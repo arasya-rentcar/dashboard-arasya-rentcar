@@ -51,4 +51,7 @@ jobs:
 
           ln -sfn releases/$RELEASE current
 
+          export NVM_DIR="$HOME/.nvm"
+          source $NVM_DIR/nvm.sh
+
           pm2 reload dashboard
