@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,10 +24,13 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
       router.replace('/dashboard');
+    } else {
+      setReady(true);
     }
   }, [router]);
 
@@ -49,6 +52,14 @@ export default function LoginPage() {
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
+  }
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="h-6 w-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

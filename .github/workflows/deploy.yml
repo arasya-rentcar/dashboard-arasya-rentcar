@@ -1,0 +1,54 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install
+      run: npm install
+
+    - name: Build
+      run: npm run build
+
+    - name: Archive
+      run: tar -czf frontend.tar.gz .next package.json package-lock.json public
+
+    - name: Upload to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        source: frontend.tar.gz
+        target: /var/www/web-arasya-rentcar/
+
+    - name: Deploy on VPS
+      uses: appleboy/ssh-action@v1
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd /var/www/web-arasya-rentcar
+
+          RELEASE=$(date +%Y%m%d%H%M%S)
+
+          mkdir -p releases/$RELEASE
+
+          tar -xzf frontend.tar.gz -C releases/$RELEASE
+
+          cp shared/.env releases/$RELEASE/ 2>/dev/null
+
+          ln -sfn releases/$RELEASE current
+
+          pm2 reload dashboard
