@@ -1,0 +1,60 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { carsApi } from '@/lib/api';
+import { Car, CreateCarInput } from '@/types';
+
+export function useCars() {
+  return useQuery<Car[]>({
+    queryKey: ['cars'],
+    queryFn: async () => {
+      const res = await carsApi.list();
+      return res.data.data;
+    },
+  });
+}
+
+export function useAvailableCars() {
+  return useQuery<Car[]>({
+    queryKey: ['cars', 'available'],
+    queryFn: async () => {
+      const res = await carsApi.list();
+      return (res.data.data as Car[]).filter((c) => c.status === 'AVAILABLE');
+    },
+  });
+}
+
+export function useCar(id: string) {
+  return useQuery<Car>({
+    queryKey: ['cars', id],
+    queryFn: async () => {
+      const res = await carsApi.getById(id);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useCreateCar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateCarInput) => {
+      const res = await carsApi.create(data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    },
+  });
+}
+
+export function useUpdateCar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: object }) => {
+      const res = await carsApi.update(id, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    },
+  });
+}
