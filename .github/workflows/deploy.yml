@@ -13,6 +13,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # inject env for build
+    - name: Create env file
+      run: |
+        echo "${{ secrets.FRONTEND_ENV }}" > .env.production
+
     - name: Install deps
       run: npm ci
 
@@ -26,7 +31,8 @@ jobs:
         public \
         package.json \
         package-lock.json \
-        next.config.ts
+        next.config.ts \
+        .env.production
 
     - name: Upload to VPS
       uses: appleboy/scp-action@v0.1.7
@@ -37,7 +43,7 @@ jobs:
         source: frontend.tar.gz
         target: /var/www/web-arasya-rentcar/
 
-    - name: Deploy with rollback
+    - name: Deploy
       uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.HOST }}
@@ -61,15 +67,14 @@ jobs:
 
           tar -xzf frontend.tar.gz -C releases/$RELEASE
 
-          cp shared/.env releases/$RELEASE/ 2>/dev/null || true
-
-          cd releases/$RELEASE
-
-          npm ci --omit=dev
-
-          cd /var/www/web-arasya-rentcar
+          # copy env to shared
+          cp releases/$RELEASE/.env.production shared/.env
 
           ln -sfn releases/$RELEASE current
+
+          cd current
+
+          npm ci --omit=dev
 
           pm2 reload dashboard
 
@@ -77,7 +82,7 @@ jobs:
 
           if ! curl -f http://localhost:3000 > /dev/null; then
 
-            echo "Deploy failed. Rolling back..."
+            echo "Rollback..."
 
             ln -sfn $PREVIOUS current
 
