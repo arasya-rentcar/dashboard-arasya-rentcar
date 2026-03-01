@@ -2,8 +2,7 @@ name: Deploy Frontend
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -14,14 +13,20 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Install
-      run: npm install
+    - name: Install deps
+      run: npm ci
 
     - name: Build
       run: npm run build
 
     - name: Archive
-      run: tar -czf frontend.tar.gz .next package.json package-lock.json public
+      run: |
+        tar -czf frontend.tar.gz \
+        .next \
+        public \
+        package.json \
+        package-lock.json \
+        next.config.ts
 
     - name: Upload to VPS
       uses: appleboy/scp-action@v0.1.7
@@ -32,14 +37,23 @@ jobs:
         source: frontend.tar.gz
         target: /var/www/web-arasya-rentcar/
 
-    - name: Deploy on VPS
+    - name: Deploy with rollback
       uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
+
         script: |
+
+          set -e
+
+          export NVM_DIR="$HOME/.nvm"
+          source $NVM_DIR/nvm.sh
+
           cd /var/www/web-arasya-rentcar
+
+          PREVIOUS=$(readlink current || echo "")
 
           RELEASE=$(date +%Y%m%d%H%M%S)
 
@@ -47,11 +61,32 @@ jobs:
 
           tar -xzf frontend.tar.gz -C releases/$RELEASE
 
-          cp shared/.env releases/$RELEASE/ 2>/dev/null
+          cp shared/.env releases/$RELEASE/ 2>/dev/null || true
+
+          cd releases/$RELEASE
+
+          npm ci --omit=dev
+
+          cd /var/www/web-arasya-rentcar
 
           ln -sfn releases/$RELEASE current
 
-          export NVM_DIR="$HOME/.nvm"
-          source $NVM_DIR/nvm.sh
-
           pm2 reload dashboard
+
+          sleep 5
+
+          if ! curl -f http://localhost:3000 > /dev/null; then
+
+            echo "Deploy failed. Rolling back..."
+
+            ln -sfn $PREVIOUS current
+
+            pm2 reload dashboard
+
+            exit 1
+
+          fi
+
+          echo "Deploy success"
+
+          ls -dt releases/* | tail -n +6 | xargs rm -rf
