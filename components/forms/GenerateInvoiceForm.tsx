@@ -19,7 +19,7 @@ import { InvoiceType, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 const schema = z.object({
-  invoice_type: z.enum(['DP', 'SETTLEMENT', 'FULL']),
+  invoice_type: z.enum(['DP', 'SETTLEMENT', 'FULL', 'ADDITIONAL']),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'QRIS', 'OTHER']),
   amount: z
     .string()
@@ -46,6 +46,7 @@ const TYPE_OPTIONS: { value: InvoiceType; label: string }[] = [
   { value: 'DP', label: 'Down Payment (DP)' },
   { value: 'SETTLEMENT', label: 'Settlement (Remaining Balance)' },
   { value: 'FULL', label: 'Full Payment' },
+  { value: 'ADDITIONAL', label: 'Additional Charge' },
 ];
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
@@ -62,11 +63,14 @@ export default function GenerateInvoiceForm({
   isLoading,
 }: Props) {
   const remaining = finalPrice - alreadyPaid;
+  const isFullyPaid = remaining <= 0;
 
-  // Filter available type options based on payment state
+  // Guard: invoices must not exceed order.final_price. Extra charges should update final_price first.
   const availableTypes = TYPE_OPTIONS.filter((t) => {
+    if (isFullyPaid) return false;
     if (t.value === 'FULL' && alreadyPaid > 0) return false;
     if (t.value === 'SETTLEMENT' && alreadyPaid === 0) return false;
+    if (t.value === 'ADDITIONAL') return false;
     return true;
   });
 
@@ -96,7 +100,7 @@ export default function GenerateInvoiceForm({
     } else if (invoiceType === 'SETTLEMENT') {
       setValue('amount', String(remaining));
     } else {
-      // DP — leave empty for admin to enter
+      // DP / ADDITIONAL — leave empty for admin to enter
       setValue('amount', '');
     }
   }, [invoiceType, finalPrice, remaining, setValue]);
@@ -126,7 +130,7 @@ export default function GenerateInvoiceForm({
         )}
         <div className="flex justify-between">
           <span className="text-gray-500">Remaining</span>
-          <span className="font-semibold text-gray-900">{formatCurrency(remaining)}</span>
+          <span className="font-semibold text-gray-900">{formatCurrency(Math.max(remaining, 0))}</span>
         </div>
       </div>
 
@@ -189,15 +193,18 @@ export default function GenerateInvoiceForm({
           id="invoice_amount"
           type="number"
           min="0"
-          max={remaining}
+          max={invoiceType === 'ADDITIONAL' ? undefined : Math.max(remaining, 0)}
           {...register('amount')}
-          readOnly={invoiceType === 'FULL'}
+          readOnly={invoiceType === 'FULL' || invoiceType === 'SETTLEMENT'}
         />
         {errors.amount && (
           <p className="text-xs text-red-500">{errors.amount.message}</p>
         )}
         {invoiceType === 'DP' && (
           <p className="text-xs text-gray-400">Enter the down payment amount received</p>
+        )}
+        {invoiceType === 'ADDITIONAL' && (
+          <p className="text-xs text-gray-400">Extra charges must increase the order final price before invoicing</p>
         )}
       </div>
 
@@ -211,8 +218,14 @@ export default function GenerateInvoiceForm({
         />
       </div>
 
+      {isFullyPaid && (
+        <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md p-2">
+          This order is fully invoiced. Edit the order final price first if you need to bill additional charges.
+        </p>
+      )}
+
       <div className="flex justify-end pt-2">
-        <Button type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading || availableTypes.length === 0}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Generate Invoice
         </Button>

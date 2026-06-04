@@ -1,4 +1,20 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Web Arasya Rentcar
+
+Next.js admin dashboard for Arasya Rentcar.
+
+Operational website flow is documented in:
+
+```text
+WEB_OPERATION_FLOW.md
+```
+
+Full bot/API/website integration flow is documented in:
+
+```text
+../ARASYA_INTEGRATION_FLOW.md
+```
+
+This project was initially bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 

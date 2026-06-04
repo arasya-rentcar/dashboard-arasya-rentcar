@@ -119,6 +119,7 @@ export default function OrdersPage() {
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Customer</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Pickup</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Dropoff</TableHead>
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Pickup / Dropoff</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">Payment</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Price</TableHead>
@@ -159,6 +160,12 @@ export default function OrdersPage() {
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden md:table-cell max-w-32 truncate">
                       {order.dropoff_location}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
+                      <div>
+                        <p>{order.service_start_at ? formatDate(order.service_start_at) : '-'}</p>
+                        {order.service_end_at && <p className="text-xs text-gray-400">until {formatDate(order.service_end_at)}</p>}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -204,7 +211,7 @@ export default function OrdersPage() {
 
       {/* Create Order Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="!w-[96vw] !max-w-[1500px] max-h-[96vh] overflow-hidden p-4 sm:p-5 lg:p-6">
           <DialogHeader>
             <DialogTitle>Create New Order</DialogTitle>
           </DialogHeader>

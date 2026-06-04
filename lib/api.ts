@@ -1,16 +1,16 @@
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Attach JWT token on every request
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -22,51 +22,55 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const authApi = {
   login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
+    api.post("/auth/login", data),
 };
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 export const ordersApi = {
-  list: () => api.get('/orders'),
+  list: () => api.get("/orders"),
   getById: (id: string) => api.get(`/orders/${id}`),
-  create: (data: object) => api.post('/orders', data),
+  create: (data: object) => api.post("/orders", data),
   update: (id: string, data: object) => api.put(`/orders/${id}`, data),
   assign: (id: string, data: { driver_id: string; car_id: string }) =>
     api.post(`/orders/${id}/assign`, data),
   generateInvoice: (id: string, data: object) =>
     api.post(`/orders/${id}/generate-invoice`, data),
+  reviseInvoice: (id: string, invoiceId: string, data: object) =>
+    api.post(`/orders/${id}/invoice/${invoiceId}/revise`, data),
+  sendInvoiceWhatsapp: (id: string, invoiceId: string, data: object) =>
+    api.post(`/orders/${id}/invoice/${invoiceId}/send-whatsapp`, data),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
 };
 
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 export const driversApi = {
-  list: () => api.get('/drivers'),
+  list: () => api.get("/drivers"),
   getById: (id: string) => api.get(`/drivers/${id}`),
-  create: (data: object) => api.post('/drivers', data),
+  create: (data: object) => api.post("/drivers", data),
   update: (id: string, data: object) => api.put(`/drivers/${id}`, data),
 };
 
 // ─── Cars ─────────────────────────────────────────────────────────────────────
 
 export const carsApi = {
-  list: () => api.get('/cars'),
+  list: () => api.get("/cars"),
   getById: (id: string) => api.get(`/cars/${id}`),
-  create: (data: object) => api.post('/cars', data),
+  create: (data: object) => api.post("/cars", data),
   update: (id: string, data: object) => api.put(`/cars/${id}`, data),
 };
 
@@ -81,7 +85,7 @@ export const tripsApi = {
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const usersApi = {
-  list: () => api.get('/users'),
+  list: () => api.get("/users"),
 };
 
 export default api;
