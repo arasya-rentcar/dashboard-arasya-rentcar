@@ -192,7 +192,7 @@ const botTemplates = [
   {
     title: "1. Internal driver pakai nama pendek",
     note: "Paling aman untuk operasional. Bot match nama ke database.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Budi Santoso
@@ -214,7 +214,7 @@ Catatan: Jemput VIP`,
   {
     title: "2. Internal driver pakai tag WhatsApp",
     note: "Bisa dipakai jika nomor tag sudah sama dengan phone driver di database.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Budi Santoso
@@ -237,7 +237,7 @@ Catatan: Jemput VIP
   {
     title: "3. Multi-day / banyak rute",
     note: "Setiap nomor menjadi baris invoice. Total otomatis dari semua Harga.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Budi Santoso
@@ -266,7 +266,7 @@ Catatan: Full day`,
   {
     title: "4. Lokasi/jam menyusul",
     note: "Boleh untuk hari berikutnya. Hari pertama sebaiknya lengkap.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Rina
@@ -296,7 +296,7 @@ Catatan: Tujuan hari kedua menyusul`,
   {
     title: "5. External driver",
     note: "Wajib nama + nomor WA + asal/base. External tidak perlu akun/email.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Budi Santoso
@@ -318,7 +318,7 @@ Catatan: Driver luar, asal Bandung`,
   {
     title: "6. Beberapa PIC/customer",
     note: "PIC pertama jadi primary. PIC tambahan tetap tersimpan di order.",
-    text: `ORDER ARASYA
+    text: `#order
 
 PIC:
 Nama: Budi Santoso
@@ -341,14 +341,23 @@ Harga: 700000`,
 ];
 
 const driverReportExamples = [
-  ["Start", "Start dari pool Arasya menuju pickup customer. Odo 12345."],
-  ["Arrived", "Sudah sampai lokasi pickup Hotel Mulia, menunggu tamu."],
-  ["On Trip", "Tamu sudah naik, perjalanan menuju Sentul."],
-  ["Finish", "Selesai dropoff di Sentul. Odo 12430. Parkir 25000."],
+  ["Start", "#start\nStart dari pool Arasya menuju pickup customer. Odo 12345."],
+  ["Drop", "#drop\nSudah dropoff di tujuan / customer sudah turun."],
+  ["Drop 1", "#drop 1\nCustomer pertama turun di Hotel Mulia."],
+  ["Drop 2", "#drop 2\nCustomer kedua turun di Bandara Soetta Terminal 3."],
+  ["Drop tambahan", "#drop\nDrop tambahan di PIK. Parkir 20000."],
+  ["Finish", "#finish\nSelesai semua. Odo 12430. Parkir 25000."],
   [
-    "Foto/PDF",
-    "Driver bisa kirim foto kendaraan, nota parkir/tol, atau PDF. Bot simpan sebagai report.",
+    "Foto/PDF/Dokumen",
+    "Foto, PDF, nota, atau dokumen wajib diberi caption yang diawali #start, #drop, atau #finish.",
   ],
+];
+
+const botWakeKeywords = [
+  ["#order", "Admin membuat order baru dari grup Internal Arasya."],
+  ["#start", "Driver mulai jalan / sampai pickup / mulai pekerjaan. Bisa teks, foto, atau dokumen dengan caption."],
+  ["#drop", "Driver laporan drop-off/customer turun. Tidak menutup order. Untuk multi-drop/multi-day, tetap pakai #drop lalu tulis nomor drop di isi pesan: #drop 1, #drop 2, dst."],
+  ["#finish", "Driver menyelesaikan pekerjaan dan menutup order/trip."],
 ];
 
 function Card({
@@ -548,7 +557,68 @@ export default function GuidePage() {
           </div>
         </Card>
 
-        <Card title="WhatsApp Bot: aturan order" icon={Bot}>
+        <Card title="WhatsApp Bot: aturan trigger" icon={Bot}>
+          <div className="space-y-4 text-sm text-gray-700">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              <b>Wajib pakai keyword di awal pesan.</b>
+              <p className="mt-1">
+                Bot akan mengabaikan semua chat biasa. Untuk text, foto, PDF,
+                dan dokumen, caption/pesan harus diawali keyword. Huruf besar
+                kecil bebas: <b>#START</b>, <b>#Start</b>, dan <b>#start</b>
+                dianggap sama.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {botWakeKeywords.map(([keyword, desc]) => (
+                <div key={keyword} className="rounded-lg border p-4">
+                  <div className="font-mono text-base font-semibold text-gray-900">
+                    {keyword}
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-gray-600">
+                    {desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <CodeBlock>{`#order
+PIC:
+Nama: Budi
+HP: 081234567890
+
+DETAIL:
+1. 30 Mei 2026 | 09:00
+Pickup: Bandara Soetta
+Dropoff: Hotel Mulia
+Mobil: ARA
+Driver: Sutan
+Harga: 750000`}</CodeBlock>
+              <CodeBlock>{`#start
+Sudah sampai lokasi pickup
+
+#drop
+Customer sudah turun di tujuan
+
+#drop 1
+Customer pertama turun di Hotel Mulia
+
+#drop 2
+Customer kedua turun di Bandara Soetta T3
+
+#finish
+Selesai semua, unit kembali standby`}</CodeBlock>
+            </div>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-xs leading-5 text-blue-900">
+              <b>Multi-drop / multi-day:</b> jangan buat keyword baru seperti <b>#drop1</b> atau <b>#drop2</b>. Tetap pakai <b>#drop</b>, lalu tulis nomor drop setelah keyword atau di isi pesan. Contoh: <b>#drop 1</b>, <b>#drop 2</b>, <b>#drop ke-3</b>. Semua drop hanya menyimpan laporan; order baru ditutup dengan <b>#finish</b>.
+            </div>
+            <p className="text-xs text-gray-500">
+              Foto/dokumen tanpa caption keyword tidak diproses. Contoh benar:
+              kirim foto dengan caption <b>#start</b>, <b>#drop</b>, <b>#drop 1</b>, atau <b>#finish</b>.
+            </p>
+          </div>
+        </Card>
+
+        <Card title="WhatsApp Bot: aturan order" icon={MessageCircle}>
           <div className="grid gap-4 text-sm text-gray-700 lg:grid-cols-3">
             <div className="rounded-lg border p-4">
               <Users className="mb-2 h-5 w-5 text-gray-900" />
@@ -597,9 +667,9 @@ export default function GuidePage() {
         <Card title="Contoh laporan driver ke bot" icon={Send}>
           <div className="grid gap-3 text-sm text-gray-700 md:grid-cols-2">
             {driverReportExamples.map(([title, text]) => (
-              <div key={title} className="rounded-lg border p-3">
+              <div key={title} className="space-y-2 rounded-lg border p-3">
                 <b>{title}</b>
-                <p className="mt-1">{text}</p>
+                <CodeBlock>{text}</CodeBlock>
               </div>
             ))}
           </div>
