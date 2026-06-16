@@ -56,6 +56,17 @@ export const ordersApi = {
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
 };
 
+export const finalOrdersApi = {
+  list: () => api.get("/final-orders"),
+  getById: (id: string) => api.get(`/final-orders/${id}`),
+};
+
+export const sheetImportsApi = {
+  preview: (data: object = {}) => api.post("/sheet-imports/preview", data),
+  import: (data: object = {}) => api.post("/sheet-imports/import", data),
+  latest: () => api.get("/sheet-imports/latest"),
+};
+
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 export const driversApi = {

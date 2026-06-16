@@ -10,6 +10,7 @@ import {
   Car,
   FileText,
   HelpCircle,
+  TableProperties,
   LogOut,
   Bot,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { User } from "@/types";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
+  { href: "/dashboard/final-orders", label: "Final Orders", icon: TableProperties },
   { href: "/dashboard/drivers", label: "Drivers", icon: Users },
   { href: "/dashboard/cars", label: "Cars", icon: Car },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },

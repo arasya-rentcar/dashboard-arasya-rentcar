@@ -196,6 +196,7 @@ export interface Order {
 
 export interface OrderListItem {
   id: string;
+  order_code?: string | null;
   customer_name: string;
   customer_phone: string;
   customers?: OrderCustomer[];
@@ -228,6 +229,84 @@ export interface OrderListItem {
     created_at?: string;
     delivery_logs?: InvoiceDeliveryLog[];
   }[];
+}
+
+export interface OrderFinalFinance {
+  id: string;
+  order_id: string;
+  sheet_checked_raw?: string | null;
+  refund_cashback_raw?: string | null;
+  refund_cashback_amount?: string | null;
+  invoice_no_raw?: string | null;
+  service_date_raw?: string | null;
+  service_date?: string | null;
+  vehicle_raw?: string | null;
+  route_raw?: string | null;
+  duration_raw?: string | null;
+  package_raw?: string | null;
+  driver_vendor_raw?: string | null;
+  plate_no_raw?: string | null;
+  sell_price?: string | null;
+  rtr_amount?: string | null;
+  dp_amount?: string | null;
+  additional_amount?: string | null;
+  user_overtime_amount?: string | null;
+  user_overtime_hours_raw?: string | null;
+  parking_user_amount?: string | null;
+  total_user_amount?: string | null;
+  paid_off_date_raw?: string | null;
+  paid_off_date?: string | null;
+  fuel_amount?: string | null;
+  toll_amount?: string | null;
+  driver_fee_amount?: string | null;
+  driver_overtime_amount?: string | null;
+  parking_cash_amount?: string | null;
+  other_amount?: string | null;
+  finance_note?: string | null;
+  total_driver_amount?: string | null;
+  driver_paid_date_raw?: string | null;
+  driver_paid_date?: string | null;
+  total_ops_cost?: string | null;
+  unit_rental_price?: string | null;
+  margin_amount?: string | null;
+}
+
+export interface SheetImportRow {
+  id: string;
+  sheet_id: string;
+  gid: string;
+  row_number: number;
+  row_hash: string;
+  order_id?: string | null;
+  status: string;
+  warnings: string[];
+}
+
+export interface FinalOrderListItem extends OrderListItem {
+  final_finance: OrderFinalFinance | null;
+  sheet_import_rows?: SheetImportRow[];
+}
+
+export interface SheetImportPreview {
+  sheet_id: string;
+  gid: string;
+  headers: string[];
+  total_rows: number;
+  meaningful_rows: number;
+  skipped_rows: number;
+  warning_count: number;
+  samples: unknown[];
+}
+
+export interface SheetImportResult {
+  sheet_id: string;
+  gid: string;
+  total_rows: number;
+  meaningful_rows: number;
+  imported: number;
+  updated: number;
+  warning_count: number;
+  results: { row_number: number; order_id?: string; status: string; warnings: string[] }[];
 }
 
 // ─── API Inputs ──────────────────────────────────────────────────────────────
