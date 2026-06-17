@@ -42,6 +42,8 @@ export const authApi = {
 
 export const ordersApi = {
   list: () => api.get("/orders"),
+  search: (params: Record<string, string | number | undefined>) =>
+    api.get("/orders/search", { params }),
   getById: (id: string) => api.get(`/orders/${id}`),
   create: (data: object) => api.post("/orders", data),
   update: (id: string, data: object) => api.put(`/orders/${id}`, data),

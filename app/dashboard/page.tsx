@@ -10,8 +10,19 @@ import {
   Receipt,
   Banknote,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useOrders } from '@/hooks/useOrders';
 import { useFinalOrders } from '@/hooks/useFinalOrders';
@@ -39,8 +50,56 @@ export default function DashboardPage() {
       (o) => o.order_status === 'IN_PROGRESS' || o.order_status === 'ASSIGNED',
     ).length ?? 0;
 
+  // ── Date-range selector for KPIs ────────────────────────────────────────
+  const [rangePreset, setRangePreset] = useState('ALL');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+
+  const range = useMemo(() => {
+    const now = new Date();
+    const startOf = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (rangePreset === 'THIS_MONTH') {
+      return {
+        f: new Date(now.getFullYear(), now.getMonth(), 1),
+        t: new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59),
+      };
+    }
+    if (rangePreset === 'LAST_MONTH') {
+      return {
+        f: new Date(now.getFullYear(), now.getMonth() - 1, 1),
+        t: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59),
+      };
+    }
+    if (rangePreset === 'LAST_30') {
+      const f = startOf(new Date(now));
+      f.setDate(f.getDate() - 30);
+      return { f, t: now };
+    }
+    if (rangePreset === 'YTD') {
+      return { f: new Date(now.getFullYear(), 0, 1), t: now };
+    }
+    if (rangePreset === 'CUSTOM') {
+      return {
+        f: from ? new Date(`${from}T00:00:00`) : null,
+        t: to ? new Date(`${to}T23:59:59`) : null,
+      };
+    }
+    return { f: null as Date | null, t: null as Date | null };
+  }, [rangePreset, from, to]);
+
+  const inRange = (o: { final_finance?: { service_date?: string | null } | null; order_date: string }) => {
+    if (!range.f && !range.t) return true;
+    const refRaw = o.final_finance?.service_date || o.order_date;
+    if (!refRaw) return false;
+    const d = new Date(refRaw);
+    if (range.f && d < range.f) return false;
+    if (range.t && d > range.t) return false;
+    return true;
+  };
+
   // ── Financial KPIs (from final_finance — the source of truth) ───────────
-  const rows = finalOrders ?? [];
+  const rows = (finalOrders ?? []).filter(inRange);
   let turnover = 0; // all non-cancelled order value (paid + unpaid)
   let receivables = 0; // unpaid order value (money owed TO us)
   let collected = 0; // paid order value (money received)
@@ -156,9 +215,60 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* ── Financial overview ─────────────────────────────────────────── */}
         <div>
-          <h2 className="text-sm font-medium text-gray-500 mb-4">
-            Financial Overview
-          </h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="text-sm font-medium text-gray-500">
+              Financial Overview
+              {rangePreset !== 'ALL' && (
+                <span className="ml-2 text-xs font-normal text-gray-400">
+                  (filtered)
+                </span>
+              )}
+            </h2>
+            <div className="flex flex-wrap items-end gap-2">
+              <Select value={rangePreset} onValueChange={setRangePreset}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Time</SelectItem>
+                  <SelectItem value="THIS_MONTH">This Month</SelectItem>
+                  <SelectItem value="LAST_MONTH">Last Month</SelectItem>
+                  <SelectItem value="LAST_30">Last 30 Days</SelectItem>
+                  <SelectItem value="YTD">Year to Date</SelectItem>
+                  <SelectItem value="CUSTOM">Custom…</SelectItem>
+                </SelectContent>
+              </Select>
+              {rangePreset === 'CUSTOM' && (
+                <>
+                  <Input
+                    type="date"
+                    className="w-36"
+                    value={from}
+                    onChange={(e) => setFrom(e.target.value)}
+                  />
+                  <Input
+                    type="date"
+                    className="w-36"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                  />
+                </>
+              )}
+              {rangePreset !== 'ALL' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setRangePreset('ALL');
+                    setFrom('');
+                    setTo('');
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {financial.map(({ label, value, hint, icon: Icon, tone }) => (
               <Card key={label} className="shadow-none border border-gray-200">

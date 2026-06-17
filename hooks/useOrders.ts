@@ -9,6 +9,8 @@ import {
   GenerateInvoiceInput,
   ReviseInvoiceInput,
   SendInvoiceWhatsappInput,
+  OrdersSearchResult,
+  OrdersSearchParams,
 } from "@/types";
 
 export function useOrders() {
@@ -18,6 +20,23 @@ export function useOrders() {
       const res = await ordersApi.list();
       return res.data.data;
     },
+  });
+}
+
+export function useOrdersSearch(params: OrdersSearchParams) {
+  return useQuery<OrdersSearchResult>({
+    queryKey: ["orders-search", params],
+    queryFn: async () => {
+      const res = await ordersApi.search(
+        params as Record<string, string | number | undefined>,
+      );
+      return {
+        data: res.data.data,
+        pagination: res.data.pagination,
+        summary: res.data.summary,
+      };
+    },
+    placeholderData: (prev) => prev,
   });
 }
 

@@ -299,6 +299,39 @@ export interface SheetImportRow {
   warnings: string[];
 }
 
+export interface OrdersSearchSummary {
+  count: number;
+  final_price_total: string | number;
+  total_user_amount: string | number;
+  total_ops_cost: string | number;
+  total_driver_amount: string | number;
+  margin_amount: string | number;
+}
+
+export interface OrdersSearchResult {
+  data: OrderListItem[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    page_count: number;
+  };
+  summary: OrdersSearchSummary;
+}
+
+export interface OrdersSearchParams {
+  search?: string;
+  order_status?: string;
+  payment_status?: string;
+  source?: string;
+  has_finance?: string;
+  date_field?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+}
+
 export interface FinalOrderListItem extends OrderListItem {
   final_finance: OrderFinalFinance | null;
   sheet_import_rows?: SheetImportRow[];
