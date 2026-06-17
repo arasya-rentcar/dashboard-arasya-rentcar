@@ -14,7 +14,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useOrders } from '@/hooks/useOrders';
 import { useFinalOrders } from '@/hooks/useFinalOrders';
+import { useCars } from '@/hooks/useCars';
+import { useDrivers } from '@/hooks/useDrivers';
 import { formatCurrency } from '@/lib/utils';
+import PaginatedTable from '@/components/dashboard/PaginatedTable';
+import FrequencyChart, { FreqItem } from '@/components/dashboard/FrequencyChart';
 
 const num = (v?: string | null) => {
   const n = Number(v ?? 0);
@@ -24,6 +28,8 @@ const num = (v?: string | null) => {
 export default function DashboardPage() {
   const { data: orders, isLoading: ordersLoading } = useOrders();
   const { data: finalOrders, isLoading: finLoading } = useFinalOrders();
+  const { data: cars, isLoading: carsLoading } = useCars();
+  const { data: drivers, isLoading: driversLoading } = useDrivers();
 
   // ── Operational counts (from orders list) ──────────────────────────────
   const totalOrders = orders?.length ?? 0;
@@ -61,6 +67,34 @@ export default function DashboardPage() {
 
   // Nett income = collected (clear) income, minus ops and external resource cost
   const nettIncome = collected - opsCost - driverPayout;
+
+  // ── Operational tables ──────────────────────────────────────────────────
+  const unpaidList = (orders ?? []).filter(
+    (o) => o.payment_status === 'UNPAID' && o.order_status !== 'CANCELLED',
+  );
+  const availableCars = (cars ?? []).filter((c) => c.status === 'AVAILABLE');
+  const availableDrivers = (drivers ?? []).filter(
+    (d) => d.status === 'AVAILABLE',
+  );
+
+  // ── Rental frequency (from final_finance raw fields; no trips yet) ───────
+  const carFreq: Record<string, number> = {};
+  const driverFreq: Record<string, number> = {};
+  for (const o of rows) {
+    if (o.order_status === 'CANCELLED') continue;
+    const car = (
+      o.final_finance?.vehicle_raw ||
+      o.final_finance?.plate_no_raw ||
+      ''
+    ).trim();
+    if (car) carFreq[car] = (carFreq[car] ?? 0) + 1;
+    const drv = (o.final_finance?.driver_vendor_raw || '').trim();
+    if (drv) driverFreq[drv] = (driverFreq[drv] ?? 0) + 1;
+  }
+  const toItems = (m: Record<string, number>): FreqItem[] =>
+    Object.entries(m).map(([label, count]) => ({ label, count }));
+  const carItems = toItems(carFreq);
+  const driverItems = toItems(driverFreq);
 
   const financial = [
     {
@@ -180,63 +214,99 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Recent Orders ──────────────────────────────────────────────── */}
-        <div>
-          <h2 className="text-sm font-medium text-gray-500 mb-4">
-            Recent Orders
-          </h2>
-          <Card className="shadow-none border border-gray-200">
-            <CardContent className="p-0">
-              {ordersLoading ? (
-                <div className="p-6 space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-10 bg-gray-100 rounded animate-pulse"
-                    />
-                  ))}
-                </div>
-              ) : orders && orders.length > 0 ? (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100">
-                      <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Customer
-                      </th>
-                      <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Status
-                      </th>
-                      <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Payment
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.slice(0, 5).map((order) => (
-                      <tr
-                        key={order.id}
-                        className="border-b border-gray-50 last:border-0"
-                      >
-                        <td className="px-6 py-3 font-medium text-gray-900">
-                          {order.customer_name}
-                        </td>
-                        <td className="px-6 py-3">
-                          <StatusBadge status={order.order_status} />
-                        </td>
-                        <td className="px-6 py-3">
-                          <PaymentBadge status={order.payment_status} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="px-6 py-10 text-center text-sm text-gray-400">
-                  No orders yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* ── Rental frequency charts ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FrequencyChart
+            title="Most Rented Cars"
+            subtitle="Times each car was used on an order"
+            items={carItems}
+            loading={finLoading}
+            barClass="bg-blue-600"
+          />
+          <FrequencyChart
+            title="Top Drivers / Vendors"
+            subtitle="Orders handled per driver / vendor"
+            items={driverItems}
+            loading={finLoading}
+            barClass="bg-emerald-600"
+          />
+        </div>
+
+        {/* ── Unpaid orders ──────────────────────────────────────────────── */}
+        <PaginatedTable
+          title="Unpaid Orders"
+          rows={unpaidList}
+          loading={ordersLoading}
+          emptyText="No unpaid orders."
+          rowKey={(o) => o.id}
+          columns={[
+            {
+              header: 'Customer',
+              cell: (o) => (
+                <span className="font-medium text-gray-900">
+                  {o.customer_name}
+                </span>
+              ),
+            },
+            {
+              header: 'Amount',
+              cell: (o) => formatCurrency(Number(o.final_price || 0)),
+            },
+            {
+              header: 'Status',
+              cell: (o) => <StatusBadge status={o.order_status} />,
+            },
+            {
+              header: 'Payment',
+              cell: (o) => <PaymentBadge status={o.payment_status} />,
+            },
+          ]}
+        />
+
+        {/* ── Available cars + drivers ───────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PaginatedTable
+            title="Available Cars"
+            rows={availableCars}
+            loading={carsLoading}
+            emptyText="No available cars."
+            rowKey={(c) => c.id}
+            columns={[
+              {
+                header: 'Model',
+                cell: (c) => (
+                  <span className="font-medium text-gray-900">{c.model}</span>
+                ),
+              },
+              { header: 'Plate', cell: (c) => c.plate_number },
+              {
+                header: 'Type',
+                cell: (c) => (
+                  <FleetBadge type={c.type} />
+                ),
+              },
+            ]}
+          />
+          <PaginatedTable
+            title="Available Drivers"
+            rows={availableDrivers}
+            loading={driversLoading}
+            emptyText="No available drivers."
+            rowKey={(d) => d.id}
+            columns={[
+              {
+                header: 'Name',
+                cell: (d) => (
+                  <span className="font-medium text-gray-900">{d.name}</span>
+                ),
+              },
+              { header: 'Phone', cell: (d) => d.phone },
+              {
+                header: 'Type',
+                cell: (d) => <FleetBadge type={d.type} />,
+              },
+            ]}
+          />
         </div>
       </div>
     </DashboardShell>
@@ -256,6 +326,21 @@ function StatusBadge({ status }: { status: string }) {
       className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${map[status] ?? 'bg-gray-100 text-gray-600'}`}
     >
       {status}
+    </span>
+  );
+}
+
+function FleetBadge({ type }: { type: string }) {
+  const isInternal = type === 'INTERNAL';
+  return (
+    <span
+      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+        isInternal
+          ? 'bg-indigo-50 text-indigo-700'
+          : 'bg-orange-50 text-orange-700'
+      }`}
+    >
+      {type}
     </span>
   );
 }
