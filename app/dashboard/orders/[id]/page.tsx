@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import TripTimeline from "@/components/orders/TripTimeline";
+import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
@@ -296,6 +297,8 @@ export default function OrderDetailPage({
                 )}
               </CardContent>
             </Card>
+
+            <OrderFinanceCard order={order} />
 
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">

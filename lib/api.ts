@@ -47,6 +47,8 @@ export const ordersApi = {
   getById: (id: string) => api.get(`/orders/${id}`),
   create: (data: object) => api.post("/orders", data),
   update: (id: string, data: object) => api.put(`/orders/${id}`, data),
+  updateFinance: (id: string, data: object) =>
+    api.put(`/orders/${id}/finance`, data),
   assign: (id: string, data: { driver_id: string; car_id: string }) =>
     api.post(`/orders/${id}/assign`, data),
   generateInvoice: (id: string, data: object) =>

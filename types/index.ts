@@ -192,6 +192,36 @@ export interface Order {
   updated_at: string;
   trip?: Trip | null;
   invoices: Invoice[];
+  is_external?: boolean;
+  external_vendor?: { id: string; name: string; phone?: string | null } | null;
+  external_car?: {
+    id: string;
+    model: string;
+    plate_number?: string | null;
+  } | null;
+  customer?: {
+    id: string;
+    name: string;
+    phone?: string | null;
+    total_orders: number;
+  } | null;
+  final_finance?: OrderFinanceDetail | null;
+}
+
+export interface OrderFinanceDetail {
+  id: string;
+  total_user_amount?: string | number | null;
+  sell_price?: string | number | null;
+  rtr_amount?: string | number | null;
+  total_ops_cost?: string | number | null;
+  fuel_amount?: string | number | null;
+  toll_amount?: string | number | null;
+  parking_cash_amount?: string | number | null;
+  driver_fee_amount?: string | number | null;
+  total_driver_amount?: string | number | null;
+  finance_note?: string | null;
+  margin_amount?: string | number | null;
+  margin_formula_version?: string | null;
 }
 
 // ─── List-view minimal order (from listOrders) ──────────────────────────────

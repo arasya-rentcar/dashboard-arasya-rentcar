@@ -84,6 +84,20 @@ export function useUpdateOrder() {
   });
 }
 
+export function useUpdateOrderFinance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: object }) => {
+      const res = await ordersApi.updateFinance(id, data);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+    },
+  });
+}
+
 export function useAssignOrder() {
   const queryClient = useQueryClient();
   return useMutation({
