@@ -30,6 +30,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import CreateOrderForm from '@/components/forms/CreateOrderForm';
+import TablePagination, {
+  usePagination,
+} from '@/components/dashboard/TablePagination';
 import { useOrders, useCreateOrder } from '@/hooks/useOrders';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
 import { OrderStatus, PaymentStatus } from '@/types';
@@ -64,6 +67,16 @@ export default function OrdersPage() {
     const matchStatus = statusFilter === 'ALL' || o.order_status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const PAGE_SIZE = 10;
+  const {
+    page,
+    setPage,
+    pageCount,
+    total,
+    start,
+    pageItems,
+  } = usePagination(filtered ?? [], PAGE_SIZE);
 
   async function handleCreate(data: Parameters<typeof createMutation.mutateAsync>[0]) {
     try {
@@ -115,6 +128,7 @@ export default function OrdersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">No</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Order ID</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Customer</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Pickup</TableHead>
@@ -130,7 +144,7 @@ export default function OrdersPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(8)].map((_, j) => (
+                    {[...Array(9)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -139,13 +153,16 @@ export default function OrdersPage() {
                 ))
               ) : filtered?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-10 text-gray-400 text-sm">
+                  <TableCell colSpan={9} className="text-center py-10 text-gray-400 text-sm">
                     No orders found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered?.map((order) => (
+                pageItems.map((order, idx) => (
                   <TableRow key={order.id} className="hover:bg-gray-50/50">
+                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                      {start + idx + 1}
+                    </TableCell>
                     <TableCell className="font-mono text-xs text-gray-500">
                       {order.id.slice(0, 8)}…
                     </TableCell>
@@ -201,12 +218,16 @@ export default function OrdersPage() {
           </Table>
         </div>
 
-        {/* Pagination hint */}
-        {filtered && filtered.length > 0 && (
-          <p className="text-xs text-gray-400 text-right">
-            {filtered.length} order{filtered.length !== 1 ? 's' : ''}
-          </p>
-        )}
+        {/* Pagination */}
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          start={start}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          label="orders"
+        />
       </div>
 
       {/* Create Order Dialog */}

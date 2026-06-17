@@ -39,6 +39,7 @@ import {
   useUpdateDriver,
 } from "@/hooks/useDrivers";
 import { useUsers } from "@/hooks/useUsers";
+import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { Driver, DriverStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -68,6 +69,7 @@ type EditDriverForm = z.infer<typeof editDriverSchema>;
 
 export default function DriversPage() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
@@ -76,13 +78,21 @@ export default function DriversPage() {
   const createMutation = useCreateDriver();
   const updateMutation = useUpdateDriver();
 
-  const filtered = drivers?.filter(
-    (d) =>
+  const filtered = drivers?.filter((d) => {
+    const matchSearch =
       search === "" ||
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.phone.includes(search) ||
       d.location?.toLowerCase().includes(search.toLowerCase()) ||
-      d.type.toLowerCase().includes(search.toLowerCase()),
+      d.type.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "ALL" || d.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const PAGE_SIZE = 10;
+  const { page, setPage, pageCount, total, start, pageItems } = usePagination(
+    filtered ?? [],
+    PAGE_SIZE,
   );
 
   const driverUserIds = new Set(drivers?.map((d) => d.user_id));
@@ -146,14 +156,27 @@ export default function DriversPage() {
     <DashboardShell title="Drivers">
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search drivers…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search drivers…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="AVAILABLE">Available</SelectItem>
+                <SelectItem value="ON_DUTY">On Duty</SelectItem>
+                <SelectItem value="OFF">Off</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -165,6 +188,9 @@ export default function DriversPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
+                  No
+                </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Name
                 </TableHead>
@@ -192,7 +218,7 @@ export default function DriversPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -202,15 +228,18 @@ export default function DriversPage() {
               ) : filtered?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     No drivers found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered?.map((driver) => (
+                pageItems.map((driver, idx) => (
                   <TableRow key={driver.id} className="hover:bg-gray-50/50">
+                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                      {start + idx + 1}
+                    </TableCell>
                     <TableCell className="font-medium text-sm text-gray-900">
                       {driver.name}
                     </TableCell>
@@ -259,6 +288,16 @@ export default function DriversPage() {
             </TableBody>
           </Table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          start={start}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          label="drivers"
+        />
       </div>
 
       {/* Create Driver Dialog */}

@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFinalOrders, usePreviewSheetImport, useRunSheetImport } from "@/hooks/useFinalOrders";
+import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { formatCurrency, formatDate, getErrorMessage } from "@/lib/utils";
 
 function money(value?: string | null) {
@@ -54,6 +55,12 @@ export default function FinalOrdersPage() {
         .some((value) => String(value).toLowerCase().includes(q));
     });
   }, [orders, search]);
+
+  const PAGE_SIZE = 10;
+  const { page, setPage, pageCount, total, start, pageItems } = usePagination(
+    filtered,
+    PAGE_SIZE,
+  );
 
   async function handlePreview() {
     try {
@@ -133,6 +140,7 @@ export default function FinalOrdersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <TableHead className="w-12">No</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Invoice</TableHead>
                 <TableHead>Date</TableHead>
@@ -152,23 +160,24 @@ export default function FinalOrdersPage() {
               {isLoading ? (
                 [...Array(8)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(13)].map((__, j) => (
+                    {[...Array(14)].map((__, j) => (
                       <TableCell key={j}><div className="h-4 bg-gray-100 rounded animate-pulse" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-10 text-gray-400 text-sm">
+                  <TableCell colSpan={14} className="text-center py-10 text-gray-400 text-sm">
                     No final orders yet. Use Preview/Import to load the sheet.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((order) => {
+                pageItems.map((order, idx) => {
                   const finance = order.final_finance;
                   const source = order.sheet_import_rows?.[0];
                   return (
                     <TableRow key={order.id} className="hover:bg-gray-50/50">
+                      <TableCell className="text-sm text-gray-400 tabular-nums">{start + idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap">
                           <Badge variant="outline" className={order.payment_status === "PAID" ? "bg-emerald-50 text-emerald-700" : order.payment_status === "DP_PAID" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"}>
@@ -200,6 +209,16 @@ export default function FinalOrdersPage() {
             </TableBody>
           </Table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          start={start}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          label="final order rows"
+        />
       </div>
     </DashboardShell>
   );

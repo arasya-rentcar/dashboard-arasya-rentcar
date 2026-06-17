@@ -10,6 +10,7 @@ import {
   Receipt,
   Banknote,
 } from 'lucide-react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { useOrders } from '@/hooks/useOrders';
@@ -243,9 +244,12 @@ export default function DashboardPage() {
             {
               header: 'Customer',
               cell: (o) => (
-                <span className="font-medium text-gray-900">
+                <Link
+                  href={`/dashboard/orders/${o.id}`}
+                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                >
                   {o.customer_name}
-                </span>
+                </Link>
               ),
             },
             {

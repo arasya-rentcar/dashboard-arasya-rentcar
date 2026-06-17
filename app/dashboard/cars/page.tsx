@@ -34,6 +34,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCars, useCreateCar, useUpdateCar } from "@/hooks/useCars";
+import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { Car, CarStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -64,6 +65,7 @@ type EditCarForm = z.infer<typeof editCarSchema>;
 
 export default function CarsPage() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
 
@@ -71,14 +73,22 @@ export default function CarsPage() {
   const createMutation = useCreateCar();
   const updateMutation = useUpdateCar();
 
-  const filtered = cars?.filter(
-    (c) =>
+  const filtered = cars?.filter((c) => {
+    const matchSearch =
       search === "" ||
       c.model.toLowerCase().includes(search.toLowerCase()) ||
       c.plate_number.toLowerCase().includes(search.toLowerCase()) ||
       c.unit_code?.toLowerCase().includes(search.toLowerCase()) ||
       c.origin_location?.toLowerCase().includes(search.toLowerCase()) ||
-      c.type.toLowerCase().includes(search.toLowerCase()),
+      c.type.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "ALL" || c.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const PAGE_SIZE = 10;
+  const { page, setPage, pageCount, total, start, pageItems } = usePagination(
+    filtered ?? [],
+    PAGE_SIZE,
   );
 
   const {
@@ -138,14 +148,27 @@ export default function CarsPage() {
     <DashboardShell title="Cars">
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search cars…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search cars…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="AVAILABLE">Available</SelectItem>
+                <SelectItem value="IN_USE">In Use</SelectItem>
+                <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -157,6 +180,9 @@ export default function CarsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
+                  No
+                </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Unit Code
                 </TableHead>
@@ -184,7 +210,7 @@ export default function CarsPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -194,15 +220,18 @@ export default function CarsPage() {
               ) : filtered?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     No cars found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered?.map((car) => (
+                pageItems.map((car, idx) => (
                   <TableRow key={car.id} className="hover:bg-gray-50/50">
+                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                      {start + idx + 1}
+                    </TableCell>
                     <TableCell className="font-mono text-sm font-semibold text-gray-900">
                       {car.unit_code || "—"}
                     </TableCell>
@@ -251,6 +280,16 @@ export default function CarsPage() {
             </TableBody>
           </Table>
         </div>
+
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          start={start}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          label="cars"
+        />
       </div>
 
       {/* Add Car Dialog */}

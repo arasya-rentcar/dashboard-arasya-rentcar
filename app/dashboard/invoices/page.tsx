@@ -41,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useOrders, useSendInvoiceWhatsapp } from "@/hooks/useOrders";
+import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import {
   Invoice,
@@ -102,6 +103,7 @@ function invoiceCanSend(inv: InvoiceWithOrder) {
 
 export default function InvoicesPage() {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [recipientByInvoice, setRecipientByInvoice] = useState<
@@ -127,11 +129,19 @@ export default function InvoicesPage() {
     [orders],
   );
 
-  const filtered = invoices.filter(
-    (inv) =>
+  const filtered = invoices.filter((inv) => {
+    const matchSearch =
       search === "" ||
       inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-      inv.order.customer_name.toLowerCase().includes(search.toLowerCase()),
+      inv.order.customer_name.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "ALL" || inv.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const PAGE_SIZE = 10;
+  const { page, setPage, pageCount, total, start, pageItems } = usePagination(
+    filtered,
+    PAGE_SIZE,
   );
 
   function recipientsFor(inv: InvoiceWithOrder) {
@@ -199,14 +209,29 @@ export default function InvoicesPage() {
     <DashboardShell title="Invoices">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search invoices…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search invoices…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Status</SelectItem>
+                <SelectItem value="DRAFT">Draft</SelectItem>
+                <SelectItem value="ISSUED">Issued</SelectItem>
+                <SelectItem value="REVISED">Revised</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -215,6 +240,9 @@ export default function InvoicesPage() {
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="w-8" />
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
+                  No
+                </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Invoice #
                 </TableHead>
@@ -239,7 +267,7 @@ export default function InvoicesPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -249,20 +277,21 @@ export default function InvoicesPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     No invoices yet.
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((inv) => {
+                pageItems.map((inv, idx) => {
                   const expanded = expandedId === inv.id;
                   const logs = inv.delivery_logs || [];
                   const canSend = invoiceCanSend(inv);
                   return (
                     <FragmentInvoiceRow
                       key={inv.id}
+                      no={start + idx + 1}
                       inv={inv}
                       expanded={expanded}
                       logs={logs}
@@ -308,11 +337,15 @@ export default function InvoicesPage() {
           </Table>
         </div>
 
-        {filtered.length > 0 && (
-          <p className="text-xs text-gray-400 text-right">
-            {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
-          </p>
-        )}
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          start={start}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          label="invoices"
+        />
       </div>
 
       <Dialog
@@ -337,6 +370,7 @@ export default function InvoicesPage() {
 }
 
 function FragmentInvoiceRow({
+  no,
   inv,
   expanded,
   logs,
@@ -355,6 +389,7 @@ function FragmentInvoiceRow({
   onNoteChange,
   onSend,
 }: {
+  no: number;
   inv: InvoiceWithOrder;
   expanded: boolean;
   logs: InvoiceDeliveryLog[];
@@ -386,6 +421,7 @@ function FragmentInvoiceRow({
             <ChevronRight className="h-4 w-4" />
           )}
         </TableCell>
+        <TableCell className="text-sm text-gray-400 tabular-nums">{no}</TableCell>
         <TableCell className="font-mono text-sm text-gray-900 font-medium">
           <div>{inv.invoice_number}</div>
           {(inv.revision ?? 0) > 0 && (
@@ -439,7 +475,7 @@ function FragmentInvoiceRow({
       </TableRow>
       {expanded && (
         <TableRow>
-          <TableCell colSpan={7} className="bg-gray-50/80 p-0">
+          <TableCell colSpan={8} className="bg-gray-50/80 p-0">
             <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_380px]">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
