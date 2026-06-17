@@ -14,6 +14,7 @@ import {
   Bot,
   UserRound,
   Handshake,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
@@ -23,6 +24,7 @@ import { User } from "@/types";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
+  { href: "/dashboard/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/dashboard/customers", label: "Customers", icon: UserRound },
   { href: "/dashboard/drivers", label: "Drivers", icon: Users },
   { href: "/dashboard/cars", label: "Cars", icon: Car },

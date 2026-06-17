@@ -208,6 +208,70 @@ export interface Order {
   final_finance?: OrderFinanceDetail | null;
 }
 
+export type ScheduleStatus =
+  | "SCHEDULED"
+  | "IN_PROGRESS"
+  | "DONE"
+  | "CANCELLED";
+
+export interface ScheduleLine {
+  id: string;
+  service_date?: string | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  description?: string | null;
+  service_kind?: string | null;
+  pickup_location: string;
+  dropoff_location: string;
+  total_price: string | number;
+  ops_cost: string | number;
+  rtr_amount?: string | number | null;
+  margin_amount?: string | number | null;
+  is_external: boolean;
+  line_status: ScheduleStatus;
+  driver_name_raw?: string | null;
+  plate_raw?: string | null;
+  notes?: string | null;
+  order?: {
+    id: string;
+    order_code?: string | null;
+    customer_name: string;
+    order_status: OrderStatus;
+    payment_status: PaymentStatus;
+  } | null;
+  driver?: { id: string; name: string; phone?: string | null } | null;
+  car?: { id: string; model: string; plate_number?: string | null } | null;
+  external_vendor?: { id: string; name: string; phone?: string | null } | null;
+  external_car?: {
+    id: string;
+    model: string;
+    plate_number?: string | null;
+  } | null;
+}
+
+export interface ScheduleTotals {
+  revenue: string | number;
+  ops_cost: string | number;
+  margin: string | number;
+}
+
+export interface DriverAvailabilityEntry {
+  id: string;
+  name: string;
+  phone?: string | null;
+  type: "INTERNAL" | "EXTERNAL";
+  status: string;
+  availability: "FREE" | "BUSY";
+  bookings: {
+    line_id: string;
+    order_id?: string;
+    order_code?: string | null;
+    customer_name?: string;
+    route: string;
+    status: ScheduleStatus;
+  }[];
+}
+
 export interface OrderFinanceDetail {
   id: string;
   total_user_amount?: string | number | null;

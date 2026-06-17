@@ -103,6 +103,17 @@ export const externalVendorsApi = {
     api.delete(`/external-vendors/cars/${carId}`),
 };
 
+// ─── Schedule ────────────────────────────────────────────────────────────────
+
+export const scheduleApi = {
+  list: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/schedule", { params }),
+  driverAvailability: (params: { date?: string; type?: string } = {}) =>
+    api.get("/schedule/driver-availability", { params }),
+  assignLine: (id: string, data: object) =>
+    api.put(`/schedule/lines/${id}`, data),
+};
+
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 export const driversApi = {
