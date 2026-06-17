@@ -55,6 +55,8 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [paymentFilter, setPaymentFilter] = useState<string>('ALL');
+  const [sourceFilter, setSourceFilter] = useState<string>('ALL');
+  const [financeFilter, setFinanceFilter] = useState<string>('ALL');
   const [dateField, setDateField] = useState<'order_date' | 'service_start_at'>(
     'order_date',
   );
@@ -87,6 +89,12 @@ export default function OrdersPage() {
       statusFilter === 'ALL' || o.order_status === statusFilter;
     const matchPayment =
       paymentFilter === 'ALL' || o.payment_status === paymentFilter;
+    const matchSource =
+      sourceFilter === 'ALL' || (o.source ?? 'WEB') === sourceFilter;
+    const hasFinance = !!o.final_finance;
+    const matchFinance =
+      financeFilter === 'ALL' ||
+      (financeFilter === 'HAS' ? hasFinance : !hasFinance);
 
     const refRaw = o[dateField] || o.order_date;
     const ref = refRaw ? new Date(refRaw) : null;
@@ -95,13 +103,23 @@ export default function OrdersPage() {
     const matchTo =
       !dateTo || (ref && ref <= new Date(`${dateTo}T23:59:59`));
 
-    return matchSearch && matchStatus && matchPayment && matchFrom && matchTo;
+    return (
+      matchSearch &&
+      matchStatus &&
+      matchPayment &&
+      matchSource &&
+      matchFinance &&
+      matchFrom &&
+      matchTo
+    );
   });
 
   const hasActiveFilter =
     search !== '' ||
     statusFilter !== 'ALL' ||
     paymentFilter !== 'ALL' ||
+    sourceFilter !== 'ALL' ||
+    financeFilter !== 'ALL' ||
     dateFrom !== '' ||
     dateTo !== '';
 
@@ -109,6 +127,8 @@ export default function OrdersPage() {
     setSearch('');
     setStatusFilter('ALL');
     setPaymentFilter('ALL');
+    setSourceFilter('ALL');
+    setFinanceFilter('ALL');
     setDateFrom('');
     setDateTo('');
   }
@@ -186,6 +206,33 @@ export default function OrdersPage() {
             </Select>
           </div>
           <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Source</label>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Sources</SelectItem>
+                <SelectItem value="WEB">Web</SelectItem>
+                <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                <SelectItem value="IMPORT">Sheet Import</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Finance</label>
+            <Select value={financeFilter} onValueChange={setFinanceFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                <SelectItem value="HAS">Has Finance</SelectItem>
+                <SelectItem value="NONE">No Finance</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-gray-500">Date field</label>
             <Select
               value={dateField}
@@ -240,6 +287,7 @@ export default function OrdersPage() {
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Pickup / Dropoff</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">Payment</TableHead>
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Source</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">Price</TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</TableHead>
               </TableRow>
@@ -248,7 +296,7 @@ export default function OrdersPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(9)].map((_, j) => (
+                    {[...Array(10)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -257,7 +305,7 @@ export default function OrdersPage() {
                 ))
               ) : filtered?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-10 text-gray-400 text-sm">
+                  <TableCell colSpan={10} className="text-center py-10 text-gray-400 text-sm">
                     No orders found.
                   </TableCell>
                 </TableRow>
@@ -304,6 +352,19 @@ export default function OrdersPage() {
                         {order.payment_status.replace('_', ' ')}
                       </Badge>
                     </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-1.5">
+                        <SourceBadge source={order.source} />
+                        {order.final_finance && (
+                          <span
+                            title="Has imported sheet finance data"
+                            className="inline-flex items-center rounded-full bg-teal-50 px-1.5 py-0.5 text-[10px] font-medium text-teal-700"
+                          >
+                            ₱
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm font-medium text-gray-900 hidden lg:table-cell">
                       {formatCurrency(order.final_price)}
                     </TableCell>
@@ -347,5 +408,24 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
     </DashboardShell>
+  );
+}
+
+function SourceBadge({ source }: { source?: string }) {
+  const s = source ?? 'WEB';
+  const map: Record<string, string> = {
+    WEB: 'bg-blue-50 text-blue-700 border-blue-200',
+    WHATSAPP: 'bg-green-50 text-green-700 border-green-200',
+    IMPORT: 'bg-purple-50 text-purple-700 border-purple-200',
+  };
+  const label: Record<string, string> = {
+    WEB: 'Web',
+    WHATSAPP: 'WA',
+    IMPORT: 'Sheet',
+  };
+  return (
+    <Badge variant="outline" className={`text-xs ${map[s] ?? map.WEB}`}>
+      {label[s] ?? s}
+    </Badge>
   );
 }

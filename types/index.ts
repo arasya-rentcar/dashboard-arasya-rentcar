@@ -16,6 +16,8 @@ export type OrderStatus =
 
 export type PaymentStatus = "UNPAID" | "DP_PAID" | "PAID";
 
+export type OrderSource = "WEB" | "WHATSAPP" | "IMPORT";
+
 export type TripStatus =
   | "DRIVER_ASSIGNED"
   | "DEPART_GARAGE"
@@ -197,6 +199,7 @@ export interface Order {
 export interface OrderListItem {
   id: string;
   order_code?: string | null;
+  source?: OrderSource;
   customer_name: string;
   customer_phone: string;
   customers?: OrderCustomer[];
@@ -228,6 +231,20 @@ export interface OrderListItem {
     file_url?: string | null;
     created_at?: string;
     delivery_logs?: InvoiceDeliveryLog[];
+  }[];
+  final_finance?: {
+    id: string;
+    total_user_amount?: string | null;
+    total_ops_cost?: string | null;
+    total_driver_amount?: string | null;
+    margin_amount?: string | null;
+    invoice_no_raw?: string | null;
+  } | null;
+  sheet_import_rows?: {
+    id: string;
+    sheet_id: string;
+    gid: string;
+    row_number: number;
   }[];
 }
 
