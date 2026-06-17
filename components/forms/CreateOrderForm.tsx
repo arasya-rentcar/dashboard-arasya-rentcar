@@ -8,7 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
+import {
+  useExternalVendors,
+  useExternalVendor,
+} from "@/hooks/useExternalVendors";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
 } from "./OrderServiceItemsEditor";
@@ -38,6 +49,9 @@ const schema = z.object({
   area: z.string().optional(),
   driver_origin: z.string().optional(),
   notes: z.string().optional(),
+  is_external: z.boolean().optional(),
+  external_vendor_id: z.string().optional(),
+  external_car_id: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 interface Props {
@@ -81,6 +95,9 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
       area: "",
       driver_origin: "",
       notes: "",
+      is_external: false,
+      external_vendor_id: "",
+      external_car_id: "",
     },
   });
   const { fields, append, remove } = useFieldArray({
@@ -89,6 +106,18 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
   });
   const customers = watch("customers");
   const items = watch("service_items");
+  const isExternal = watch("is_external");
+  const selectedVendorId = watch("external_vendor_id");
+  const { data: vendorsData } = useExternalVendors({
+    sort: "order_count",
+    order: "desc",
+    page: 1,
+    page_size: 200,
+  });
+  const { data: vendorDetail } = useExternalVendor(
+    isExternal && selectedVendorId ? selectedVendorId : "",
+    { cars_page: 1, orders_page: 1 },
+  );
   const total = (items || []).reduce(
     (sum, item) =>
       sum + Number(item.quantity || 1) * Number(item.unit_price || 0),
@@ -131,6 +160,13 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
       area: values.area?.trim() || undefined,
       driver_origin: values.driver_origin?.trim() || undefined,
       notes: values.notes?.trim() || undefined,
+      is_external: values.is_external || false,
+      external_vendor_id: values.is_external
+        ? values.external_vendor_id || undefined
+        : undefined,
+      external_car_id: values.is_external
+        ? values.external_car_id || undefined
+        : undefined,
       service_items: values.service_items.map((item, index) => ({
         service_date: dateIso(item.service_date),
         start_at: iso(item.start_at),
@@ -291,6 +327,82 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                   />
                 </div>
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-950">
+                    External Vendor
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Toggle on if this order is sub-contracted to an outside
+                    vendor (affects margin: flat external formula).
+                  </p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300"
+                    {...register("is_external")}
+                  />
+                  <span className="text-sm text-gray-700">External</span>
+                </label>
+              </div>
+              {isExternal && (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label>Vendor</Label>
+                    <Select
+                      value={selectedVendorId || ""}
+                      onValueChange={(v) => {
+                        setValue("external_vendor_id", v);
+                        setValue("external_car_id", "");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select vendor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(vendorsData?.data ?? []).map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Vendor Car</Label>
+                    <Select
+                      value={watch("external_car_id") || ""}
+                      onValueChange={(v) => setValue("external_car_id", v)}
+                      disabled={!selectedVendorId}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            selectedVendorId
+                              ? "Select car (optional)"
+                              : "Pick a vendor first"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(vendorDetail?.cars ?? []).map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.model}
+                            {c.plate_number ? ` (${c.plate_number})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-gray-400">
+                      Manage vendors &amp; their cars in the External menu.
+                    </p>
+                  </div>
+                </div>
+              )}
             </section>
 
             <OrderServiceItemsEditor

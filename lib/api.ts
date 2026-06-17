@@ -69,6 +69,38 @@ export const sheetImportsApi = {
   latest: () => api.get("/sheet-imports/latest"),
 };
 
+// ─── Customers ─────────────────────────────────────────────────
+
+export const customersApi = {
+  list: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/customers", { params }),
+  getById: (id: string, ordersPage = 1) =>
+    api.get(`/customers/${id}`, { params: { orders_page: ordersPage } }),
+  create: (data: object) => api.post("/customers", data),
+  update: (id: string, data: object) => api.put(`/customers/${id}`, data),
+};
+
+// ─── External vendors ───────────────────────────────────────
+
+export const externalVendorsApi = {
+  list: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/external-vendors", { params }),
+  getById: (
+    id: string,
+    params: { cars_page?: number; orders_page?: number } = {},
+  ) => api.get(`/external-vendors/${id}`, { params }),
+  create: (data: object) => api.post("/external-vendors", data),
+  update: (id: string, data: object) =>
+    api.put(`/external-vendors/${id}`, data),
+  remove: (id: string) => api.delete(`/external-vendors/${id}`),
+  addCar: (id: string, data: object) =>
+    api.post(`/external-vendors/${id}/cars`, data),
+  updateCar: (carId: string, data: object) =>
+    api.put(`/external-vendors/cars/${carId}`, data),
+  removeCar: (carId: string) =>
+    api.delete(`/external-vendors/cars/${carId}`),
+};
+
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 export const driversApi = {

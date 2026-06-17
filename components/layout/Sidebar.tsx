@@ -12,6 +12,8 @@ import {
   HelpCircle,
   LogOut,
   Bot,
+  UserRound,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
@@ -21,8 +23,10 @@ import { User } from "@/types";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
+  { href: "/dashboard/customers", label: "Customers", icon: UserRound },
   { href: "/dashboard/drivers", label: "Drivers", icon: Users },
   { href: "/dashboard/cars", label: "Cars", icon: Car },
+  { href: "/dashboard/external", label: "External", icon: Handshake },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
   { href: "/dashboard/agent", label: "Bot Agent", icon: Bot },
   { href: "/dashboard/guide", label: "Guide", icon: HelpCircle },

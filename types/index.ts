@@ -461,6 +461,92 @@ export interface CreateCarInput {
   model: string;
 }
 
+// ─── Customers ───────────────────────────────────────────────────────────────
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  tags: string[];
+  total_orders: number;
+  total_spent: string | number;
+  first_order_at?: string | null;
+  last_order_at?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomerOrderRow {
+  id: string;
+  order_code?: string | null;
+  order_date: string;
+  service_start_at?: string | null;
+  pickup_location: string;
+  dropoff_location: string;
+  final_price: string | number;
+  order_status: OrderStatus;
+  payment_status: PaymentStatus;
+  is_external: boolean;
+}
+
+export interface PaginationMeta {
+  page: number;
+  page_size: number;
+  total: number;
+  page_count: number;
+}
+
+export interface CustomerDetail extends Customer {
+  orders: CustomerOrderRow[];
+  orders_pagination: PaginationMeta;
+}
+
+// ─── External vendors ──────────────────────────────────────────────────────────
+
+export interface ExternalVendorListItem {
+  id: string;
+  name: string;
+  phone?: string | null;
+  notes?: string | null;
+  order_count: number;
+  created_at: string;
+  updated_at: string;
+  _count?: { cars: number; orders: number };
+}
+
+export interface ExternalCar {
+  id: string;
+  vendor_id: string;
+  model: string;
+  plate_number?: string | null;
+  notes?: string | null;
+  created_at: string;
+  _count?: { orders: number };
+}
+
+export interface VendorOrderRow {
+  id: string;
+  order_code?: string | null;
+  order_date: string;
+  service_start_at?: string | null;
+  customer_name: string;
+  pickup_location: string;
+  dropoff_location: string;
+  final_price: string | number;
+  order_status: OrderStatus;
+  payment_status: PaymentStatus;
+  external_car?: { id: string; model: string; plate_number?: string | null } | null;
+}
+
+export interface ExternalVendorDetail extends ExternalVendorListItem {
+  cars: ExternalCar[];
+  cars_pagination: PaginationMeta;
+  orders: VendorOrderRow[];
+  orders_pagination: PaginationMeta;
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

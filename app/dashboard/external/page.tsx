@@ -1,0 +1,255 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { Search, Eye, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import DashboardShell from '@/components/layout/DashboardShell';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import TablePagination from '@/components/dashboard/TablePagination';
+import {
+  useExternalVendors,
+  useCreateVendor,
+} from '@/hooks/useExternalVendors';
+import { getErrorMessage } from '@/lib/utils';
+
+const PAGE_SIZE = 20;
+
+export default function ExternalVendorsPage() {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', notes: '' });
+
+  const { data, isLoading, isFetching } = useExternalVendors({
+    search: search.trim() || undefined,
+    sort: 'order_count',
+    order: 'desc',
+    page,
+    page_size: PAGE_SIZE,
+  });
+  const createMutation = useCreateVendor();
+
+  const rows = data?.data ?? [];
+  const pagination = data?.pagination;
+  const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
+
+  const [lastSearch, setLastSearch] = useState(search);
+  if (search !== lastSearch) {
+    setLastSearch(search);
+    setPage(1);
+  }
+
+  async function handleCreate() {
+    if (!form.name.trim()) {
+      toast.error('Vendor name is required.');
+      return;
+    }
+    try {
+      await createMutation.mutateAsync({
+        name: form.name.trim(),
+        phone: form.phone.trim() || undefined,
+        notes: form.notes.trim() || undefined,
+      });
+      toast.success('Vendor created');
+      setForm({ name: '', phone: '', notes: '' });
+      setCreateOpen(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  return (
+    <DashboardShell title="External Vendors">
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+          <div className="relative w-full sm:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search vendor name or phone…"
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" /> Add Vendor
+          </Button>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <Th className="w-12">No</Th>
+                <Th>Vendor / Driver</Th>
+                <Th className="hidden sm:table-cell">Phone</Th>
+                <Th className="text-right">Cars</Th>
+                <Th className="text-right">Orders</Th>
+                <Th>Actions</Th>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                [...Array(6)].map((_, i) => (
+                  <TableRow key={i}>
+                    {[...Array(6)].map((__, j) => (
+                      <TableCell key={j}>
+                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="text-center py-10 text-gray-400 text-sm"
+                  >
+                    No external vendors yet. Add one with “Add Vendor”.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((v, i) => (
+                  <TableRow key={v.id} className="hover:bg-gray-50/50">
+                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                      {start + i + 1}
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/dashboard/external/${v.id}`}
+                        className="font-medium text-sm text-blue-600 hover:underline"
+                      >
+                        {v.name}
+                      </Link>
+                      {v.notes && (
+                        <p className="text-xs text-gray-400 max-w-64 truncate">
+                          {v.notes}
+                        </p>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-gray-600 hidden sm:table-cell">
+                      {v.phone || '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className="tabular-nums">
+                        {v._count?.cars ?? 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant="outline"
+                        className="tabular-nums bg-purple-50 text-purple-700 border-purple-200"
+                      >
+                        {v._count?.orders ?? v.order_count}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/external/${v.id}`}>
+                          <Eye className="h-4 w-4 mr-1" /> View
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {pagination && (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">
+              {isFetching ? 'Updating…' : ' '}
+            </span>
+            <TablePagination
+              page={pagination.page}
+              pageCount={pagination.page_count}
+              total={pagination.total}
+              start={start}
+              pageSize={pagination.page_size}
+              onPageChange={setPage}
+              label="vendors"
+            />
+          </div>
+        )}
+      </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add External Vendor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500">
+                Name *
+              </label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Vendor / driver name"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500">Phone</label>
+              <Input
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="08…"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500">Notes</label>
+              <Input
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Optional"
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleCreate}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? 'Creating…' : 'Create Vendor'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </DashboardShell>
+  );
+}
+
+function Th({
+  children,
+  className = '',
+}: {
+  children?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <TableHead
+      className={`text-xs font-medium text-gray-500 uppercase tracking-wide ${className}`}
+    >
+      {children}
+    </TableHead>
+  );
+}
