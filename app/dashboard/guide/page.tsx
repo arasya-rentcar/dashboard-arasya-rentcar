@@ -2,14 +2,17 @@ import {
   AlertCircle,
   Bot,
   Car,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
   FileText,
+  Handshake,
   HelpCircle,
   MessageCircle,
   MousePointerClick,
   Send,
   Table2,
+  UserRound,
   Users,
 } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -18,11 +21,13 @@ const steps = [
   "Terima order dari customer atau owner.",
   "Input order lewat WhatsApp group Internal Arasya atau tombol Create Order di website.",
   "Cek order di menu Orders: PIC, service detail, rute, mobil, driver, dan harga.",
-  "Assign driver dan mobil jika belum otomatis.",
+  "Assign driver/mobil per hari di menu Schedule. Order multi-hari bisa ganti driver tiap hari.",
+  "Cek ketersediaan driver (FREE/BUSY) di Schedule sebelum assign agar tidak bentrok.",
   "Generate invoice dari Order Detail.",
   "Kirim invoice PDF ke WhatsApp customer dari menu Invoices.",
   "Driver kirim laporan/foto perjalanan ke bot.",
-  "Set order selesai setelah perjalanan selesai dan data sudah lengkap.",
+  "Set status tiap hari di Schedule (SCHEDULED -> IN_PROGRESS -> DONE).",
+  "Order selesai setelah semua hari DONE dan data sudah lengkap.",
 ];
 
 const keywords = [
@@ -36,7 +41,7 @@ const keywords = [
   ],
   [
     "DETAIL / Rincian / Itinerary",
-    "Awal daftar layanan/rute. Setiap nomor jadi baris invoice.",
+    "Awal daftar layanan/rute. Setiap nomor jadi satu baris invoice sekaligus satu hari di Schedule. Driver bisa diisi berbeda di tiap nomor.",
   ],
   ["Pickup / Jemput", "Lokasi penjemputan."],
   ["Dropoff / Tujuan / Antar", "Lokasi tujuan/dropoff."],
@@ -83,6 +88,55 @@ const websiteCases = [
   [
     "Cars/Drivers",
     "Tambah/edit data master. Untuk internal, simpan phone asli agar tag WhatsApp bisa match ke database.",
+  ],
+];
+
+const scheduleCases = [
+  [
+    "Agenda (daftar harian)",
+    "Tab Agenda menampilkan satu baris per hari per order. Filter berdasarkan tanggal, driver, tipe (Internal/External), dan status.",
+  ],
+  [
+    "Assign / ganti per hari",
+    "Klik Edit pada baris untuk pilih driver+mobil (internal) atau vendor+mobil (external) khusus hari itu. Order multi-hari boleh beda driver tiap hari.",
+  ],
+  [
+    "Status per hari",
+    "Setiap hari punya status sendiri: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Ubah saat perjalanan jalan.",
+  ],
+  [
+    "Ketersediaan driver",
+    "Tab Driver Availability menampilkan FREE/BUSY tiap driver untuk tanggal terpilih, dihitung dari jadwal (bukan status order). Pakai ini sebelum assign agar tidak bentrok.",
+  ],
+];
+
+const customerCases = [
+  [
+    "Otomatis dari order",
+    "Customer tersimpan otomatis saat order dibuat (dari WhatsApp atau website), dicocokkan berdasarkan nomor HP.",
+  ],
+  [
+    "Riwayat order",
+    "Buka detail customer untuk lihat total order dan daftar order sebelumnya. Berguna untuk customer langganan.",
+  ],
+  [
+    "Tags & catatan",
+    "Tambahkan tag (mis. VIP, Corporate) dan catatan untuk info penting customer.",
+  ],
+];
+
+const externalCases = [
+  [
+    "Vendor & mobil",
+    "Menu External menyimpan vendor/driver luar beserta mobil-mobil mereka (satu vendor bisa punya banyak mobil).",
+  ],
+  [
+    "Otomatis dari order",
+    "Saat order external dibuat dari WhatsApp (driver pakai nama + HP + asal), vendor dan mobilnya dibuat otomatis lalu bisa dirapikan di menu ini.",
+  ],
+  [
+    "Pakai di Schedule",
+    "Saat assign hari external di Schedule, pilih vendor dan mobilnya dari daftar yang sudah tersimpan di sini.",
   ],
 ];
 
@@ -235,8 +289,8 @@ Catatan: Jemput VIP
 @Sutan`,
   },
   {
-    title: "3. Multi-day / banyak rute",
-    note: "Setiap nomor menjadi baris invoice. Total otomatis dari semua Harga.",
+    title: "3. Multi-day / banyak rute (driver bisa beda tiap hari)",
+    note: "Setiap nomor menjadi satu hari di Schedule dan satu baris invoice. Tulis Driver di tiap nomor; boleh berbeda tiap hari. Total otomatis dari semua Harga.",
     text: `#order
 
 PIC:
@@ -259,9 +313,10 @@ Harga: 750000
 Pickup: Hotel Mulia
 Dropoff: Sentul
 Mobil: ARA
-Driver: Sutan
+Layanan: FULL DAY
+Driver: Rori
 Harga: 950000
-Catatan: Full day`,
+Catatan: Hari kedua ganti driver`,
   },
   {
     title: "4. Lokasi/jam menyusul",
@@ -421,7 +476,12 @@ export default function GuidePage() {
             <div className="space-y-3 text-sm text-gray-700">
               <p>
                 <b>Orders</b> adalah pusat operasional. Klik order untuk detail,
-                assign driver/mobil, edit order, dan generate invoice.
+                edit order, dan generate invoice.
+              </p>
+              <p>
+                <b>Schedule</b> mengatur assign driver/mobil <b>per hari</b> dan
+                cek ketersediaan driver. <b>Customers</b> menyimpan data
+                customer otomatis, <b>External</b> menyimpan vendor/driver luar.
               </p>
               <p>
                 <b>Form</b> dipakai untuk input/edit data. Jika field wajib
@@ -445,6 +505,48 @@ export default function GuidePage() {
           <Card title="Contoh kasus website" icon={Table2}>
             <div className="space-y-2 text-sm text-gray-700">
               {websiteCases.map(([title, desc]) => (
+                <div key={title} className="rounded-lg border p-3">
+                  <b>{title}</b>
+                  <p className="mt-1">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card title="Schedule: jadwal & ketersediaan driver" icon={CalendarDays}>
+          <div className="space-y-3 text-sm text-gray-700">
+            <p>
+              Menu <b>Schedule</b> mengatur penugasan <b>per hari</b>, bukan per
+              order. Inilah cara order yang berlangsung beberapa hari bisa
+              memakai driver berbeda di tiap harinya.
+            </p>
+            <div className="grid gap-2 md:grid-cols-2">
+              {scheduleCases.map(([title, desc]) => (
+                <div key={title} className="rounded-lg border p-3">
+                  <b>{title}</b>
+                  <p className="mt-1">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Card title="Customers: data customer" icon={UserRound}>
+            <div className="space-y-2 text-sm text-gray-700">
+              {customerCases.map(([title, desc]) => (
+                <div key={title} className="rounded-lg border p-3">
+                  <b>{title}</b>
+                  <p className="mt-1">{desc}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card title="External: vendor & driver luar" icon={Handshake}>
+            <div className="space-y-2 text-sm text-gray-700">
+              {externalCases.map(([title, desc]) => (
                 <div key={title} className="rounded-lg border p-3">
                   <b>{title}</b>
                   <p className="mt-1">{desc}</p>
