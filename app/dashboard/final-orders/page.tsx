@@ -2,13 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, Eye, RefreshCw, Search, Upload } from "lucide-react";
+import { Download, Eye, RefreshCw, Search, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,28 +40,103 @@ function rawDate(parsed?: string | null, raw?: string | null) {
 
 export default function FinalOrdersPage() {
   const [search, setSearch] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("ALL");
+  const [checkedFilter, setCheckedFilter] = useState("ALL");
+  const [assignFilter, setAssignFilter] = useState("ALL");
+  const [marginFilter, setMarginFilter] = useState("ALL");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const { data: orders, isLoading } = useFinalOrders();
   const previewMutation = usePreviewSheetImport();
   const importMutation = useRunSheetImport();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return orders || [];
     return (orders || []).filter((order) => {
       const finance = order.final_finance;
-      return [
-        order.customer_name,
-        order.order_code,
-        finance?.invoice_no_raw,
-        finance?.driver_vendor_raw,
-        finance?.vehicle_raw,
-        finance?.route_raw,
-        finance?.plate_no_raw,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(q));
+      const matchSearch =
+        q === "" ||
+        [
+          order.customer_name,
+          order.order_code,
+          finance?.invoice_no_raw,
+          finance?.driver_vendor_raw,
+          finance?.vehicle_raw,
+          finance?.route_raw,
+          finance?.plate_no_raw,
+          finance?.package_raw,
+          finance?.duration_raw,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(q));
+
+      const matchPayment =
+        paymentFilter === "ALL" || order.payment_status === paymentFilter;
+
+      const isChecked = finance?.sheet_checked_raw === "TRUE";
+      const matchChecked =
+        checkedFilter === "ALL" ||
+        (checkedFilter === "CHECKED" ? isChecked : !isChecked);
+
+      const hasDriver = !!finance?.driver_vendor_raw?.trim();
+      const matchAssign =
+        assignFilter === "ALL" ||
+        (assignFilter === "ASSIGNED" ? hasDriver : !hasDriver);
+
+      const hasMargin =
+        finance?.margin_amount !== null &&
+        finance?.margin_amount !== undefined &&
+        finance?.margin_amount !== "";
+      const matchMargin =
+        marginFilter === "ALL" ||
+        (marginFilter === "HAS" ? hasMargin : !hasMargin);
+
+      const refRaw = finance?.service_date || order.order_date;
+      const ref = refRaw ? new Date(refRaw) : null;
+      const matchFrom =
+        !dateFrom || (ref && ref >= new Date(`${dateFrom}T00:00:00`));
+      const matchTo =
+        !dateTo || (ref && ref <= new Date(`${dateTo}T23:59:59`));
+
+      return (
+        matchSearch &&
+        matchPayment &&
+        matchChecked &&
+        matchAssign &&
+        matchMargin &&
+        matchFrom &&
+        matchTo
+      );
     });
-  }, [orders, search]);
+  }, [
+    orders,
+    search,
+    paymentFilter,
+    checkedFilter,
+    assignFilter,
+    marginFilter,
+    dateFrom,
+    dateTo,
+  ]);
+
+  const hasActiveFilter =
+    search !== "" ||
+    paymentFilter !== "ALL" ||
+    checkedFilter !== "ALL" ||
+    assignFilter !== "ALL" ||
+    marginFilter !== "ALL" ||
+    dateFrom !== "" ||
+    dateTo !== "";
+
+  function clearFilters() {
+    setSearch("");
+    setPaymentFilter("ALL");
+    setCheckedFilter("ALL");
+    setAssignFilter("ALL");
+    setMarginFilter("ALL");
+    setDateFrom("");
+    setDateTo("");
+  }
 
   const PAGE_SIZE = 10;
   const { page, setPage, pageCount, total, start, pageItems } = usePagination(
@@ -124,16 +206,96 @@ export default function FinalOrdersPage() {
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
+          <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search invoice, customer, driver, car…"
+              placeholder="Search invoice, customer, driver, car, route, package…"
               className="pl-9"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
           <div className="text-xs text-gray-400">{filtered.length} final order rows</div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Payment</label>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Payment</SelectItem>
+                <SelectItem value="UNPAID">Unpaid</SelectItem>
+                <SelectItem value="DP_PAID">DP Paid</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Checked</label>
+            <Select value={checkedFilter} onValueChange={setCheckedFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                <SelectItem value="CHECKED">Checked</SelectItem>
+                <SelectItem value="UNCHECKED">Unchecked</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Driver</label>
+            <Select value={assignFilter} onValueChange={setAssignFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                <SelectItem value="ASSIGNED">Has Driver</SelectItem>
+                <SelectItem value="UNASSIGNED">Unassigned</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Margin</label>
+            <Select value={marginFilter} onValueChange={setMarginFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All</SelectItem>
+                <SelectItem value="HAS">Has Margin</SelectItem>
+                <SelectItem value="NONE">No Margin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">From</label>
+            <Input
+              type="date"
+              className="w-40"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">To</label>
+            <Input
+              type="date"
+              className="w-40"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+          {hasActiveFilter && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              <X className="h-3.5 w-3.5 mr-1" /> Clear
+            </Button>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-none overflow-auto">

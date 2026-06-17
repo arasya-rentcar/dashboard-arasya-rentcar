@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Eye } from 'lucide-react';
+import { Plus, Search, Eye, X } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Button } from '@/components/ui/button';
@@ -54,19 +54,64 @@ const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
 export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [paymentFilter, setPaymentFilter] = useState<string>('ALL');
+  const [dateField, setDateField] = useState<'order_date' | 'service_start_at'>(
+    'order_date',
+  );
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   const [createOpen, setCreateOpen] = useState(false);
 
   const { data: orders, isLoading } = useOrders();
   const createMutation = useCreateOrder();
 
   const filtered = orders?.filter((o) => {
+    const q = search.trim().toLowerCase();
     const matchSearch =
-      search === '' ||
-      o.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-      o.id.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'ALL' || o.order_status === statusFilter;
-    return matchSearch && matchStatus;
+      q === '' ||
+      [
+        o.customer_name,
+        o.customer_phone,
+        o.id,
+        o.order_code,
+        o.pickup_location,
+        o.dropoff_location,
+        o.trip?.driver?.name,
+        o.trip?.car?.plate_number,
+        o.trip?.car?.model,
+        ...(o.customers?.flatMap((c) => [c.name, c.phone]) ?? []),
+      ]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q));
+    const matchStatus =
+      statusFilter === 'ALL' || o.order_status === statusFilter;
+    const matchPayment =
+      paymentFilter === 'ALL' || o.payment_status === paymentFilter;
+
+    const refRaw = o[dateField] || o.order_date;
+    const ref = refRaw ? new Date(refRaw) : null;
+    const matchFrom =
+      !dateFrom || (ref && ref >= new Date(`${dateFrom}T00:00:00`));
+    const matchTo =
+      !dateTo || (ref && ref <= new Date(`${dateTo}T23:59:59`));
+
+    return matchSearch && matchStatus && matchPayment && matchFrom && matchTo;
   });
+
+  const hasActiveFilter =
+    search !== '' ||
+    statusFilter !== 'ALL' ||
+    paymentFilter !== 'ALL' ||
+    dateFrom !== '' ||
+    dateTo !== '';
+
+  function clearFilters() {
+    setSearch('');
+    setStatusFilter('ALL');
+    setPaymentFilter('ALL');
+    setDateFrom('');
+    setDateTo('');
+  }
 
   const PAGE_SIZE = 10;
   const {
@@ -93,16 +138,25 @@ export default function OrdersPage() {
       <div className="space-y-4">
         {/* Actions bar */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name or ID…"
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search name, phone, route, driver, car, ID…"
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Order
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-36">
                 <SelectValue />
@@ -117,10 +171,60 @@ export default function OrdersPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Order
-          </Button>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Payment</label>
+            <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All Payment</SelectItem>
+                <SelectItem value="UNPAID">Unpaid</SelectItem>
+                <SelectItem value="DP_PAID">DP Paid</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">Date field</label>
+            <Select
+              value={dateField}
+              onValueChange={(v) =>
+                setDateField(v as 'order_date' | 'service_start_at')
+              }
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="order_date">Order Date</SelectItem>
+                <SelectItem value="service_start_at">Service Date</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">From</label>
+            <Input
+              type="date"
+              className="w-40"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500">To</label>
+            <Input
+              type="date"
+              className="w-40"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </div>
+          {hasActiveFilter && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              <X className="h-3.5 w-3.5 mr-1" /> Clear
+            </Button>
+          )}
         </div>
 
         {/* Table */}
