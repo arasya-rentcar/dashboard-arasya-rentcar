@@ -296,6 +296,30 @@ function OrdersPageInner() {
           </div>
         </div>
 
+        {/* Bucket chips */}
+        <div className="flex flex-wrap gap-2">
+          {[
+            ['ALL', 'All'],
+            ['ACTIVE', 'Active'],
+            ['MISSING_INVOICE', 'Missing Invoice'],
+            ['NOT_FINAL', 'Not Final'],
+            ['CANCELLED', 'Cancelled'],
+            ['REFUNDED', 'Refunded'],
+          ].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setFilter('bucket', val)}
+              className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+                filters.bucket === val
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
           <FilterSelect
@@ -484,6 +508,29 @@ function OrdersPageInner() {
                       >
                         {order.customer_name}
                       </Link>
+                      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        {order.invoice_missing && (
+                          <span className="inline-flex rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
+                            No Invoice
+                          </span>
+                        )}
+                        {order.is_refunded && (
+                          <span className="inline-flex rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">
+                            Refund
+                          </span>
+                        )}
+                        {order.order_status !== 'CANCELLED' &&
+                          order.is_final === false && (
+                            <span className="inline-flex rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                              Not Final
+                            </span>
+                          )}
+                        {order.is_final && (
+                          <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                            Final
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400">
                         {order.customer_phone}
                       </p>

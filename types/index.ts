@@ -306,6 +306,9 @@ export interface OrderListItem {
   final_price: string;
   order_status: OrderStatus;
   payment_status: PaymentStatus;
+  is_final?: boolean;
+  invoice_missing?: boolean;
+  is_refunded?: boolean;
   created_at: string;
   updated_at: string;
   trip?: {
@@ -415,6 +418,7 @@ export interface OrdersSearchResult {
 
 export interface OrdersSearchParams {
   search?: string;
+  bucket?: string;
   order_status?: string;
   payment_status?: string;
   source?: string;

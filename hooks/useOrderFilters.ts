@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export interface OrderFilters {
   search: string;
+  bucket: string;
   order_status: string;
   payment_status: string;
   source: string;
@@ -16,6 +17,7 @@ export interface OrderFilters {
 
 export const DEFAULT_FILTERS: OrderFilters = {
   search: '',
+  bucket: 'ALL',
   order_status: 'ALL',
   payment_status: 'ALL',
   source: 'ALL',
@@ -37,6 +39,7 @@ function fromParams(sp: URLSearchParams): OrderFilters {
     sp.get(k) ?? DEFAULT_FILTERS[k];
   return {
     search: get('search'),
+    bucket: get('bucket'),
     order_status: get('order_status'),
     payment_status: get('payment_status'),
     source: get('source'),
