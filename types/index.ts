@@ -335,6 +335,11 @@ export interface CreateOrderInput {
   service_start_at?: string;
   service_end_at?: string;
   final_price: number;
+  service_type?: string;
+  passenger_count?: number;
+  area?: string;
+  driver_origin?: string;
+  notes?: string;
 }
 
 export interface UpdateOrderInput {

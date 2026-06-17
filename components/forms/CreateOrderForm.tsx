@@ -7,6 +7,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/utils";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
@@ -32,6 +33,11 @@ const serviceItemSchema = z.object({
 const schema = z.object({
   customers: z.array(customerSchema).min(1),
   service_items: z.array(serviceItemSchema).min(1),
+  service_type: z.string().optional(),
+  passenger_count: z.string().optional(),
+  area: z.string().optional(),
+  driver_origin: z.string().optional(),
+  notes: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 interface Props {
@@ -70,6 +76,11 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
     defaultValues: {
       customers: [{ name: "", phone: "", is_primary: true }],
       service_items: [defaultItem],
+      service_type: "",
+      passenger_count: "",
+      area: "",
+      driver_origin: "",
+      notes: "",
     },
   });
   const { fields, append, remove } = useFieldArray({
@@ -113,6 +124,13 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
       service_start_at: iso(values.service_items[0]?.start_at),
       service_end_at: iso(values.service_items[0]?.end_at),
       final_price: finalPrice,
+      service_type: values.service_type?.trim() || undefined,
+      passenger_count: values.passenger_count?.trim()
+        ? Number(values.passenger_count)
+        : undefined,
+      area: values.area?.trim() || undefined,
+      driver_origin: values.driver_origin?.trim() || undefined,
+      notes: values.notes?.trim() || undefined,
       service_items: values.service_items.map((item, index) => ({
         service_date: dateIso(item.service_date),
         start_at: iso(item.start_at),
@@ -222,6 +240,57 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               created. Fill <b>Day 1</b> in the first Service Detail row below.
               For a 1-day rental, the admin only needs to complete that first
               row once.
+            </section>
+
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-950">
+                  Order Details
+                </h3>
+                <p className="mt-1 text-xs text-gray-500">
+                  Booking info matching the operations sheet. All optional.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Package / Service Type</Label>
+                  <Input
+                    placeholder="e.g. ALL-IN, DROP"
+                    {...register("service_type")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Passengers</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="e.g. 4"
+                    {...register("passenger_count")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Area</Label>
+                  <Input
+                    placeholder="e.g. Jabodetabek"
+                    {...register("area")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Driver / Vendor Origin</Label>
+                  <Input
+                    placeholder="Vendor name (external only)"
+                    {...register("driver_origin")}
+                  />
+                </div>
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label>Notes (Keterangan)</Label>
+                  <Textarea
+                    rows={2}
+                    placeholder="Extra notes for this order"
+                    {...register("notes")}
+                  />
+                </div>
+              </div>
             </section>
 
             <OrderServiceItemsEditor
