@@ -43,6 +43,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import CreateOrderForm from '@/components/forms/CreateOrderForm';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useOrdersSearch, useCreateOrder } from '@/hooks/useOrders';
+import { ordersApi } from '@/lib/api';
 import {
   usePreviewSheetImport,
   useRunSheetImport,
@@ -87,6 +88,7 @@ function OrdersPageInner() {
   const createMutation = useCreateOrder();
   const previewMutation = usePreviewSheetImport();
   const importMutation = useRunSheetImport();
+  const [exportingAll, setExportingAll] = useState(false);
 
   // Reset to page 1 whenever filters change.
   const filterKey = JSON.stringify(filters);
@@ -142,33 +144,74 @@ function OrdersPageInner() {
     }
   }
 
+  const toCsvRow = (
+    o: (typeof rows)[number],
+    index: number,
+  ): Record<string, unknown> => ({
+    no: index + 1,
+    order_id: o.id,
+    order_code: o.order_code ?? '',
+    source: o.source ?? 'WEB',
+    customer: o.customer_name,
+    phone: o.customer_phone,
+    pickup: o.pickup_location,
+    dropoff: o.dropoff_location,
+    order_date: o.order_date ? formatDate(o.order_date) : '',
+    service_date: o.service_start_at ? formatDate(o.service_start_at) : '',
+    status: o.order_status,
+    payment: o.payment_status,
+    final_price: o.final_price,
+    total_user: o.final_finance?.total_user_amount ?? '',
+    ops_cost: o.final_finance?.total_ops_cost ?? '',
+    driver_cost: o.final_finance?.total_driver_amount ?? '',
+    margin: o.final_finance?.margin_amount ?? '',
+    invoice_no: o.final_finance?.invoice_no_raw ?? '',
+  });
+
   function handleExport() {
     if (!rows.length) {
       toast.error('Nothing to export on this page.');
       return;
     }
-    const csvRows = rows.map((o, i) => ({
-      no: start + i + 1,
-      order_id: o.id,
-      order_code: o.order_code ?? '',
-      source: o.source ?? 'WEB',
-      customer: o.customer_name,
-      phone: o.customer_phone,
-      pickup: o.pickup_location,
-      dropoff: o.dropoff_location,
-      order_date: o.order_date ? formatDate(o.order_date) : '',
-      service_date: o.service_start_at ? formatDate(o.service_start_at) : '',
-      status: o.order_status,
-      payment: o.payment_status,
-      final_price: o.final_price,
-      total_user: o.final_finance?.total_user_amount ?? '',
-      ops_cost: o.final_finance?.total_ops_cost ?? '',
-      driver_cost: o.final_finance?.total_driver_amount ?? '',
-      margin: o.final_finance?.margin_amount ?? '',
-      invoice_no: o.final_finance?.invoice_no_raw ?? '',
-    }));
+    const csvRows = rows.map((o, i) => toCsvRow(o, start + i));
     exportToCsv(`arasya-orders-${new Date().toISOString().slice(0, 10)}`, csvRows);
     toast.success(`Exported ${csvRows.length} rows (current page).`);
+  }
+
+  async function handleExportAll() {
+    setExportingAll(true);
+    try {
+      const FETCH_SIZE = 200;
+      let p = 1;
+      let pageCount = 1;
+      const all: (typeof rows)[number][] = [];
+      do {
+        const res = await ordersApi.search({
+          ...filters,
+          page: p,
+          page_size: FETCH_SIZE,
+        } as Record<string, string | number | undefined>);
+        const batch = (res.data.data ?? []) as (typeof rows)[number][];
+        all.push(...batch);
+        pageCount = res.data.pagination?.page_count ?? 1;
+        p += 1;
+      } while (p <= pageCount);
+
+      if (!all.length) {
+        toast.error('No matching orders to export.');
+        return;
+      }
+      const csvRows = all.map((o, i) => toCsvRow(o, i));
+      exportToCsv(
+        `arasya-orders-all-${new Date().toISOString().slice(0, 10)}`,
+        csvRows,
+      );
+      toast.success(`Exported ${csvRows.length} rows (all filtered).`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setExportingAll(false);
+    }
   }
 
   function handleSavePreset() {
@@ -218,7 +261,19 @@ function OrdersPageInner() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" /> Export CSV
+              <Download className="h-4 w-4 mr-2" /> Export Page
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportAll}
+              disabled={exportingAll}
+            >
+              {exportingAll ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Export All
             </Button>
             <Button
               variant="outline"
