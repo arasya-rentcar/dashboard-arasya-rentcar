@@ -127,7 +127,10 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
           ) : (
             <>
               <Stat label="Ops Cost" value={fin?.total_ops_cost} />
-              <Stat label="Driver Cost" value={fin?.total_driver_amount} />
+              <Stat
+                label="Driver Cost"
+                value={fin?.total_driver_amount ?? fin?.total_ops_cost}
+              />
             </>
           )}
         </div>

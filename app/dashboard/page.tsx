@@ -117,22 +117,28 @@ export default function DashboardPage() {
     if (o.order_status === 'CANCELLED') continue;
     const fin = o.final_finance;
     const value = num(fin?.total_user_amount) || num(o.final_price);
-    const driver = num(fin?.total_driver_amount);
     const ops = num(fin?.total_ops_cost);
+    const rtr = num(fin?.rtr_amount);
+    // Resource cost = what we pay to run the trip: internal driver ops_cost
+    // (also the DRIVER payable) + external vendor RTR. total_driver_amount is
+    // an optional manual override and intentionally not added (avoids double
+    // counting with ops_cost).
+    const resourceCost = ops + rtr;
 
     turnover += value;
     opsCost += ops;
-    driverPayout += driver;
+    driverPayout += resourceCost;
 
     if (o.payment_status === 'PAID') collected += value;
     else receivables += value;
 
     // debt = driver/vendor cost we haven't settled yet
-    if (!fin?.driver_paid_date) payables += driver;
+    if (!fin?.driver_paid_date) payables += resourceCost;
   }
 
-  // Nett income = collected (clear) income, minus ops and external resource cost
-  const nettIncome = collected - opsCost - driverPayout;
+  // Nett income = collected (cleared) income minus resource cost
+  // (driverPayout already includes ops + RTR, so don't subtract opsCost again).
+  const nettIncome = collected - driverPayout;
 
   // ── Operational tables ──────────────────────────────────────────────────
   const unpaidList = (orders ?? []).filter(
