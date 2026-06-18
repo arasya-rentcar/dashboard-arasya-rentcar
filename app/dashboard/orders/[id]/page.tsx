@@ -29,6 +29,7 @@ import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
+import AdditionalInvoiceForm from "@/components/forms/AdditionalInvoiceForm";
 import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
 import EditOrderForm from "@/components/forms/EditOrderForm";
 import {
@@ -75,6 +76,7 @@ export default function OrderDetailPage({
   const [editOpen, setEditOpen] = useState(false);
   const [revisionInvoice, setRevisionInvoice] = useState<Invoice | null>(null);
   const [additionalOpen, setAdditionalOpen] = useState(false);
+  const [additionalInvoiceOpen, setAdditionalInvoiceOpen] = useState(false);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -777,6 +779,7 @@ export default function OrderDetailPage({
                   invoices={order.invoices}
                   finalPrice={orderFinalPrice}
                   onOpenGenerate={() => setInvoiceOpen(true)}
+                  onOpenAdditional={() => setAdditionalInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}
                   onSend={handleSendInvoice}
                   onMarkPaid={handleMarkInvoicePaid}
@@ -890,16 +893,38 @@ export default function OrderDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Generate Invoice Dialog */}
+      {/* Generate Rental Invoice Dialog */}
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Generate Invoice</DialogTitle>
+            <DialogTitle>Invoice Rental (DP / Settlement)</DialogTitle>
           </DialogHeader>
           <GenerateInvoiceForm
             finalPrice={orderFinalPrice}
             alreadyPaid={alreadyPaid}
             onSubmit={handleGenerateInvoice}
+            isLoading={generateInvoiceMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Additional Invoice Dialog */}
+      <Dialog
+        open={additionalInvoiceOpen}
+        onOpenChange={setAdditionalInvoiceOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invoice an Additional Charge</DialogTitle>
+          </DialogHeader>
+          <AdditionalInvoiceForm
+            finalPrice={orderFinalPrice}
+            alreadyPaid={alreadyPaid}
+            adjustments={order.adjustments ?? []}
+            onSubmit={async (data) => {
+              await handleGenerateInvoice(data);
+              setAdditionalInvoiceOpen(false);
+            }}
             isLoading={generateInvoiceMutation.isPending}
           />
         </DialogContent>

@@ -57,6 +57,7 @@ interface Props {
   invoices: Invoice[];
   finalPrice: number;
   onOpenGenerate: () => void;
+  onOpenAdditional?: () => void;
   onOpenRevise: (invoice: Invoice) => void;
   onSend?: (invoice: Invoice) => void;
   onMarkPaid?: (invoice: Invoice) => void;
@@ -82,6 +83,7 @@ export default function InvoiceSection({
   invoices,
   finalPrice,
   onOpenGenerate,
+  onOpenAdditional,
   onOpenRevise,
   onSend,
   onMarkPaid,
@@ -124,22 +126,23 @@ export default function InvoiceSection({
         </div>
       )}
 
-      {!hasInvoice ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Button variant="outline" size="sm" className="w-full gap-2" onClick={onOpenGenerate}>
           <Plus className="h-4 w-4" />
-          Generate Invoice
+          Invoice Rental
         </Button>
-      ) : currentInvoice ? (
-        <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => onOpenRevise(currentInvoice)}>
-          <RefreshCw className="h-4 w-4" />
-          Sync Current Invoice
-        </Button>
-      ) : (
-        <Button variant="outline" size="sm" className="w-full gap-2" onClick={onOpenGenerate}>
-          <Plus className="h-4 w-4" />
-          Generate Invoice
-        </Button>
-      )}
+        {onOpenAdditional && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 text-purple-700 border-purple-200 hover:bg-purple-50"
+            onClick={onOpenAdditional}
+          >
+            <Plus className="h-4 w-4" />
+            Invoice Additional
+          </Button>
+        )}
+      </div>
 
       {hasInvoice && remaining > 0 && !isOverInvoiced && (
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-2 text-xs text-amber-700">

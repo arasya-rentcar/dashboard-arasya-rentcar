@@ -42,11 +42,11 @@ interface Props {
   isLoading: boolean;
 }
 
+// Rental-payment invoices only. Additional charges have their own dialog.
 const TYPE_OPTIONS: { value: InvoiceType; label: string }[] = [
   { value: 'DP', label: 'Down Payment (DP)' },
   { value: 'SETTLEMENT', label: 'Settlement (Remaining Balance)' },
   { value: 'FULL', label: 'Full Payment' },
-  { value: 'ADDITIONAL', label: 'Additional Charge' },
 ];
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
@@ -72,9 +72,6 @@ export default function GenerateInvoiceForm({
     if (isFullyPaid) return false;
     if (t.value === 'FULL' && alreadyPaid > 0) return false;
     if (t.value === 'SETTLEMENT' && alreadyPaid === 0) return false;
-    // ADDITIONAL is meant for extra charges after the base rental is already
-    // invoiced — only offer it once something has been billed.
-    if (t.value === 'ADDITIONAL' && alreadyPaid === 0) return false;
     return true;
   });
 
