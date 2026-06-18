@@ -19,18 +19,44 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import { DashboardAnalytics, AgingBuckets } from "@/types";
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import {
   ArrowDownCircle,
   ArrowUpCircle,
   TrendingUp,
   TrendingDown,
-  User,
-  Building2,
   Car,
 } from "lucide-react";
 
 function fmtPct(v: number) {
   return `${v.toFixed(1)}%`;
 }
+
+function compactRp(v: number) {
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}M`;
+  if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}jt`;
+  if (abs >= 1_000) return `${(v / 1_000).toFixed(0)}rb`;
+  return String(v);
+}
+
+const tooltipContentStyle = {
+  fontSize: 12,
+  borderRadius: 8,
+  border: "1px solid #e5e7eb",
+};
+const rpFormatter = (val: unknown) => formatCurrency(Number(val ?? 0));
 
 const AGING_LABELS: { key: keyof AgingBuckets; label: string; tone: string }[] =
   [
@@ -41,48 +67,56 @@ const AGING_LABELS: { key: keyof AgingBuckets; label: string; tone: string }[] =
     { key: "d30plus", label: ">30 hari", tone: "text-red-800" },
   ];
 
-function AgingTable({ title, data }: { title: string; data: AgingBuckets }) {
+const AGING_COLORS = ["#9ca3af", "#f59e0b", "#ea580c", "#dc2626", "#991b1b"];
+
+function AgingTable({
+  title,
+  data,
+  barColor,
+}: {
+  title: string;
+  data: AgingBuckets;
+  barColor: string;
+}) {
   const total = Object.values(data).reduce((s, v) => s + v, 0);
+  const chartData = AGING_LABELS.map((a) => ({
+    name: a.label,
+    value: data[a.key],
+  }));
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">
-          {title}
+        <CardTitle className="flex items-center justify-between text-sm font-medium text-gray-600">
+          <span>{title}</span>
+          <span className="text-xs text-gray-400">{formatCurrency(total)}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {AGING_LABELS.map(({ key, label, tone }) => {
-          const v = data[key];
-          const pct = total > 0 ? (v / total) * 100 : 0;
-          return (
-            <div key={key} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className={tone}>{label}</span>
-                <span className="font-medium">{formatCurrency(v)}</span>
-              </div>
-              <div className="h-1.5 w-full rounded bg-gray-100">
-                <div
-                  className="h-1.5 rounded bg-gray-400"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-        <div className="flex items-center justify-between border-t pt-2 text-sm font-semibold">
-          <span>Total</span>
-          <span>{formatCurrency(total)}</span>
-        </div>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={chartData} layout="vertical" margin={{ left: 8, right: 16 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+            <XAxis type="number" tickFormatter={compactRp} fontSize={11} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={110}
+              fontSize={11}
+              tickLine={false}
+            />
+            <Tooltip contentStyle={tooltipContentStyle} formatter={rpFormatter} />
+            <Bar dataKey="value" fill={barColor} radius={[0, 4, 4, 0]}>
+              {chartData.map((_, i) => (
+                <Cell key={i} fill={AGING_COLORS[i]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );
 }
 
 function TrendChart({ data }: { data: DashboardAnalytics["monthly_trend"] }) {
-  const max = Math.max(
-    1,
-    ...data.flatMap((d) => [d.turnover, d.collected, d.payout]),
-  );
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="pb-2">
@@ -91,43 +125,69 @@ function TrendChart({ data }: { data: DashboardAnalytics["monthly_trend"] }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end justify-between gap-2 pt-2" style={{ height: 160 }}>
-          {data.map((m) => (
-            <div key={m.label} className="flex flex-1 flex-col items-center gap-1">
-              <div className="flex h-[130px] w-full items-end justify-center gap-0.5">
-                <div
-                  className="w-2 rounded-t bg-gray-800"
-                  style={{ height: `${(m.turnover / max) * 100}%` }}
-                  title={`Turnover ${formatCurrency(m.turnover)}`}
-                />
-                <div
-                  className="w-2 rounded-t bg-emerald-500"
-                  style={{ height: `${(m.collected / max) * 100}%` }}
-                  title={`Collected ${formatCurrency(m.collected)}`}
-                />
-                <div
-                  className="w-2 rounded-t bg-red-400"
-                  style={{ height: `${(m.payout / max) * 100}%` }}
-                  title={`Payout ${formatCurrency(m.payout)}`}
-                />
-              </div>
-              <span className="text-[10px] text-gray-500">{m.label}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-gray-500">
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-sm bg-gray-800" /> Turnover
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-sm bg-emerald-500" /> Collected
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-sm bg-red-400" /> Payout
-          </span>
-        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" fontSize={11} tickLine={false} />
+            <YAxis tickFormatter={compactRp} fontSize={11} width={48} />
+            <Tooltip contentStyle={tooltipContentStyle} formatter={rpFormatter} />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            <Bar dataKey="turnover" name="Turnover" fill="#1f2937" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="collected" name="Collected" fill="#10b981" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="payout" name="Payout" fill="#f87171" radius={[3, 3, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
+  );
+}
+
+function MixDonut({
+  title,
+  internal,
+  external,
+  fmt,
+}: {
+  title: string;
+  internal: number;
+  external: number;
+  fmt: (v: number) => string;
+}) {
+  const pieData = [
+    { name: "Internal", value: internal },
+    { name: "External", value: external },
+  ];
+  const total = internal + external;
+  return (
+    <div className="flex flex-col items-center">
+      <p className="mb-1 text-xs font-medium text-gray-500">{title}</p>
+      <ResponsiveContainer width="100%" height={170}>
+        <PieChart>
+          <Pie
+            data={pieData}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={45}
+            outerRadius={70}
+            paddingAngle={2}
+          >
+            <Cell fill="#3b82f6" />
+            <Cell fill="#a855f7" />
+          </Pie>
+          <Tooltip formatter={(v: unknown) => fmt(Number(v ?? 0))} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="flex gap-4 text-[11px]">
+        <span className="flex items-center gap-1 text-blue-600">
+          <span className="h-2 w-2 rounded-sm bg-blue-500" /> Internal{" "}
+          {total > 0 ? `${((internal / total) * 100).toFixed(0)}%` : "0%"}
+        </span>
+        <span className="flex items-center gap-1 text-purple-600">
+          <span className="h-2 w-2 rounded-sm bg-purple-500" /> External{" "}
+          {total > 0 ? `${((external / total) * 100).toFixed(0)}%` : "0%"}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -147,8 +207,7 @@ export default function AnalyticsSections({
   const r = data.receivables;
   const cf = data.cashflow;
   const mix = data.mix;
-  const totalMixRev = mix.internal.revenue + mix.external.revenue || 1;
-  const totalMixTrips = mix.internal.trips + mix.external.trips || 1;
+  const totalTrips = mix.internal.trips + mix.external.trips;
 
   return (
     <div className="space-y-6">
@@ -228,8 +287,16 @@ export default function AnalyticsSections({
       <div>
         <h2 className="mb-3 text-sm font-medium text-gray-500">Aging (Umur Tagihan)</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <AgingTable title="Piutang (Receivables)" data={data.aging.receivables} />
-          <AgingTable title="Hutang (Payables)" data={data.aging.payables} />
+          <AgingTable
+            title="Piutang (Receivables)"
+            data={data.aging.receivables}
+            barColor="#3b82f6"
+          />
+          <AgingTable
+            title="Hutang (Payables)"
+            data={data.aging.payables}
+            barColor="#ef4444"
+          />
         </div>
       </div>
 
@@ -239,49 +306,19 @@ export default function AnalyticsSections({
           Internal vs External
         </h2>
         <Card className="shadow-none border border-gray-200">
-          <CardContent className="space-y-4 pt-4">
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1 text-blue-700">
-                  <User className="h-3.5 w-3.5" /> Internal · {mix.internal.trips} trip
-                </span>
-                <span className="flex items-center gap-1 text-purple-700">
-                  External · {mix.external.trips} trip <Building2 className="h-3.5 w-3.5" />
-                </span>
-              </div>
-              <div className="flex h-3 w-full overflow-hidden rounded">
-                <div
-                  className="bg-blue-500"
-                  style={{ width: `${(mix.internal.trips / totalMixTrips) * 100}%` }}
-                />
-                <div
-                  className="bg-purple-500"
-                  style={{ width: `${(mix.external.trips / totalMixTrips) * 100}%` }}
-                />
-              </div>
-              <p className="mt-1 text-[11px] text-gray-400">Distribusi jumlah trip</p>
-            </div>
-            <div>
-              <div className="mb-1 flex items-center justify-between text-xs">
-                <span className="text-blue-700">
-                  {formatCurrency(mix.internal.revenue)}
-                </span>
-                <span className="text-purple-700">
-                  {formatCurrency(mix.external.revenue)}
-                </span>
-              </div>
-              <div className="flex h-3 w-full overflow-hidden rounded">
-                <div
-                  className="bg-blue-400"
-                  style={{ width: `${(mix.internal.revenue / totalMixRev) * 100}%` }}
-                />
-                <div
-                  className="bg-purple-400"
-                  style={{ width: `${(mix.external.revenue / totalMixRev) * 100}%` }}
-                />
-              </div>
-              <p className="mt-1 text-[11px] text-gray-400">Distribusi revenue</p>
-            </div>
+          <CardContent className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
+            <MixDonut
+              title={`Jumlah Trip (${totalTrips})`}
+              internal={mix.internal.trips}
+              external={mix.external.trips}
+              fmt={(v) => `${v} trip`}
+            />
+            <MixDonut
+              title="Revenue"
+              internal={mix.internal.revenue}
+              external={mix.external.revenue}
+              fmt={formatCurrency}
+            />
           </CardContent>
         </Card>
       </div>
