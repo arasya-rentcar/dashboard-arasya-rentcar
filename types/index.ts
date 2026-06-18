@@ -744,6 +744,51 @@ export interface VendorPayableHistory {
   items: Payable[];
 }
 
+// ─── Driver / Vendor detail ────────────────────────────────────────
+
+export interface PartnerTripRow {
+  id: string;
+  service_date?: string | null;
+  description?: string | null;
+  service_kind?: string | null;
+  service_package?: string | null;
+  pickup_location?: string | null;
+  dropoff_location?: string | null;
+  line_status: string;
+  total_price: string | number;
+  ops_cost?: string | number | null;
+  rtr_amount?: string | number | null;
+  margin_amount?: string | number | null;
+  order?: { id: string; order_code?: string | null; customer_name?: string } | null;
+  car?: { id: string; model: string; plate_number?: string | null } | null;
+  external_car?: { id: string; model: string; plate_number?: string | null } | null;
+}
+
+export interface PartnerDetailSummary {
+  total_trips: number;
+  completed_trips: number;
+  total_earned?: number;
+  total_billed?: number;
+  total_paid: number;
+  outstanding: number;
+  revenue_generated: number;
+  margin_generated: number;
+}
+
+export interface DriverDetail {
+  driver: Driver;
+  summary: PartnerDetailSummary;
+  trips: PartnerTripRow[];
+  payments: Payable[];
+}
+
+export interface VendorDetail2 {
+  vendor: { id: string; name: string; phone?: string | null; notes?: string | null };
+  summary: PartnerDetailSummary;
+  trips: PartnerTripRow[];
+  payments: Payable[];
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {

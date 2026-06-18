@@ -31,9 +31,10 @@ import {
   useDeleteVendorCar,
 } from '@/hooks/useExternalVendors';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
-import PayableHistorySheet from '@/components/payables/PayableHistorySheet';
+import PartnerDetailView from '@/components/partners/PartnerDetailView';
+import { useVendorDetail2 } from '@/hooks/useExternalVendors';
 
-type Tab = 'cars' | 'orders';
+type Tab = 'cars' | 'orders' | 'finance';
 
 export default function VendorDetailPage() {
   const params = useParams();
@@ -42,7 +43,6 @@ export default function VendorDetailPage() {
   const [carsPage, setCarsPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
   const [addCarOpen, setAddCarOpen] = useState(false);
-  const [tagihanOpen, setTagihanOpen] = useState(false);
   const [carForm, setCarForm] = useState({ model: '', plate_number: '', notes: '' });
 
   const { data: vendor, isLoading } = useExternalVendor(id, {
@@ -51,6 +51,7 @@ export default function VendorDetailPage() {
   });
   const addCarMutation = useAddVendorCar();
   const deleteCarMutation = useDeleteVendorCar();
+  const { data: detail } = useVendorDetail2(tab === 'finance' ? id : undefined);
 
   async function handleAddCar() {
     if (!carForm.model.trim()) {
@@ -139,25 +140,9 @@ export default function VendorDetailPage() {
                 </p>
                 <p className="text-xs text-gray-400">Orders</p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setTagihanOpen(true)}
-              >
-                <Wallet className="h-4 w-4" /> Tagihan
-              </Button>
             </div>
           </CardContent>
         </Card>
-
-        <PayableHistorySheet
-          kind="VENDOR"
-          id={id}
-          name={vendor.name}
-          open={tagihanOpen}
-          onOpenChange={setTagihanOpen}
-        />
 
         {vendor.notes && (
           <p className="text-sm text-gray-500">{vendor.notes}</p>
@@ -177,7 +162,27 @@ export default function VendorDetailPage() {
             icon={<ClipboardList className="h-4 w-4" />}
             label={`Orders (${op.total})`}
           />
+          <TabButton
+            active={tab === 'finance'}
+            onClick={() => setTab('finance')}
+            icon={<Wallet className="h-4 w-4" />}
+            label="Tagihan & Trip"
+          />
         </div>
+
+        {/* Finance / Tagihan tab */}
+        {tab === 'finance' && (
+          detail ? (
+            <PartnerDetailView
+              kind="VENDOR"
+              summary={detail.summary}
+              trips={detail.trips}
+              payments={detail.payments}
+            />
+          ) : (
+            <p className="text-sm text-gray-400">Loading...</p>
+          )
+        )}
 
         {/* Cars tab */}
         {tab === 'cars' && (

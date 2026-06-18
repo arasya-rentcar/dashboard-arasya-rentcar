@@ -3,8 +3,20 @@ import { externalVendorsApi } from '@/lib/api';
 import {
   ExternalVendorListItem,
   ExternalVendorDetail,
+  VendorDetail2,
   PaginationMeta,
 } from '@/types';
+
+export function useVendorDetail2(id?: string) {
+  return useQuery<VendorDetail2>({
+    queryKey: ['vendor-detail2', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await externalVendorsApi.detail(id as string);
+      return res.data.data;
+    },
+  });
+}
 
 export interface VendorsListParams {
   search?: string;

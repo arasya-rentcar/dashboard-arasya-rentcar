@@ -95,6 +95,7 @@ export const externalVendorsApi = {
     id: string,
     params: { cars_page?: number; orders_page?: number } = {},
   ) => api.get(`/external-vendors/${id}`, { params }),
+  detail: (id: string) => api.get(`/external-vendors/${id}/detail`),
   create: (data: object) => api.post("/external-vendors", data),
   update: (id: string, data: object) =>
     api.put(`/external-vendors/${id}`, data),
@@ -139,6 +140,7 @@ export const payablesApi = {
 export const driversApi = {
   list: () => api.get("/drivers"),
   getById: (id: string) => api.get(`/drivers/${id}`),
+  detail: (id: string) => api.get(`/drivers/${id}/detail`),
   create: (data: object) => api.post("/drivers", data),
   update: (id: string, data: object) => api.put(`/drivers/${id}`, data),
 };

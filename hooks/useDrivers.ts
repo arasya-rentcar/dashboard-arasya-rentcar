@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driversApi } from '@/lib/api';
-import { Driver, CreateDriverInput } from '@/types';
+import { Driver, CreateDriverInput, DriverDetail } from '@/types';
 
 export function useDrivers() {
   return useQuery<Driver[]>({
@@ -30,6 +30,17 @@ export function useDriver(id: string) {
       return res.data.data;
     },
     enabled: !!id,
+  });
+}
+
+export function useDriverDetail(id?: string) {
+  return useQuery<DriverDetail>({
+    queryKey: ['driver-detail', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await driversApi.detail(id as string);
+      return res.data.data;
+    },
   });
 }
 
