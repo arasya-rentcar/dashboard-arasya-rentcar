@@ -58,6 +58,8 @@ export const ordersApi = {
   sendInvoiceWhatsapp: (id: string, invoiceId: string, data: object) =>
     api.post(`/orders/${id}/invoice/${invoiceId}/send-whatsapp`, data),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
+  addAdjustment: (id: string, data: object) =>
+    api.post(`/orders/${id}/adjustments`, data),
 };
 
 export const finalOrdersApi = {

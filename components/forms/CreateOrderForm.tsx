@@ -8,18 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/utils";
-import {
-  useExternalVendors,
-  useExternalVendor,
-} from "@/hooks/useExternalVendors";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
 } from "./OrderServiceItemsEditor";
@@ -35,23 +24,23 @@ const serviceItemSchema = z.object({
   end_at: z.string().optional(),
   description: z.string().optional(),
   service_kind: z.string().optional(),
+  service_package: z.string().optional(),
   pickup_location: z.string().min(1, "Pickup spot is required"),
   dropoff_location: z.string().min(1, "Dropoff spot is required"),
   quantity: z.string().min(1),
   unit_price: z.string().min(1),
   notes: z.string().optional(),
 });
+const additionalSchema = z.object({
+  type: z.string().min(1),
+  description: z.string().optional(),
+  amount: z.string().optional(),
+});
 const schema = z.object({
   customers: z.array(customerSchema).min(1),
   service_items: z.array(serviceItemSchema).min(1),
-  service_type: z.string().optional(),
-  passenger_count: z.string().optional(),
-  area: z.string().optional(),
-  driver_origin: z.string().optional(),
+  additionals: z.array(additionalSchema).optional(),
   notes: z.string().optional(),
-  is_external: z.boolean().optional(),
-  external_vendor_id: z.string().optional(),
-  external_car_id: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 interface Props {
@@ -69,13 +58,21 @@ const defaultItem: ServiceItemFormValue = {
   start_at: "",
   end_at: "",
   description: "",
-  service_kind: "ALL INCLUDED",
+  service_kind: "12H",
+  service_package: "ALL-IN",
   pickup_location: "",
   dropoff_location: "",
   quantity: "1",
   unit_price: "",
   notes: "",
 };
+
+const ADDITIONAL_TYPES: { label: string; value: string }[] = [
+  { label: "Overtime", value: "OVERTIME" },
+  { label: "Parkir", value: "PARKING" },
+  { label: "Toll", value: "TOLL" },
+  { label: "Additional", value: "OTHER" },
+];
 
 export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
   const {
@@ -90,39 +87,35 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
     defaultValues: {
       customers: [{ name: "", phone: "", is_primary: true }],
       service_items: [defaultItem],
-      service_type: "",
-      passenger_count: "",
-      area: "",
-      driver_origin: "",
+      additionals: [],
       notes: "",
-      is_external: false,
-      external_vendor_id: "",
-      external_car_id: "",
     },
   });
   const { fields, append, remove } = useFieldArray({
     control,
     name: "customers",
   });
+  const {
+    fields: additionalFields,
+    append: appendAdditional,
+    remove: removeAdditional,
+  } = useFieldArray({
+    control,
+    name: "additionals",
+  });
   const customers = watch("customers");
   const items = watch("service_items");
-  const isExternal = watch("is_external");
-  const selectedVendorId = watch("external_vendor_id");
-  const { data: vendorsData } = useExternalVendors({
-    sort: "order_count",
-    order: "desc",
-    page: 1,
-    page_size: 200,
-  });
-  const { data: vendorDetail } = useExternalVendor(
-    isExternal && selectedVendorId ? selectedVendorId : "",
-    { cars_page: 1, orders_page: 1 },
-  );
-  const total = (items || []).reduce(
+  const additionals = watch("additionals");
+  const lineTotal = (items || []).reduce(
     (sum, item) =>
       sum + Number(item.quantity || 1) * Number(item.unit_price || 0),
     0,
   );
+  const additionalTotal = (additionals || []).reduce(
+    (sum, a) => sum + Number(a.amount || 0),
+    0,
+  );
+  const total = lineTotal + additionalTotal;
   const primary = customers?.find((c) => c.is_primary) || customers?.[0];
 
   function setPrimary(index: number) {
@@ -134,11 +127,23 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
   async function handleFormSubmit(values: FormValues) {
     const mainCustomer =
       values.customers.find((c) => c.is_primary) || values.customers[0];
-    const finalPrice = values.service_items.reduce(
+    const lineSum = values.service_items.reduce(
       (sum, item) =>
         sum + Number(item.quantity || 1) * Number(item.unit_price || 0),
       0,
     );
+    const cleanAdditionals = (values.additionals || [])
+      .filter((a) => Number(a.amount || 0) > 0)
+      .map((a) => ({
+        type: a.type,
+        description:
+          a.description?.trim() ||
+          ADDITIONAL_TYPES.find((t) => t.value === a.type)?.label ||
+          "Additional",
+        amount: Number(a.amount || 0),
+        quantity: 1,
+        is_billable: true,
+      }));
     await onSubmit({
       customer_name: mainCustomer.name,
       customer_phone: mainCustomer.phone || "",
@@ -152,27 +157,15 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
       order_date: new Date().toISOString(),
       service_start_at: iso(values.service_items[0]?.start_at),
       service_end_at: iso(values.service_items[0]?.end_at),
-      final_price: finalPrice,
-      service_type: values.service_type?.trim() || undefined,
-      passenger_count: values.passenger_count?.trim()
-        ? Number(values.passenger_count)
-        : undefined,
-      area: values.area?.trim() || undefined,
-      driver_origin: values.driver_origin?.trim() || undefined,
+      final_price: lineSum,
       notes: values.notes?.trim() || undefined,
-      is_external: values.is_external || false,
-      external_vendor_id: values.is_external
-        ? values.external_vendor_id || undefined
-        : undefined,
-      external_car_id: values.is_external
-        ? values.external_car_id || undefined
-        : undefined,
       service_items: values.service_items.map((item, index) => ({
         service_date: dateIso(item.service_date),
         start_at: iso(item.start_at),
         end_at: iso(item.end_at),
         description: item.description || undefined,
         service_kind: item.service_kind || undefined,
+        service_package: item.service_package || undefined,
         pickup_location: item.pickup_location,
         dropoff_location: item.dropoff_location,
         quantity: Number(item.quantity || 1),
@@ -181,6 +174,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
         notes: item.notes || undefined,
         sort_order: index,
       })),
+      additionals: cleanAdditionals,
     });
   }
 
@@ -278,133 +272,6 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               row once.
             </section>
 
-            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-gray-950">
-                  Order Details
-                </h3>
-                <p className="mt-1 text-xs text-gray-500">
-                  Booking info matching the operations sheet. All optional.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label>Package / Service Type</Label>
-                  <Input
-                    placeholder="e.g. ALL-IN, DROP"
-                    {...register("service_type")}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Passengers</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="e.g. 4"
-                    {...register("passenger_count")}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Area</Label>
-                  <Input
-                    placeholder="e.g. Jabodetabek"
-                    {...register("area")}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Driver / Vendor Origin</Label>
-                  <Input
-                    placeholder="Vendor name (external only)"
-                    {...register("driver_origin")}
-                  />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>Notes (Keterangan)</Label>
-                  <Textarea
-                    rows={2}
-                    placeholder="Extra notes for this order"
-                    {...register("notes")}
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-950">
-                    External Vendor
-                  </h3>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Toggle on if this order is sub-contracted to an outside
-                    vendor (affects margin: flat external formula).
-                  </p>
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300"
-                    {...register("is_external")}
-                  />
-                  <span className="text-sm text-gray-700">External</span>
-                </label>
-              </div>
-              {isExternal && (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label>Vendor</Label>
-                    <Select
-                      value={selectedVendorId || ""}
-                      onValueChange={(v) => {
-                        setValue("external_vendor_id", v);
-                        setValue("external_car_id", "");
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select vendor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(vendorsData?.data ?? []).map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label>Vendor Car</Label>
-                    <Select
-                      value={watch("external_car_id") || ""}
-                      onValueChange={(v) => setValue("external_car_id", v)}
-                      disabled={!selectedVendorId}
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            selectedVendorId
-                              ? "Select car (optional)"
-                              : "Pick a vendor first"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(vendorDetail?.cars ?? []).map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.model}
-                            {c.plate_number ? ` (${c.plate_number})` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-gray-400">
-                      Manage vendors &amp; their cars in the External menu.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </section>
-
             <OrderServiceItemsEditor
               control={control}
               register={register}
@@ -412,6 +279,99 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               watch={watch}
               errors={errors}
             />
+
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-950">
+                    Additional Charges
+                  </h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Optional. Add if known upfront (overtime, parkir, etc.).
+                    Otherwise add later from the order detail page. Amount in
+                    Rupiah.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    appendAdditional({
+                      type: "OVERTIME",
+                      description: "",
+                      amount: "",
+                    })
+                  }
+                >
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Add Additional
+                </Button>
+              </div>
+              {additionalFields.length === 0 ? (
+                <p className="text-xs text-gray-400">
+                  No additional charges added.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {additionalFields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 md:grid-cols-[160px_minmax(0,1fr)_160px_40px] md:items-end"
+                    >
+                      <div className="space-y-1.5">
+                        <Label>Type</Label>
+                        <select
+                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          {...register(`additionals.${index}.type`)}
+                        >
+                          {ADDITIONAL_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>
+                              {t.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Label / Note</Label>
+                        <Input
+                          placeholder="e.g. Overtime 2 jam"
+                          {...register(`additionals.${index}.description`)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Amount (Rp)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          {...register(`additionals.${index}.amount`)}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeAdditional(index)}
+                        className="text-red-500 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
+              <div className="space-y-1.5">
+                <Label>Notes (Keterangan)</Label>
+                <Textarea
+                  rows={2}
+                  placeholder="Extra notes for this order"
+                  {...register("notes")}
+                />
+              </div>
+            </section>
           </div>
 
           <aside className="hidden lg:block min-w-0">
@@ -424,7 +384,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                   {formatCurrency(total || 0)}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  Calculated from service detail rows.
+                  Service lines + additional charges.
                 </p>
               </div>
               <div className="space-y-3 border-t border-gray-200 pt-4 text-sm">
@@ -437,12 +397,24 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                     {primary?.phone || "No phone yet"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-500">Service Rows</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-gray-500">
+                    Service Rows ({items?.length || 0})
+                  </p>
                   <p className="font-medium text-gray-900">
-                    {items?.length || 0} row(s)
+                    {formatCurrency(lineTotal || 0)}
                   </p>
                 </div>
+                {additionalTotal > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-gray-500">
+                      Additional ({additionalFields.length})
+                    </p>
+                    <p className="font-medium text-gray-900">
+                      {formatCurrency(additionalTotal)}
+                    </p>
+                  </div>
+                )}
                 <div className="rounded-xl bg-white p-3 text-xs text-gray-600 ring-1 ring-gray-200">
                   Tip: use one row per day, route, extra stop, overtime, or
                   different price.

@@ -14,14 +14,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 
-const SERVICE_KIND_OPTIONS = [
-  "ALL INCLUDED",
-  "12 JAM",
-  "FULL DAY",
-  "DROP OFF",
-  "PICKUP",
-  "OVERTIME",
-  "CUSTOM",
+// DURASI (sheet column) -> stored value
+export const DURASI_OPTIONS: { label: string; value: string }[] = [
+  { label: "12 Jam", value: "12H" },
+  { label: "Fullday", value: "FULLDAY" },
+  { label: "Drop Only", value: "DROP" },
+];
+
+// PAKET / LAYANAN (sheet column) -> stored value
+export const PAKET_OPTIONS: { label: string; value: string }[] = [
+  { label: "All Include", value: "ALL-IN" },
+  { label: "X Parkir", value: "ALL-IN X PARKIR" },
+  { label: "X Ops", value: "XOPS" },
 ];
 
 export interface ServiceItemFormValue {
@@ -30,6 +34,7 @@ export interface ServiceItemFormValue {
   end_at?: string;
   description?: string;
   service_kind?: string;
+  service_package?: string;
   pickup_location: string;
   dropoff_location: string;
   quantity: string;
@@ -51,7 +56,8 @@ function newItem(): ServiceItemFormValue {
     start_at: "",
     end_at: "",
     description: "",
-    service_kind: "ALL INCLUDED",
+    service_kind: "12H",
+    service_package: "ALL-IN",
     pickup_location: "",
     dropoff_location: "",
     quantity: "1",
@@ -158,16 +164,31 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Layanan</Label>
+                  <Label>Durasi</Label>
                   <select
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...register(
                       `service_items.${index}.service_kind` as never,
                     )}
                   >
-                    {SERVICE_KIND_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
+                    {DURASI_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5 xl:col-span-2">
+                  <Label>Paket</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    {...register(
+                      `service_items.${index}.service_package` as never,
+                    )}
+                  >
+                    {PAKET_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
                       </option>
                     ))}
                   </select>

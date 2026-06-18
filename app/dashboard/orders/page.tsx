@@ -111,10 +111,29 @@ function OrdersPageInner() {
   const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
   async function handleCreate(
-    payload: Parameters<typeof createMutation.mutateAsync>[0],
+    payload: Parameters<typeof createMutation.mutateAsync>[0] & {
+      additionals?: {
+        type: string;
+        description: string;
+        amount: number;
+        quantity?: number;
+        is_billable?: boolean;
+      }[];
+    },
   ) {
     try {
-      await createMutation.mutateAsync(payload);
+      const { additionals, ...orderPayload } = payload;
+      const created = await createMutation.mutateAsync(orderPayload);
+      const orderId = created?.id;
+      if (orderId && additionals && additionals.length) {
+        for (const adj of additionals) {
+          try {
+            await ordersApi.addAdjustment(orderId, adj);
+          } catch {
+            toast.error(`Failed to add additional: ${adj.description}`);
+          }
+        }
+      }
       toast.success('Order created successfully');
       setCreateOpen(false);
     } catch (err) {

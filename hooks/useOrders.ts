@@ -64,6 +64,26 @@ export function useCreateOrder() {
   });
 }
 
+export function useAddAdjustment(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      type: string;
+      description: string;
+      amount: number;
+      quantity?: number;
+      is_billable?: boolean;
+    }) => {
+      const res = await ordersApi.addAdjustment(id, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders", id] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}
+
 export function useUpdateOrder() {
   const queryClient = useQueryClient();
   return useMutation({

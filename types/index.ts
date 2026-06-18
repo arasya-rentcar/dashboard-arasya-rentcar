@@ -155,6 +155,7 @@ export interface OrderServiceItem {
   end_at?: string | null;
   description?: string | null;
   service_kind?: string | null;
+  service_package?: string | null;
   pickup_location: string;
   dropoff_location: string;
   quantity: number;
@@ -163,6 +164,19 @@ export interface OrderServiceItem {
   notes?: string | null;
   sort_order?: number;
   created_at?: string;
+  is_external?: boolean;
+  line_status?: string | null;
+  driver_name_raw?: string | null;
+  plate_raw?: string | null;
+  driver?: { id: string; name: string } | null;
+  car?: {
+    id: string;
+    model?: string | null;
+    plate_number?: string | null;
+    unit_code?: string | null;
+  } | null;
+  external_vendor?: { id: string; name: string } | null;
+  external_car?: { id: string; model?: string | null; plate_number?: string | null } | null;
 }
 
 export interface OrderCustomer {
@@ -206,6 +220,19 @@ export interface Order {
     total_orders: number;
   } | null;
   final_finance?: OrderFinanceDetail | null;
+  adjustments?: OrderAdjustment[];
+}
+
+export interface OrderAdjustment {
+  id: string;
+  order_id?: string;
+  type: string;
+  description: string;
+  amount: string | number;
+  quantity: number;
+  is_billable: boolean;
+  created_by?: string | null;
+  created_at?: string;
 }
 
 export type ScheduleStatus =
