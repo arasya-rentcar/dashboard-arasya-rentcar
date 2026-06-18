@@ -744,6 +744,20 @@ export interface VendorPayableHistory {
   items: Payable[];
 }
 
+export interface PayableKindSummary {
+  outstanding: number;
+  paid: number;
+  total: number;
+  unpaid_count: number;
+  paid_count: number;
+}
+
+export interface PayablesSummary {
+  driver: PayableKindSummary;
+  vendor: PayableKindSummary;
+  combined: { outstanding: number; paid: number; total: number };
+}
+
 // ─── Driver / Vendor detail ────────────────────────────────────────
 
 export interface PartnerTripRow {

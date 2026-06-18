@@ -28,6 +28,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { useFinalOrders } from '@/hooks/useFinalOrders';
 import { useCars } from '@/hooks/useCars';
 import { useDrivers } from '@/hooks/useDrivers';
+import { usePayablesSummary } from '@/hooks/usePayables';
+import { User, Building2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import PaginatedTable from '@/components/dashboard/PaginatedTable';
 import FrequencyChart, { FreqItem } from '@/components/dashboard/FrequencyChart';
@@ -42,6 +44,7 @@ export default function DashboardPage() {
   const { data: finalOrders, isLoading: finLoading } = useFinalOrders();
   const { data: cars, isLoading: carsLoading } = useCars();
   const { data: drivers, isLoading: driversLoading } = useDrivers();
+  const { data: payablesSummary, isLoading: payablesLoading } = usePayablesSummary();
 
   // ── Operational counts (from orders list) ──────────────────────────────
   const totalOrders = orders?.length ?? 0;
@@ -173,8 +176,10 @@ export default function DashboardPage() {
     },
     {
       label: 'Debts (Payables)',
-      value: formatCurrency(payables),
-      hint: 'Unsettled driver / vendor cost',
+      value: formatCurrency(
+        payablesSummary?.combined.outstanding ?? payables,
+      ),
+      hint: 'Unsettled driver + vendor (Tagihan)',
       icon: ArrowUpCircle,
       tone: 'text-red-600',
     },
@@ -322,6 +327,103 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+
+        {/* ── Debts / Tagihan (internal vs external) ─────────────────────── */}
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-gray-500">
+              Debts &middot; Hutang ke Driver &amp; Vendor
+            </h2>
+            <Link
+              href="/dashboard/payables"
+              className="text-xs font-medium text-blue-600 hover:underline"
+            >
+              Buka Tagihan &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Internal driver debt */}
+            <Card className="shadow-none border border-blue-100 bg-blue-50/40">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-blue-900">
+                  Hutang Internal (Driver)
+                </CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <User className="h-4 w-4 text-blue-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {payablesLoading ? (
+                  <div className="h-8 w-28 bg-blue-100 rounded animate-pulse" />
+                ) : (
+                  <>
+                    <p className="text-2xl font-semibold text-blue-700">
+                      {formatCurrency(payablesSummary?.driver.outstanding ?? 0)}
+                    </p>
+                    <p className="mt-1 text-xs text-blue-900/60">
+                      {payablesSummary?.driver.unpaid_count ?? 0} tagihan belum dibayar &middot; sudah dibayar{' '}
+                      {formatCurrency(payablesSummary?.driver.paid ?? 0)}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* External vendor debt */}
+            <Card className="shadow-none border border-purple-100 bg-purple-50/40">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-purple-900">
+                  Hutang External (Vendor)
+                </CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-purple-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {payablesLoading ? (
+                  <div className="h-8 w-28 bg-purple-100 rounded animate-pulse" />
+                ) : (
+                  <>
+                    <p className="text-2xl font-semibold text-purple-700">
+                      {formatCurrency(payablesSummary?.vendor.outstanding ?? 0)}
+                    </p>
+                    <p className="mt-1 text-xs text-purple-900/60">
+                      {payablesSummary?.vendor.unpaid_count ?? 0} tagihan belum dibayar &middot; sudah dibayar{' '}
+                      {formatCurrency(payablesSummary?.vendor.paid ?? 0)}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Combined */}
+            <Card className="shadow-none border border-red-100 bg-red-50/40">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-red-900">
+                  Total Hutang Outstanding
+                </CardTitle>
+                <div className="h-8 w-8 rounded-lg bg-red-100 flex items-center justify-center">
+                  <ArrowUpCircle className="h-4 w-4 text-red-700" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {payablesLoading ? (
+                  <div className="h-8 w-28 bg-red-100 rounded animate-pulse" />
+                ) : (
+                  <>
+                    <p className="text-2xl font-semibold text-red-700">
+                      {formatCurrency(payablesSummary?.combined.outstanding ?? 0)}
+                    </p>
+                    <p className="mt-1 text-xs text-red-900/60">
+                      Internal + External &middot; total lifetime{' '}
+                      {formatCurrency(payablesSummary?.combined.total ?? 0)}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 

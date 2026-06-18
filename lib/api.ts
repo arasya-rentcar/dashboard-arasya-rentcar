@@ -124,6 +124,8 @@ export const scheduleApi = {
 export const payablesApi = {
   list: (params: Record<string, string | number | undefined> = {}) =>
     api.get("/payables", { params }),
+  summary: (params: Record<string, string | undefined> = {}) =>
+    api.get("/payables/summary", { params }),
   getById: (id: string) => api.get(`/payables/${id}`),
   update: (id: string, data: object) => api.put(`/payables/${id}`, data),
   markPaid: (id: string, data: object = {}) =>

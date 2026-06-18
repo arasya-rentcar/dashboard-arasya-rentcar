@@ -6,7 +6,18 @@ import {
   PaginationMeta,
   DriverPayableHistory,
   VendorPayableHistory,
+  PayablesSummary,
 } from "@/types";
+
+export function usePayablesSummary(params: { date_from?: string; date_to?: string } = {}) {
+  return useQuery<PayablesSummary>({
+    queryKey: ["payables-summary", params],
+    queryFn: async () => {
+      const res = await payablesApi.summary(params);
+      return res.data.data;
+    },
+  });
+}
 
 export interface PayablesListParams {
   kind?: string;
