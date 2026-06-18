@@ -168,6 +168,9 @@ export interface OrderServiceItem {
   created_at?: string;
   is_external?: boolean;
   line_status?: string | null;
+  ops_cost?: string | number | null;
+  rtr_amount?: string | number | null;
+  margin_amount?: string | number | null;
   driver_name_raw?: string | null;
   plate_raw?: string | null;
   driver?: { id: string; name: string } | null;

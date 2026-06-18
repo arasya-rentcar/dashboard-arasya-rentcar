@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   UserPlus,
+  UserCog,
   PencilLine,
   AlertTriangle,
   Plus,
@@ -30,6 +31,8 @@ import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
 import AdditionalInvoiceForm from "@/components/forms/AdditionalInvoiceForm";
+import ScheduleLineDialog from "@/components/schedule/ScheduleLineDialog";
+import type { ScheduleLine, ScheduleStatus, OrderServiceItem } from "@/types";
 import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
 import EditOrderForm from "@/components/forms/EditOrderForm";
 import {
@@ -77,6 +80,7 @@ export default function OrderDetailPage({
   const [revisionInvoice, setRevisionInvoice] = useState<Invoice | null>(null);
   const [additionalOpen, setAdditionalOpen] = useState(false);
   const [additionalInvoiceOpen, setAdditionalInvoiceOpen] = useState(false);
+  const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -245,6 +249,55 @@ export default function OrderDetailPage({
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
+  }
+
+  // Adapt an order service line into the ScheduleLine shape the per-day
+  // assignment dialog expects (same underlying record / API route).
+  function openDayAssign(item: OrderServiceItem) {
+    if (!order || !item.id) return;
+    setAssignLine({
+      id: item.id,
+      service_date: item.service_date ?? null,
+      start_at: item.start_at ?? null,
+      end_at: item.end_at ?? null,
+      description: item.description ?? null,
+      service_kind: item.service_kind ?? null,
+      pickup_location: item.pickup_location,
+      dropoff_location: item.dropoff_location,
+      total_price: item.total_price,
+      ops_cost: item.ops_cost ?? 0,
+      rtr_amount: item.rtr_amount ?? null,
+      margin_amount: item.margin_amount ?? null,
+      is_external: item.is_external ?? false,
+      line_status: (item.line_status as ScheduleStatus) ?? "SCHEDULED",
+      driver_name_raw: item.driver_name_raw ?? null,
+      plate_raw: item.plate_raw ?? null,
+      notes: item.notes ?? null,
+      order: {
+        id: order.id,
+        order_code:
+          (order as { order_code?: string | null }).order_code ?? null,
+        customer_name: order.customer_name,
+        order_status: order.order_status,
+        payment_status: order.payment_status,
+      },
+      driver: item.driver ?? null,
+      car: item.car
+        ? {
+            id: item.car.id,
+            model: item.car.model ?? "",
+            plate_number: item.car.plate_number ?? null,
+          }
+        : null,
+      external_vendor: item.external_vendor ?? null,
+      external_car: item.external_car
+        ? {
+            id: item.external_car.id,
+            model: item.external_car.model ?? "",
+            plate_number: item.external_car.plate_number ?? null,
+          }
+        : null,
+    });
   }
 
   async function handleUpdateOrder(
@@ -580,20 +633,32 @@ export default function OrderDetailPage({
                                         {item.pickup_location} →{" "}
                                         {item.dropoff_location}
                                       </p>
-                                      {(driverLabel || carLabel) && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          {driverLabel || "—"}
-                                          {carLabel ? ` · ${carLabel}` : ""}
-                                          {item.is_external ? " · vendor" : ""}
-                                        </p>
-                                      )}
+                                      <div className="mt-1.5">
+                                        {driverLabel ? (
+                                          <span
+                                            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                                              item.is_external
+                                                ? "bg-purple-50 text-purple-700"
+                                                : "bg-emerald-50 text-emerald-700"
+                                            }`}
+                                          >
+                                            {driverLabel}
+                                            {carLabel ? ` · ${carLabel}` : ""}
+                                            {item.is_external ? " · vendor" : ""}
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center rounded bg-gray-100 text-gray-500 px-1.5 py-0.5 text-[11px] font-medium">
+                                            No driver assigned
+                                          </span>
+                                        )}
+                                      </div>
                                       {item.notes && (
                                         <p className="text-xs text-gray-400 mt-1">
                                           {item.notes}
                                         </p>
                                       )}
                                     </div>
-                                    <div className="text-right shrink-0">
+                                    <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                                       <p className="text-xs text-gray-400">
                                         Qty {item.quantity} ×{" "}
                                         {formatCurrency(item.unit_price)}
@@ -601,6 +666,15 @@ export default function OrderDetailPage({
                                       <p className="text-sm font-semibold text-gray-900">
                                         {formatCurrency(item.total_price)}
                                       </p>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 gap-1 text-xs"
+                                        onClick={() => openDayAssign(item)}
+                                      >
+                                        <UserCog className="h-3.5 w-3.5" />
+                                        {driverLabel ? "Change" : "Assign"}
+                                      </Button>
                                     </div>
                                   </div>
                                 </div>
@@ -907,6 +981,13 @@ export default function OrderDetailPage({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Per-day driver/car assignment (reuses the Schedule line dialog) */}
+      <ScheduleLineDialog
+        line={assignLine}
+        open={!!assignLine}
+        onClose={() => setAssignLine(null)}
+      />
 
       {/* Generate Additional Invoice Dialog */}
       <Dialog
