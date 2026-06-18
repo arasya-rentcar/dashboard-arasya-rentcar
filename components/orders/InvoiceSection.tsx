@@ -247,8 +247,16 @@ export default function InvoiceSection({
                   {inv.file_url && (
                     <Button variant="outline" size="sm" className="w-full" asChild>
                       <a href={inv.file_url} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-3.5 w-3.5 mr-1" />
-                        PDF
+                        <FileText className="h-3.5 w-3.5 mr-1" />
+                        Invoice
+                      </a>
+                    </Button>
+                  )}
+                  {inv.receipt_url && (
+                    <Button variant="outline" size="sm" className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50" asChild>
+                      <a href={inv.receipt_url} target="_blank" rel="noopener noreferrer">
+                        <ReceiptText className="h-3.5 w-3.5 mr-1" />
+                        Kwitansi
                       </a>
                     </Button>
                   )}

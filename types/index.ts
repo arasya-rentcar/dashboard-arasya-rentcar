@@ -142,6 +142,7 @@ export interface Invoice {
   amount: string;
   note?: string;
   file_url?: string;
+  receipt_url?: string | null;
   status: InvoiceStatus;
   revision?: number;
   parent_id?: string | null;
