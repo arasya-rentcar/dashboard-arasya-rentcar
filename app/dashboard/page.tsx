@@ -29,6 +29,8 @@ import { useFinalOrders } from '@/hooks/useFinalOrders';
 import { useCars } from '@/hooks/useCars';
 import { useDrivers } from '@/hooks/useDrivers';
 import { usePayablesSummary } from '@/hooks/usePayables';
+import { useDashboardAnalytics } from '@/hooks/useAnalytics';
+import AnalyticsSections from '@/components/dashboard/AnalyticsSections';
 import { User, Building2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import PaginatedTable from '@/components/dashboard/PaginatedTable';
@@ -45,6 +47,7 @@ export default function DashboardPage() {
   const { data: cars, isLoading: carsLoading } = useCars();
   const { data: drivers, isLoading: driversLoading } = useDrivers();
   const { data: payablesSummary, isLoading: payablesLoading } = usePayablesSummary();
+  const { data: analytics, isLoading: analyticsLoading } = useDashboardAnalytics();
 
   // ── Operational counts (from orders list) ──────────────────────────────
   const totalOrders = orders?.length ?? 0;
@@ -426,6 +429,10 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* ── Rich analytics (receivables, aging, margin, cashflow, leaderboard,
+            mix, car utilization, monthly trend) ───────────────────────── */}
+        <AnalyticsSections data={analytics} loading={analyticsLoading} />
 
         {/* ── Rental frequency charts ────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

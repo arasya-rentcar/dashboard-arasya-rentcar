@@ -121,6 +121,11 @@ export const scheduleApi = {
 
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
 
+export const analyticsApi = {
+  dashboard: (params: Record<string, string | undefined> = {}) =>
+    api.get("/analytics/dashboard", { params }),
+};
+
 export const payablesApi = {
   list: (params: Record<string, string | number | undefined> = {}) =>
     api.get("/payables", { params }),

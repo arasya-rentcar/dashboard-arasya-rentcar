@@ -752,6 +752,74 @@ export interface PayableKindSummary {
   paid_count: number;
 }
 
+export interface AgingBuckets {
+  current: number;
+  d1_7: number;
+  d8_14: number;
+  d15_30: number;
+  d30plus: number;
+}
+
+export interface MarginRow {
+  order_id: string;
+  order_code?: string | null;
+  customer_name: string;
+  revenue: number;
+  margin: number;
+  margin_pct: number;
+}
+
+export interface DriverLeader {
+  id: string;
+  name: string;
+  trips: number;
+  revenue: number;
+  margin: number;
+  ops: number;
+}
+
+export interface VendorLeader {
+  id: string;
+  name: string;
+  trips: number;
+  revenue: number;
+  cost: number;
+}
+
+export interface CarUtil {
+  id: string;
+  model: string;
+  plate_number?: string | null;
+  status: string;
+  days_booked: number;
+}
+
+export interface MonthlyTrendRow {
+  label: string;
+  turnover: number;
+  collected: number;
+  payout: number;
+}
+
+export interface DashboardAnalytics {
+  receivables: {
+    dp_pending: number;
+    settlement_due: number;
+    unbilled: number;
+    total: number;
+  };
+  aging: { receivables: AgingBuckets; payables: AgingBuckets };
+  margin: { top: MarginRow[]; bottom: MarginRow[] };
+  cashflow: { inflow_7d: number; outflow_7d: number; net_7d: number };
+  leaderboard: { drivers: DriverLeader[]; vendors: VendorLeader[] };
+  mix: {
+    internal: { trips: number; revenue: number };
+    external: { trips: number; revenue: number };
+  };
+  car_utilization: CarUtil[];
+  monthly_trend: MonthlyTrendRow[];
+}
+
 export interface PayablesSummary {
   driver: PayableKindSummary;
   vendor: PayableKindSummary;
