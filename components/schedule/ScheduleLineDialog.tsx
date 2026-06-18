@@ -20,10 +20,16 @@ import {
 } from '@/components/ui/select';
 import { useDrivers } from '@/hooks/useDrivers';
 import { useCars } from '@/hooks/useCars';
-import { useExternalVendors, useExternalVendor } from '@/hooks/useExternalVendors';
+import {
+  useExternalVendors,
+  useExternalVendor,
+  useCreateVendor,
+  useAddVendorCar,
+} from '@/hooks/useExternalVendors';
 import { useAssignScheduleLine } from '@/hooks/useSchedule';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
+import { Plus, Loader2 } from 'lucide-react';
 
 const num = (v?: string | number | null) =>
   v == null || v === '' ? '' : String(v);
@@ -38,9 +44,19 @@ export default function ScheduleLineDialog({
   onClose: () => void;
 }) {
   const mutation = useAssignScheduleLine();
+  const createVendor = useCreateVendor();
+  const addVendorCar = useAddVendorCar();
   const { data: drivers } = useDrivers();
   const { data: cars } = useCars();
   const { data: vendorList } = useExternalVendors({ page: 1, page_size: 100 });
+
+  // Inline create state
+  const [newVendorOpen, setNewVendorOpen] = useState(false);
+  const [newVendorName, setNewVendorName] = useState('');
+  const [newVendorPhone, setNewVendorPhone] = useState('');
+  const [newCarOpen, setNewCarOpen] = useState(false);
+  const [newCarModel, setNewCarModel] = useState('');
+  const [newCarPlate, setNewCarPlate] = useState('');
 
   const [isExternal, setIsExternal] = useState(false);
   const [driverId, setDriverId] = useState('');
@@ -95,6 +111,60 @@ export default function ScheduleLineDialog({
       });
       toast.success('Schedule line updated — margin recomputed');
       onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleCreateVendor() {
+    const name = newVendorName.trim();
+    if (!name) {
+      toast.error('Vendor name is required');
+      return;
+    }
+    try {
+      const res = await createVendor.mutateAsync({
+        name,
+        phone: newVendorPhone.trim() || undefined,
+      });
+      const created = res?.data?.data;
+      if (created?.id) {
+        setVendorId(created.id);
+        setVendorCarId('');
+      }
+      toast.success('Vendor created');
+      setNewVendorOpen(false);
+      setNewVendorName('');
+      setNewVendorPhone('');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleCreateVendorCar() {
+    if (!vendorId) {
+      toast.error('Select a vendor first');
+      return;
+    }
+    const model = newCarModel.trim();
+    if (!model) {
+      toast.error('Car type / model is required');
+      return;
+    }
+    try {
+      const res = await addVendorCar.mutateAsync({
+        id: vendorId,
+        data: {
+          model,
+          plate_number: newCarPlate.trim() || undefined,
+        },
+      });
+      const created = res?.data?.data;
+      if (created?.id) setVendorCarId(created.id);
+      toast.success('Vendor car added');
+      setNewCarOpen(false);
+      setNewCarModel('');
+      setNewCarPlate('');
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -193,42 +263,117 @@ export default function ScheduleLineDialog({
           ) : (
             <>
               <div className="space-y-1.5">
-                <Label>Vendor</Label>
-                <Select
-                  value={vendorId}
-                  onValueChange={(v) => {
-                    setVendorId(v);
-                    setVendorCarId('');
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select vendor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(vendorList?.data ?? []).map((v) => (
-                      <SelectItem key={v.id} value={v.id}>
-                        {v.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {vendorId && (
-                <div className="space-y-1.5">
-                  <Label>Vendor Car</Label>
-                  <Select value={vendorCarId} onValueChange={setVendorCarId}>
+                <div className="flex items-center justify-between">
+                  <Label>Vendor</Label>
+                  <button
+                    type="button"
+                    onClick={() => setNewVendorOpen((o) => !o)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {newVendorOpen ? 'Cancel' : 'New vendor'}
+                  </button>
+                </div>
+                {newVendorOpen ? (
+                  <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-2.5 space-y-2">
+                    <Input
+                      placeholder="Vendor name"
+                      value={newVendorName}
+                      onChange={(e) => setNewVendorName(e.target.value)}
+                    />
+                    <Input
+                      placeholder="Phone (optional)"
+                      value={newVendorPhone}
+                      onChange={(e) => setNewVendorPhone(e.target.value)}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full"
+                      onClick={handleCreateVendor}
+                      disabled={createVendor.isPending}
+                    >
+                      {createVendor.isPending && (
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      )}
+                      Create vendor
+                    </Button>
+                  </div>
+                ) : (
+                  <Select
+                    value={vendorId}
+                    onValueChange={(v) => {
+                      setVendorId(v);
+                      setVendorCarId('');
+                      setNewCarOpen(false);
+                    }}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select car" />
+                      <SelectValue placeholder="Select vendor" />
                     </SelectTrigger>
                     <SelectContent>
-                      {vendorCars.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.model}
-                          {c.plate_number ? ` · ${c.plate_number}` : ''}
+                      {(vendorList?.data ?? []).map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                )}
+              </div>
+              {vendorId && !newVendorOpen && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Vendor Car</Label>
+                    <button
+                      type="button"
+                      onClick={() => setNewCarOpen((o) => !o)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {newCarOpen ? 'Cancel' : 'New car'}
+                    </button>
+                  </div>
+                  {newCarOpen ? (
+                    <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-2.5 space-y-2">
+                      <Input
+                        placeholder="Car type / model (e.g. Innova Reborn)"
+                        value={newCarModel}
+                        onChange={(e) => setNewCarModel(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Plate number (e.g. F 1728 ABJ)"
+                        value={newCarPlate}
+                        onChange={(e) => setNewCarPlate(e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full"
+                        onClick={handleCreateVendorCar}
+                        disabled={addVendorCar.isPending}
+                      >
+                        {addVendorCar.isPending && (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        )}
+                        Add car
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select value={vendorCarId} onValueChange={setVendorCarId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select car" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendorCars.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.model}
+                            {c.plate_number ? ` · ${c.plate_number}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               )}
               <div className="space-y-1.5">
