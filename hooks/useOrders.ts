@@ -201,3 +201,25 @@ export function useSendInvoiceWhatsapp() {
     },
   });
 }
+
+export function useMarkInvoicePaid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      invoiceId,
+      data,
+    }: {
+      id: string;
+      invoiceId: string;
+      data?: { payment_method?: string; paid_at?: string };
+    }) => {
+      const res = await ordersApi.markInvoicePaid(id, invoiceId, data ?? {});
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+    },
+  });
+}

@@ -137,6 +137,8 @@ export interface Invoice {
   invoice_type: InvoiceType;
   payment_method: PaymentMethod;
   issue_date: string;
+  due_date?: string | null;
+  paid_at?: string | null;
   amount: string;
   note?: string;
   file_url?: string;

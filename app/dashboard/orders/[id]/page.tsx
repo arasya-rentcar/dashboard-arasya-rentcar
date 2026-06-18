@@ -38,6 +38,8 @@ import {
   useGenerateInvoice,
   useReviseInvoice,
   useAddAdjustment,
+  useSendInvoiceWhatsapp,
+  useMarkInvoicePaid,
 } from "@/hooks/useOrders";
 import { useAdvanceTripStatus } from "@/hooks/useTrips";
 import {
@@ -83,6 +85,48 @@ export default function OrderDetailPage({
   const generateInvoiceMutation = useGenerateInvoice();
   const reviseInvoiceMutation = useReviseInvoice();
   const addAdjustmentMutation = useAddAdjustment(id);
+  const sendInvoiceMutation = useSendInvoiceWhatsapp();
+  const markInvoicePaidMutation = useMarkInvoicePaid();
+
+  async function handleSendInvoice(invoice: Invoice) {
+    const phone =
+      order?.customers?.find((c) => c.phone)?.phone ||
+      order?.customer_phone ||
+      "";
+    const name =
+      order?.customers?.find((c) => c.phone)?.name ||
+      order?.customer_name ||
+      "";
+    if (!phone) {
+      toast.error("No customer phone number on this order");
+      return;
+    }
+    try {
+      await sendInvoiceMutation.mutateAsync({
+        id,
+        invoiceId: invoice.id,
+        data: { target_phone: phone, target_name: name },
+      });
+      toast.success(`Invoice ${invoice.invoice_number} sent via WhatsApp`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleMarkInvoicePaid(invoice: Invoice) {
+    try {
+      await markInvoicePaidMutation.mutateAsync({
+        id,
+        invoiceId: invoice.id,
+        data: { payment_method: invoice.payment_method },
+      });
+      toast.success(
+        `${invoice.invoice_number} marked paid — now a receipt (kwitansi)`,
+      );
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
   const advanceTripMutation = useAdvanceTripStatus(id);
 
   const ADDITIONAL_TYPES: { label: string; value: string }[] = [
@@ -127,6 +171,13 @@ export default function OrderDetailPage({
   const invoiceDifference = orderFinalPrice - alreadyPaid;
   const serviceStart = order?.service_start_at;
   const serviceEnd = order?.service_end_at;
+  // Rule B: rental must be fully paid by day 1 of service. Warn if service has
+  // started (or starts today/earlier) while the order is not fully PAID.
+  const serviceStarted =
+    !!order?.trip?.started_at ||
+    (!!serviceStart && new Date(serviceStart).getTime() <= Date.now());
+  const unpaidAtServiceStart =
+    !!order && serviceStarted && order.payment_status !== "PAID";
   const serviceDuration =
     serviceStart && serviceEnd
       ? formatDuration(serviceStart, serviceEnd)
@@ -299,6 +350,22 @@ export default function OrderDetailPage({
             )}
           </div>
         </div>
+
+        {unpaidAtServiceStart && (
+          <div className="rounded-lg border p-3 flex gap-3 text-sm bg-red-50 border-red-200 text-red-700">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">
+                Service has started but rental is not fully paid
+              </p>
+              <p className="text-xs mt-1">
+                Full rental payment is due on day 1 of service. Current status:{" "}
+                {order.payment_status.replace("_", " ")}. Issue/settle the
+                remaining balance.
+              </p>
+            </div>
+          </div>
+        )}
 
         {order.invoices.length > 0 && invoiceDifference !== 0 && (
           <div
@@ -711,6 +778,18 @@ export default function OrderDetailPage({
                   finalPrice={orderFinalPrice}
                   onOpenGenerate={() => setInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}
+                  onSend={handleSendInvoice}
+                  onMarkPaid={handleMarkInvoicePaid}
+                  sendingInvoiceId={
+                    sendInvoiceMutation.isPending
+                      ? sendInvoiceMutation.variables?.invoiceId
+                      : null
+                  }
+                  payingInvoiceId={
+                    markInvoicePaidMutation.isPending
+                      ? markInvoicePaidMutation.variables?.invoiceId
+                      : null
+                  }
                 />
               </CardContent>
             </Card>

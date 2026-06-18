@@ -65,14 +65,21 @@ export default function GenerateInvoiceForm({
   const remaining = finalPrice - alreadyPaid;
   const isFullyPaid = remaining <= 0;
 
-  // Guard: invoices must not exceed order.final_price. Extra charges should update final_price first.
+  // Guard: invoices must not exceed order.final_price. Extra charges (overtime,
+  // parkir, etc.) should be added to the order final price first (Additional
+  // Charges), which opens up remaining balance to bill as an ADDITIONAL invoice.
   const availableTypes = TYPE_OPTIONS.filter((t) => {
     if (isFullyPaid) return false;
     if (t.value === 'FULL' && alreadyPaid > 0) return false;
     if (t.value === 'SETTLEMENT' && alreadyPaid === 0) return false;
-    if (t.value === 'ADDITIONAL') return false;
+    // ADDITIONAL is meant for extra charges after the base rental is already
+    // invoiced — only offer it once something has been billed.
+    if (t.value === 'ADDITIONAL' && alreadyPaid === 0) return false;
     return true;
   });
+
+  // DP minimum = 20% of the rental (order total here is rental-only at booking).
+  const minDp = Math.round(finalPrice * 0.2);
 
   const {
     register,
@@ -97,13 +104,16 @@ export default function GenerateInvoiceForm({
   useEffect(() => {
     if (invoiceType === 'FULL') {
       setValue('amount', String(finalPrice));
-    } else if (invoiceType === 'SETTLEMENT') {
-      setValue('amount', String(remaining));
+    } else if (invoiceType === 'SETTLEMENT' || invoiceType === 'ADDITIONAL') {
+      // Settlement and additional both bill the remaining balance.
+      setValue('amount', String(Math.max(remaining, 0)));
+    } else if (invoiceType === 'DP') {
+      // Suggest the 20% minimum; admin can raise it (customer may pay more).
+      setValue('amount', String(minDp));
     } else {
-      // DP / ADDITIONAL — leave empty for admin to enter
       setValue('amount', '');
     }
-  }, [invoiceType, finalPrice, remaining, setValue]);
+  }, [invoiceType, finalPrice, remaining, minDp, setValue]);
 
   async function handleFormSubmit(values: FormValues) {
     await onSubmit({
@@ -192,19 +202,27 @@ export default function GenerateInvoiceForm({
         <Input
           id="invoice_amount"
           type="number"
-          min="0"
-          max={invoiceType === 'ADDITIONAL' ? undefined : Math.max(remaining, 0)}
+          min={invoiceType === 'DP' ? minDp : 0}
+          max={Math.max(remaining, 0)}
           {...register('amount')}
-          readOnly={invoiceType === 'FULL' || invoiceType === 'SETTLEMENT'}
+          readOnly={invoiceType === 'FULL'}
         />
         {errors.amount && (
           <p className="text-xs text-red-500">{errors.amount.message}</p>
         )}
         {invoiceType === 'DP' && (
-          <p className="text-xs text-gray-400">Enter the down payment amount received</p>
+          <p className="text-xs text-gray-400">
+            Minimum {formatCurrency(minDp)} (20% of rental). Customer may pay more.
+          </p>
+        )}
+        {invoiceType === 'SETTLEMENT' && (
+          <p className="text-xs text-gray-400">Remaining rental balance, due on day 1 of service.</p>
         )}
         {invoiceType === 'ADDITIONAL' && (
-          <p className="text-xs text-gray-400">Extra charges must increase the order final price before invoicing</p>
+          <p className="text-xs text-gray-400">
+            Bills the remaining balance from extra charges. Add the charge in
+            Additional Charges first so the order total reflects it.
+          </p>
         )}
       </div>
 

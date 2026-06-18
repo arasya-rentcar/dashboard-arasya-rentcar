@@ -1,6 +1,16 @@
 'use client';
 
-import { FileText, Download, Plus, PencilLine, Eye, RefreshCw } from 'lucide-react';
+import {
+  FileText,
+  Download,
+  Plus,
+  PencilLine,
+  Eye,
+  RefreshCw,
+  Send,
+  CheckCircle2,
+  ReceiptText,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +58,10 @@ interface Props {
   finalPrice: number;
   onOpenGenerate: () => void;
   onOpenRevise: (invoice: Invoice) => void;
+  onSend?: (invoice: Invoice) => void;
+  onMarkPaid?: (invoice: Invoice) => void;
+  sendingInvoiceId?: string | null;
+  payingInvoiceId?: string | null;
 }
 
 function isActiveInvoice(invoice: Invoice) {
@@ -69,6 +83,10 @@ export default function InvoiceSection({
   finalPrice,
   onOpenGenerate,
   onOpenRevise,
+  onSend,
+  onMarkPaid,
+  sendingInvoiceId,
+  payingInvoiceId,
 }: Props) {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const activeInvoices = invoices.filter(isActiveInvoice);
@@ -178,6 +196,17 @@ export default function InvoiceSection({
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
                         {inv.status}
                       </Badge>
+                      {inv.status === 'PAID' && (
+                        <Badge variant="outline" className="text-[10px] border-emerald-300 bg-emerald-100 text-emerald-800 gap-0.5">
+                          <ReceiptText className="h-2.5 w-2.5" />
+                          Kwitansi
+                        </Badge>
+                      )}
+                      {inv.due_date && inv.status !== 'PAID' && (
+                        <Badge variant="outline" className="text-[10px] border-orange-200 bg-orange-50 text-orange-700">
+                          Due {formatDate(inv.due_date)}
+                        </Badge>
+                      )}
                       {(inv.revision ?? 0) > 0 && (
                         <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">
                           R{inv.revision}
@@ -205,13 +234,7 @@ export default function InvoiceSection({
 
                 {inv.note && <p className="text-xs text-gray-400 italic">{inv.note}</p>}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {active && (
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenRevise(inv)}>
-                      <PencilLine className="h-3.5 w-3.5 mr-1" />
-                      Revise
-                    </Button>
-                  )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {inv.file_url && (
                     <Button variant="outline" size="sm" className="w-full" onClick={() => setPreviewInvoice(inv)}>
                       <Eye className="h-3.5 w-3.5 mr-1" />
@@ -224,6 +247,36 @@ export default function InvoiceSection({
                         <Download className="h-3.5 w-3.5 mr-1" />
                         PDF
                       </a>
+                    </Button>
+                  )}
+                  {active && onSend && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-blue-700 border-blue-200 hover:bg-blue-50"
+                      disabled={sendingInvoiceId === inv.id}
+                      onClick={() => onSend(inv)}
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1" />
+                      {sendingInvoiceId === inv.id ? 'Sending…' : 'Send'}
+                    </Button>
+                  )}
+                  {active && inv.status !== 'PAID' && onMarkPaid && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                      disabled={payingInvoiceId === inv.id}
+                      onClick={() => onMarkPaid(inv)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                      {payingInvoiceId === inv.id ? 'Saving…' : 'Mark Paid'}
+                    </Button>
+                  )}
+                  {active && (
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenRevise(inv)}>
+                      <PencilLine className="h-3.5 w-3.5 mr-1" />
+                      Revise
                     </Button>
                   )}
                 </div>
