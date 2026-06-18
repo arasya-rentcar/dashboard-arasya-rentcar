@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Edit, Plus, Search } from "lucide-react";
+import { Edit, Plus, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,6 +42,7 @@ import { useUsers } from "@/hooks/useUsers";
 import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { Driver, DriverStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
+import PayableHistorySheet from "@/components/payables/PayableHistorySheet";
 
 const DRIVER_STATUS_STYLES: Record<DriverStatus, string> = {
   AVAILABLE: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -72,6 +73,7 @@ export default function DriversPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [tagihanDriver, setTagihanDriver] = useState<Driver | null>(null);
 
   const { data: drivers, isLoading } = useDrivers();
   const { data: users } = useUsers();
@@ -276,6 +278,14 @@ export default function DriversPage() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setTagihanDriver(driver)}
+                      >
+                        <Wallet className="h-4 w-4 mr-1" />
+                        Tagihan
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => openEdit(driver)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -299,6 +309,14 @@ export default function DriversPage() {
           label="drivers"
         />
       </div>
+
+      <PayableHistorySheet
+        kind="DRIVER"
+        id={tagihanDriver?.id}
+        name={tagihanDriver?.name}
+        open={!!tagihanDriver}
+        onOpenChange={(v) => !v && setTagihanDriver(null)}
+      />
 
       {/* Create Driver Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

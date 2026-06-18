@@ -118,6 +118,22 @@ export const scheduleApi = {
     api.put(`/schedule/lines/${id}`, data),
 };
 
+// ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
+
+export const payablesApi = {
+  list: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/payables", { params }),
+  getById: (id: string) => api.get(`/payables/${id}`),
+  update: (id: string, data: object) => api.put(`/payables/${id}`, data),
+  markPaid: (id: string, data: object = {}) =>
+    api.post(`/payables/${id}/mark-paid`, data),
+  markUnpaid: (id: string) => api.post(`/payables/${id}/mark-unpaid`),
+  bulkMarkPaid: (data: { ids: string[]; paid_at?: string }) =>
+    api.post(`/payables/bulk-mark-paid`, data),
+  driverHistory: (id: string) => api.get(`/payables/driver/${id}/history`),
+  vendorHistory: (id: string) => api.get(`/payables/vendor/${id}/history`),
+};
+
 // ─── Drivers ─────────────────────────────────────────────────────────────────
 
 export const driversApi = {

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Phone, Car, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Phone, Car, ClipboardList, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import {
   useDeleteVendorCar,
 } from '@/hooks/useExternalVendors';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
+import PayableHistorySheet from '@/components/payables/PayableHistorySheet';
 
 type Tab = 'cars' | 'orders';
 
@@ -41,6 +42,7 @@ export default function VendorDetailPage() {
   const [carsPage, setCarsPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
   const [addCarOpen, setAddCarOpen] = useState(false);
+  const [tagihanOpen, setTagihanOpen] = useState(false);
   const [carForm, setCarForm] = useState({ model: '', plate_number: '', notes: '' });
 
   const { data: vendor, isLoading } = useExternalVendor(id, {
@@ -124,7 +126,7 @@ export default function VendorDetailPage() {
                 </p>
               )}
             </div>
-            <div className="flex gap-6 ml-auto">
+            <div className="flex items-center gap-6 ml-auto">
               <div className="text-center">
                 <p className="text-xl font-semibold text-gray-900">
                   {cp.total}
@@ -137,9 +139,25 @@ export default function VendorDetailPage() {
                 </p>
                 <p className="text-xs text-gray-400">Orders</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setTagihanOpen(true)}
+              >
+                <Wallet className="h-4 w-4" /> Tagihan
+              </Button>
             </div>
           </CardContent>
         </Card>
+
+        <PayableHistorySheet
+          kind="VENDOR"
+          id={id}
+          name={vendor.name}
+          open={tagihanOpen}
+          onOpenChange={setTagihanOpen}
+        />
 
         {vendor.notes && (
           <p className="text-sm text-gray-500">{vendor.notes}</p>

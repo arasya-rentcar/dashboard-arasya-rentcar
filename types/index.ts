@@ -677,6 +677,73 @@ export interface ExternalVendorDetail extends ExternalVendorListItem {
   orders_pagination: PaginationMeta;
 }
 
+// ─── Payables (Tagihan) ──────────────────────────────────────────────
+
+export type PayableKind = "DRIVER" | "VENDOR";
+export type PayableStatus = "UNPAID" | "PAID";
+
+export interface PayableExtra {
+  id?: string;
+  label: string;
+  amount: number | string;
+}
+
+export interface Payable {
+  id: string;
+  kind: PayableKind;
+  status: PayableStatus;
+  service_item_id: string;
+  order_id: string;
+  driver_id?: string | null;
+  vendor_id?: string | null;
+  service_date?: string | null;
+  base_amount: string | number;
+  extras_amount: string | number;
+  total_amount: string | number;
+  keterangan?: string | null;
+  paid_at?: string | null;
+  payment_method?: string | null;
+  created_at: string;
+  order?: { id: string; order_code?: string | null; customer_name: string } | null;
+  driver?: { id: string; name: string; phone?: string | null } | null;
+  vendor?: { id: string; name: string; phone?: string | null } | null;
+  service_item?: {
+    id: string;
+    service_date?: string | null;
+    description?: string | null;
+    service_kind?: string | null;
+    service_package?: string | null;
+    pickup_location?: string | null;
+    dropoff_location?: string | null;
+  } | null;
+  extras?: PayableExtra[];
+}
+
+export interface PayableTotals {
+  outstanding: number;
+  paid: number;
+}
+
+export interface PayableHistorySummary {
+  total_earned?: number;
+  total_billed?: number;
+  total_paid: number;
+  outstanding: number;
+  count: number;
+}
+
+export interface DriverPayableHistory {
+  driver: { id: string; name: string; phone?: string | null; type?: string };
+  summary: PayableHistorySummary;
+  items: Payable[];
+}
+
+export interface VendorPayableHistory {
+  vendor: { id: string; name: string; phone?: string | null };
+  summary: PayableHistorySummary;
+  items: Payable[];
+}
+
 // ─── API Response ────────────────────────────────────────────────────────────
 
 export interface ApiResponse<T> {
