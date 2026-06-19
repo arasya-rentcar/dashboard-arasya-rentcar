@@ -10,11 +10,15 @@ import {
   Send,
   CheckCircle2,
   ReceiptText,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ordersApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +60,7 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 interface Props {
   invoices: Invoice[];
   finalPrice: number;
+  orderId: string;
   onOpenGenerate: () => void;
   onOpenAdditional?: () => void;
   onOpenRevise: (invoice: Invoice) => void;
@@ -82,6 +87,7 @@ function shortInvoiceNumber(invoiceNumber: string) {
 export default function InvoiceSection({
   invoices,
   finalPrice,
+  orderId,
   onOpenGenerate,
   onOpenAdditional,
   onOpenRevise,
@@ -91,6 +97,24 @@ export default function InvoiceSection({
   payingInvoiceId,
 }: Props) {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [statementLoading, setStatementLoading] = useState(false);
+
+  async function handleViewStatement() {
+    setStatementLoading(true);
+    try {
+      const res = await ordersApi.getStatement(orderId);
+      const url = res.data?.data?.statement_url;
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        toast.error('Statement URL not returned');
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setStatementLoading(false);
+    }
+  }
   const activeInvoices = invoices.filter(isActiveInvoice);
   const currentInvoice = latestActiveInvoice(invoices);
   const totalPaid = activeInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
@@ -143,6 +167,19 @@ export default function InvoiceSection({
           </Button>
         )}
       </div>
+
+      {hasInvoice && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 text-slate-700 border-slate-300 hover:bg-slate-50"
+          onClick={handleViewStatement}
+          disabled={statementLoading}
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          {statementLoading ? 'Membuat Statement…' : 'Statement Gabungan (Invoice + Pembayaran)'}
+        </Button>
+      )}
 
       {hasInvoice && remaining > 0 && !isOverInvoiced && (
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-2 text-xs text-amber-700">

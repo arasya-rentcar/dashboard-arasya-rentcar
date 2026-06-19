@@ -852,6 +852,7 @@ export default function OrderDetailPage({
                 <InvoiceSection
                   invoices={order.invoices}
                   finalPrice={orderFinalPrice}
+                  orderId={order.id}
                   onOpenGenerate={() => setInvoiceOpen(true)}
                   onOpenAdditional={() => setAdditionalInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}

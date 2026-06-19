@@ -60,6 +60,7 @@ export const ordersApi = {
   markInvoicePaid: (id: string, invoiceId: string, data: object = {}) =>
     api.post(`/orders/${id}/invoice/${invoiceId}/mark-paid`, data),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
+  getStatement: (id: string) => api.get(`/orders/${id}/statement`),
   addAdjustment: (id: string, data: object) =>
     api.post(`/orders/${id}/adjustments`, data),
 };
