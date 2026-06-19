@@ -1,97 +1,66 @@
-name: Deploy Frontend
+name: Deploy Dashboard
+
+# Best-practice CI/CD:
+#  1. CI GATE  — build on a GitHub runner to catch breakage BEFORE prod.
+#  2. DEPLOY   — SSH into the prod host and run our release-based deploy
+#                script (atomic flip + health-gated rollback).
+#
+# Triggered on push to main that touches dashboard code, or manually.
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'lib/**'
+      - 'types/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+      - 'ecosystem.config.js'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-dashboard
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  # ---- 1. CI gate: prove it builds before we touch production ----
+  build:
     runs-on: ubuntu-latest
-
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install deps
+        run: npm ci
+      - name: Build (Next.js)
+        run: npm run build
+        env:
+          # NEXT_PUBLIC_* is baked at build time; the real value is set on the
+          # host via shared/.env.production. CI just needs the build to pass.
+          NEXT_PUBLIC_API_URL: https://api.haikuy.com/api/v1
 
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    # inject env for build
-    - name: Create env file
-      run: |
-        echo "${{ secrets.FRONTEND_ENV }}" > .env.production
-
-    - name: Install deps
-      run: npm ci
-
-    - name: Build
-      run: npm run build
-
-    - name: Archive
-      run: |
-        tar -czf frontend.tar.gz \
-        .next \
-        public \
-        package.json \
-        package-lock.json \
-        next.config.ts \
-        .env.production
-
-    - name: Upload to VPS
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        source: frontend.tar.gz
-        target: /var/www/web-arasya-rentcar/
-
-    - name: Deploy
-      uses: appleboy/ssh-action@v1
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-
-        script: |
-
-          set -e
-
-          export NVM_DIR="$HOME/.nvm"
-          source $NVM_DIR/nvm.sh
-
-          cd /var/www/web-arasya-rentcar
-
-          PREVIOUS=$(readlink current || echo "")
-
-          RELEASE=$(date +%Y%m%d%H%M%S)
-
-          mkdir -p releases/$RELEASE
-
-          tar -xzf frontend.tar.gz -C releases/$RELEASE
-
-          # copy env to shared
-          cp releases/$RELEASE/.env.production shared/.env
-
-          ln -sfn releases/$RELEASE current
-
-          cd current
-
-          npm ci --omit=dev
-
-          pm2 reload dashboard
-
-          sleep 5
-
-          if ! curl -f http://localhost:3000 > /dev/null; then
-
-            echo "Rollback..."
-
-            ln -sfn $PREVIOUS current
-
-            pm2 reload dashboard
-
-            exit 1
-
-          fi
-
-          echo "Deploy success"
-
-          ls -dt releases/* | tail -n +6 | xargs rm -rf
+  # ---- 2. Deploy: only runs if build passed ----
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH (release-based, health-gated)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /root/.openclaw/workspace/arasya-projects
+            GIT_SYNC=1 ./deploy-local.sh dashboard
