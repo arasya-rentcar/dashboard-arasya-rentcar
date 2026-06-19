@@ -149,24 +149,14 @@ export default function DashboardPage() {
     (d) => d.status === 'AVAILABLE',
   );
 
-  // ── Rental frequency (from final_finance raw fields; no trips yet) ───────
-  const carFreq: Record<string, number> = {};
-  const driverFreq: Record<string, number> = {};
-  for (const o of rows) {
-    if (o.order_status === 'CANCELLED') continue;
-    const car = (
-      o.final_finance?.vehicle_raw ||
-      o.final_finance?.plate_no_raw ||
-      ''
-    ).trim();
-    if (car) carFreq[car] = (carFreq[car] ?? 0) + 1;
-    const drv = (o.final_finance?.driver_vendor_raw || '').trim();
-    if (drv) driverFreq[drv] = (driverFreq[drv] ?? 0) + 1;
-  }
-  const toItems = (m: Record<string, number>): FreqItem[] =>
-    Object.entries(m).map(([label, count]) => ({ label, count }));
-  const carItems = toItems(carFreq);
-  const driverItems = toItems(driverFreq);
+  // ── Rental frequency (from analytics, split internal vs external) ────────
+  const freq = analytics?.frequency;
+  const toFreqItems = (rows?: { label: string; count: number }[]): FreqItem[] =>
+    (rows ?? []).map((r) => ({ label: r.label, count: r.count }));
+  const intCarItems = toFreqItems(freq?.internal.cars);
+  const intDriverItems = toFreqItems(freq?.internal.drivers);
+  const extCarItems = toFreqItems(freq?.external.cars);
+  const extVendorItems = toFreqItems(freq?.external.vendors);
 
   const financial = [
     {
@@ -440,22 +430,50 @@ export default function DashboardPage() {
             mix, car utilization, monthly trend) ───────────────────────── */}
         <AnalyticsSections data={analytics} loading={analyticsLoading} />
 
-        {/* ── Rental frequency charts ────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <FrequencyChart
-            title="Most Rented Cars"
-            subtitle="Times each car was used on an order"
-            items={carItems}
-            loading={finLoading}
-            barClass="bg-blue-600"
-          />
-          <FrequencyChart
-            title="Top Drivers / Vendors"
-            subtitle="Orders handled per driver / vendor"
-            items={driverItems}
-            loading={finLoading}
-            barClass="bg-emerald-600"
-          />
+        {/* ── Rental frequency — Internal fleet ──────────────────────────── */}
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-gray-500">
+            Internal Fleet Frequency
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FrequencyChart
+              title="Top Internal Cars"
+              subtitle="Service lines per internal car"
+              items={intCarItems}
+              loading={analyticsLoading}
+              barClass="bg-blue-600"
+            />
+            <FrequencyChart
+              title="Top Internal Drivers"
+              subtitle="Service lines per internal driver"
+              items={intDriverItems}
+              loading={analyticsLoading}
+              barClass="bg-emerald-600"
+            />
+          </div>
+        </div>
+
+        {/* ── Rental frequency — External partners ───────────────────────── */}
+        <div>
+          <h2 className="mb-3 text-sm font-medium text-gray-500">
+            External Partner Frequency
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FrequencyChart
+              title="Top External Cars"
+              subtitle="Service lines per partner car"
+              items={extCarItems}
+              loading={analyticsLoading}
+              barClass="bg-indigo-600"
+            />
+            <FrequencyChart
+              title="Top External Vendors"
+              subtitle="Service lines per partner vendor"
+              items={extVendorItems}
+              loading={analyticsLoading}
+              barClass="bg-amber-600"
+            />
+          </div>
         </div>
 
         {/* ── Unpaid orders ──────────────────────────────────────────────── */}

@@ -802,6 +802,18 @@ export interface MonthlyTrendRow {
   payout: number;
 }
 
+export interface FreqRow {
+  id: string;
+  label: string;
+  count: number;
+  revenue: number;
+}
+
+export interface FrequencyBreakdown {
+  internal: { cars: FreqRow[]; drivers: FreqRow[] };
+  external: { cars: FreqRow[]; vendors: FreqRow[] };
+}
+
 export interface DashboardAnalytics {
   receivables: {
     dp_pending: number;
@@ -819,6 +831,7 @@ export interface DashboardAnalytics {
   };
   car_utilization: CarUtil[];
   monthly_trend: MonthlyTrendRow[];
+  frequency?: FrequencyBreakdown;
 }
 
 export interface PayablesSummary {
