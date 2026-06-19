@@ -98,14 +98,36 @@ export default function InvoiceSection({
 }: Props) {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
+  const [statementOpen, setStatementOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  async function handleViewStatement() {
+  // Open the picker with every invoice pre-selected (most common case = all).
+  function openStatementPicker() {
+    setSelectedIds(invoices.map((inv) => inv.id));
+    setStatementOpen(true);
+  }
+
+  function toggleInvoice(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  async function handleGenerateStatement() {
+    if (selectedIds.length === 0) {
+      toast.error('Pilih minimal satu invoice');
+      return;
+    }
     setStatementLoading(true);
     try {
-      const res = await ordersApi.getStatement(orderId);
+      // If every invoice is selected, send no ids (legacy = all) to keep it simple.
+      const idsArg =
+        selectedIds.length === invoices.length ? undefined : selectedIds;
+      const res = await ordersApi.getStatement(orderId, idsArg);
       const url = res.data?.data?.statement_url;
       if (url) {
         window.open(url, '_blank', 'noopener,noreferrer');
+        setStatementOpen(false);
       } else {
         toast.error('Statement URL not returned');
       }
@@ -173,11 +195,10 @@ export default function InvoiceSection({
           variant="outline"
           size="sm"
           className="w-full gap-2 text-slate-700 border-slate-300 hover:bg-slate-50"
-          onClick={handleViewStatement}
-          disabled={statementLoading}
+          onClick={openStatementPicker}
         >
           <FileSpreadsheet className="h-4 w-4" />
-          {statementLoading ? 'Membuat Statement…' : 'Statement Gabungan (Invoice + Pembayaran)'}
+          Statement Gabungan (Pilih Invoice)
         </Button>
       )}
 
@@ -340,6 +361,97 @@ export default function InvoiceSection({
           <p className="text-xs text-gray-400">No invoices generated yet</p>
         </div>
       )}
+
+      {/* Statement invoice picker */}
+      <Dialog open={statementOpen} onOpenChange={(open) => !statementLoading && setStatementOpen(open)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <FileSpreadsheet className="h-4 w-4 text-slate-600" />
+              Statement Gabungan
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-gray-500">
+            Pilih invoice yang ingin digabungkan ke dalam statement. Semua
+            terpilih secara default.
+          </p>
+
+          <div className="flex items-center justify-between border-y border-gray-100 py-2">
+            <span className="text-xs font-medium text-gray-500">
+              {selectedIds.length} / {invoices.length} dipilih
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="text-xs text-blue-600 hover:underline"
+                onClick={() => setSelectedIds(invoices.map((i) => i.id))}
+              >
+                Pilih semua
+              </button>
+              <button
+                type="button"
+                className="text-xs text-gray-500 hover:underline"
+                onClick={() => setSelectedIds([])}
+              >
+                Kosongkan
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-[45vh] space-y-2 overflow-y-auto py-1">
+            {invoices.map((inv) => {
+              const checked = selectedIds.includes(inv.id);
+              return (
+                <label
+                  key={inv.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-2.5 transition ${
+                    checked ? 'border-slate-300 bg-slate-50' : 'border-gray-100 bg-white'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleInvoice(inv.id)}
+                    className="h-4 w-4 shrink-0 accent-slate-700"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate font-mono text-xs font-medium text-gray-900" title={inv.invoice_number}>
+                        {shortInvoiceNumber(inv.invoice_number)}
+                      </span>
+                      <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
+                        {TYPE_LABELS[inv.invoice_type]}
+                      </Badge>
+                      <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
+                        {inv.status}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-gray-900">
+                    {formatCurrency(inv.amount)}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
+            <Button variant="outline" size="sm" onClick={() => setStatementOpen(false)} disabled={statementLoading}>
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={handleGenerateStatement}
+              disabled={statementLoading || selectedIds.length === 0}
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              {statementLoading ? 'Membuat…' : 'Buat Statement'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!previewInvoice} onOpenChange={(open) => !open && setPreviewInvoice(null)}>
         <DialogContent className="w-[98vw] max-w-[1500px] h-[96vh] p-0 overflow-hidden flex flex-col gap-0">
