@@ -1,5 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api";
+
+// Invalidate EVERY order-related view in one place. The list page uses
+// ["orders-search", params], the dashboard uses ["orders"], and detail uses
+// ["orders", id]. Missing any of these = stale UI until manual refresh.
+function invalidateOrderViews(queryClient: QueryClient, id?: string) {
+  queryClient.invalidateQueries({ queryKey: ["orders"] });
+  queryClient.invalidateQueries({ queryKey: ["orders-search"] });
+  if (id) queryClient.invalidateQueries({ queryKey: ["orders", id] });
+}
 import {
   OrderListItem,
   Order,
@@ -59,7 +73,7 @@ export function useCreateOrder() {
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      invalidateOrderViews(queryClient);
     },
   });
 }
@@ -78,8 +92,7 @@ export function useAddAdjustment(id: string) {
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders", id] });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      invalidateOrderViews(queryClient, id);
     },
   });
 }
@@ -98,8 +111,7 @@ export function useUpdateOrder() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -112,8 +124,7 @@ export function useUpdateOrderFinance() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -132,8 +143,7 @@ export function useAssignOrder() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -152,8 +162,7 @@ export function useGenerateInvoice() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -174,8 +183,7 @@ export function useReviseInvoice() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -196,8 +204,7 @@ export function useSendInvoiceWhatsapp() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
@@ -218,8 +225,7 @@ export function useMarkInvoicePaid() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      queryClient.invalidateQueries({ queryKey: ["orders", variables.id] });
+      invalidateOrderViews(queryClient, variables.id);
     },
   });
 }
