@@ -40,7 +40,12 @@ export type InvoiceStatus =
   | "CANCELLED";
 export type InvoiceDeliveryStatus = "PENDING" | "SENT" | "FAILED";
 
-export type InvoiceType = "DP" | "SETTLEMENT" | "FULL" | "ADDITIONAL";
+export type InvoiceType =
+  | "DP"
+  | "SETTLEMENT"
+  | "FULL"
+  | "ADDITIONAL"
+  | "COMBINED";
 
 export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "QRIS" | "OTHER";
 
@@ -359,6 +364,9 @@ export interface OrderListItem {
     revision?: number;
     parent_id?: string | null;
     file_url?: string | null;
+    receipt_url?: string | null;
+    issue_date?: string | null;
+    paid_at?: string | null;
     created_at?: string;
     delivery_logs?: InvoiceDeliveryLog[];
   }[];

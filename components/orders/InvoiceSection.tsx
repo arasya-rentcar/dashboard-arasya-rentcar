@@ -33,6 +33,7 @@ const TYPE_LABELS: Record<InvoiceType, string> = {
   SETTLEMENT: 'Settlement',
   FULL: 'Full',
   ADDITIONAL: 'Additional',
+  COMBINED: 'Gabungan',
 };
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
@@ -40,6 +41,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   SETTLEMENT: 'border-amber-200 text-amber-700 bg-amber-50',
   FULL: 'border-emerald-200 text-emerald-700 bg-emerald-50',
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
+  COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -63,6 +65,7 @@ interface Props {
   orderId: string;
   onOpenGenerate: () => void;
   onOpenAdditional?: () => void;
+  onOpenCombined?: () => void;
   onOpenRevise: (invoice: Invoice) => void;
   onSend?: (invoice: Invoice) => void;
   onMarkPaid?: (invoice: Invoice) => void;
@@ -90,6 +93,7 @@ export default function InvoiceSection({
   orderId,
   onOpenGenerate,
   onOpenAdditional,
+  onOpenCombined,
   onOpenRevise,
   onSend,
   onMarkPaid,
@@ -189,6 +193,18 @@ export default function InvoiceSection({
           </Button>
         )}
       </div>
+
+      {onOpenCombined && !hasInvoice && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+          onClick={onOpenCombined}
+        >
+          <Plus className="h-4 w-4" />
+          Invoice Gabungan (Rental + Additional)
+        </Button>
+      )}
 
       {hasInvoice && (
         <Button

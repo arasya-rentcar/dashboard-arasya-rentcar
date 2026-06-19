@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Fragment, Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Plus,
@@ -12,6 +12,8 @@ import {
   RefreshCw,
   Star,
   Trash2,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -41,6 +43,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import CreateOrderForm from '@/components/forms/CreateOrderForm';
+import OrderInvoiceHistory from '@/components/orders/OrderInvoiceHistory';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useOrdersSearch, useCreateOrder } from '@/hooks/useOrders';
 import { ordersApi } from '@/lib/api';
@@ -83,6 +86,16 @@ function OrdersPageInner() {
   const { presets, savePreset, deletePreset } = useFilterPresets();
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpand(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [presetName, setPresetName] = useState('');
 
   const createMutation = useCreateOrder();
@@ -482,6 +495,7 @@ function OrdersPageInner() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <Th className="w-8"></Th>
                 <Th className="w-12">No</Th>
                 <Th>Customer</Th>
                 <Th className="hidden lg:table-cell">Route</Th>
@@ -498,7 +512,7 @@ function OrdersPageInner() {
               {isLoading ? (
                 [...Array(8)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(10)].map((__, j) => (
+                    {[...Array(11)].map((__, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -508,7 +522,7 @@ function OrdersPageInner() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={10}
+                    colSpan={11}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     No orders found.
@@ -516,7 +530,22 @@ function OrdersPageInner() {
                 </TableRow>
               ) : (
                 rows.map((order, idx) => (
-                  <TableRow key={order.id} className="hover:bg-gray-50/50">
+                  <Fragment key={order.id}>
+                  <TableRow className="hover:bg-gray-50/50">
+                    <TableCell className="w-8 pr-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(order.id)}
+                        aria-label={expanded.has(order.id) ? 'Collapse' : 'Expand'}
+                        className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                      >
+                        {expanded.has(order.id) ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                    </TableCell>
                     <TableCell className="text-sm text-gray-400 tabular-nums">
                       {start + idx + 1}
                     </TableCell>
@@ -605,6 +634,14 @@ function OrdersPageInner() {
                       </Button>
                     </TableCell>
                   </TableRow>
+                  {expanded.has(order.id) && (
+                    <TableRow className="bg-gray-50/60 hover:bg-gray-50/60">
+                      <TableCell colSpan={11} className="p-0">
+                        <OrderInvoiceHistory order={order} />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  </Fragment>
                 ))
               )}
             </TableBody>

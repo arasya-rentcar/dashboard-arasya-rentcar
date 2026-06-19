@@ -19,7 +19,7 @@ import { InvoiceType, PaymentMethod } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 const schema = z.object({
-  invoice_type: z.enum(['DP', 'SETTLEMENT', 'FULL', 'ADDITIONAL']),
+  invoice_type: z.enum(['DP', 'SETTLEMENT', 'FULL', 'ADDITIONAL', 'COMBINED']),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'QRIS', 'OTHER']),
   amount: z
     .string()

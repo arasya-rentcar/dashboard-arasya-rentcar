@@ -70,6 +70,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   SETTLEMENT: "border-amber-200 text-amber-700 bg-amber-50",
   FULL: "border-emerald-200 text-emerald-700 bg-emerald-50",
   ADDITIONAL: "border-purple-200 text-purple-700 bg-purple-50",
+  COMBINED: "border-indigo-200 text-indigo-700 bg-indigo-50",
 };
 
 const TYPE_LABELS: Record<InvoiceType, string> = {
@@ -77,6 +78,7 @@ const TYPE_LABELS: Record<InvoiceType, string> = {
   SETTLEMENT: "Settlement",
   FULL: "Full",
   ADDITIONAL: "Additional",
+  COMBINED: "Gabungan",
 };
 
 type InvoiceWithOrder = Invoice & { order: OrderListItem };

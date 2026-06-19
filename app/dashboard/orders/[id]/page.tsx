@@ -31,6 +31,7 @@ import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
 import AdditionalInvoiceForm from "@/components/forms/AdditionalInvoiceForm";
+import CombinedInvoiceForm from "@/components/forms/CombinedInvoiceForm";
 import ScheduleLineDialog from "@/components/schedule/ScheduleLineDialog";
 import type { ScheduleLine, ScheduleStatus, OrderServiceItem } from "@/types";
 import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
@@ -80,6 +81,7 @@ export default function OrderDetailPage({
   const [revisionInvoice, setRevisionInvoice] = useState<Invoice | null>(null);
   const [additionalOpen, setAdditionalOpen] = useState(false);
   const [additionalInvoiceOpen, setAdditionalInvoiceOpen] = useState(false);
+  const [combinedInvoiceOpen, setCombinedInvoiceOpen] = useState(false);
   const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
@@ -175,6 +177,12 @@ export default function OrderDetailPage({
       .reduce((sum, inv) => sum + Number(inv.amount), 0) ?? 0;
   const orderFinalPrice = Number(order?.final_price ?? 0);
   const invoiceDifference = orderFinalPrice - alreadyPaid;
+  // Rental base = sum of service lines (excludes billable additionals, which the
+  // combined invoice adds back explicitly).
+  const rentalBase = (order?.service_items ?? []).reduce(
+    (sum, item) => sum + Number(item.total_price || 0),
+    0,
+  );
   const serviceStart = order?.service_start_at;
   const serviceEnd = order?.service_end_at;
   // Rule B: rental must be fully paid by day 1 of service. Warn if service has
@@ -855,6 +863,7 @@ export default function OrderDetailPage({
                   orderId={order.id}
                   onOpenGenerate={() => setInvoiceOpen(true)}
                   onOpenAdditional={() => setAdditionalInvoiceOpen(true)}
+                  onOpenCombined={() => setCombinedInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}
                   onSend={handleSendInvoice}
                   onMarkPaid={handleMarkInvoicePaid}
@@ -1006,6 +1015,24 @@ export default function OrderDetailPage({
             onSubmit={async (data) => {
               await handleGenerateInvoice(data);
               setAdditionalInvoiceOpen(false);
+            }}
+            isLoading={generateInvoiceMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate Combined (Rental + Additional) Invoice Dialog */}
+      <Dialog open={combinedInvoiceOpen} onOpenChange={setCombinedInvoiceOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invoice Gabungan (Rental + Additional)</DialogTitle>
+          </DialogHeader>
+          <CombinedInvoiceForm
+            rentalBase={rentalBase}
+            adjustments={order.adjustments ?? []}
+            onSubmit={async (data) => {
+              await handleGenerateInvoice(data);
+              setCombinedInvoiceOpen(false);
             }}
             isLoading={generateInvoiceMutation.isPending}
           />

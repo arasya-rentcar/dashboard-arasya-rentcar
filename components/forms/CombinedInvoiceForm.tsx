@@ -1,0 +1,150 @@
+'use client';
+
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { InvoiceType, PaymentMethod, OrderAdjustment } from '@/types';
+import { formatCurrency } from '@/lib/utils';
+
+const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
+  { value: 'CASH', label: 'Cash' },
+  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
+  { value: 'QRIS', label: 'QRIS' },
+  { value: 'OTHER', label: 'Other' },
+];
+
+interface Props {
+  // Rental base = order final price minus billable additionals already folded in.
+  rentalBase: number;
+  adjustments: OrderAdjustment[];
+  onSubmit: (data: {
+    invoice_type: InvoiceType;
+    payment_method: PaymentMethod;
+    amount: number;
+    note?: string;
+  }) => Promise<void>;
+  isLoading: boolean;
+}
+
+export default function CombinedInvoiceForm({
+  rentalBase,
+  adjustments,
+  onSubmit,
+  isLoading,
+}: Props) {
+  const billable = adjustments.filter((a) => a.is_billable);
+  const additionalsTotal = billable.reduce(
+    (sum, a) => sum + Number(a.amount) * (a.quantity || 1),
+    0,
+  );
+  const grandTotal = rentalBase + additionalsTotal;
+
+  const [method, setMethod] = useState<PaymentMethod>('CASH');
+  const [note, setNote] = useState<string>('');
+
+  async function handleSubmit() {
+    await onSubmit({
+      invoice_type: 'COMBINED',
+      payment_method: method,
+      amount: grandTotal,
+      note: note.trim() || undefined,
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-gray-500">
+        A single invoice billing the rental together with every billable
+        additional charge. When paid, its Kwitansi is also combined. Use this
+        instead of issuing separate Rental + Additional invoices.
+      </p>
+
+      {/* Breakdown */}
+      <div className="rounded-lg border border-gray-100 bg-gray-50/70 p-3 space-y-1.5 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-500">Rental</span>
+          <span className="font-medium text-gray-800">{formatCurrency(rentalBase)}</span>
+        </div>
+
+        {billable.length > 0 ? (
+          <div className="space-y-1 border-t border-gray-200 pt-1.5">
+            {billable.map((a) => (
+              <div key={a.id} className="flex justify-between text-xs">
+                <span className="text-gray-500 truncate pr-2">
+                  + {a.description || a.type}
+                  {(a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''}
+                </span>
+                <span className="text-gray-600">
+                  {formatCurrency(Number(a.amount) * (a.quantity || 1))}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="border-t border-gray-200 pt-1.5 text-xs text-gray-400">
+            No billable additional charges logged. This will bill the rental
+            only — you may prefer the normal Rental invoice.
+          </p>
+        )}
+
+        <div className="flex justify-between border-t border-gray-200 pt-1.5">
+          <span className="font-medium text-gray-600">Additional Charges</span>
+          <span className="font-medium text-gray-800">{formatCurrency(additionalsTotal)}</span>
+        </div>
+        <div className="flex justify-between border-t border-gray-300 pt-1.5">
+          <span className="font-semibold text-gray-900">Grand Total</span>
+          <span className="text-base font-bold text-indigo-700">{formatCurrency(grandTotal)}</span>
+        </div>
+      </div>
+
+      {/* Payment method */}
+      <div className="space-y-1.5">
+        <Label>Payment Method</Label>
+        <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select method" />
+          </SelectTrigger>
+          <SelectContent>
+            {METHOD_OPTIONS.map((m) => (
+              <SelectItem key={m.value} value={m.value}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Optional note */}
+      <div className="space-y-1.5">
+        <Label htmlFor="combined_note">Note (optional)</Label>
+        <Input
+          id="combined_note"
+          placeholder="e.g. Termasuk overtime & parkir"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </div>
+
+      <div className="flex justify-end pt-2">
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isLoading || grandTotal <= 0}
+          className="bg-indigo-600 hover:bg-indigo-700"
+        >
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Generate Combined Invoice — {formatCurrency(grandTotal)}
+        </Button>
+      </div>
+    </div>
+  );
+}
