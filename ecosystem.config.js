@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'web-arasya-rentcar',
-      cwd: '/root/.openclaw/workspace/arasya-projects/dashboard-arasya-rentcar',
+      cwd: '/var/www/dashboard-arasya-rentcar/current',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 3000',
       instances: 1,
