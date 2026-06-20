@@ -26,6 +26,8 @@ const schema = z.object({
     .min(1, 'Amount is required')
     .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Must be a positive number'),
   note: z.string().optional(),
+  // Sprint 5: optional back-dated issue date (datetime-local string).
+  issue_date: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -38,6 +40,7 @@ interface Props {
     payment_method: PaymentMethod;
     amount: number;
     note?: string;
+    issue_date?: string;
   }) => Promise<void>;
   isLoading: boolean;
 }
@@ -92,6 +95,7 @@ export default function GenerateInvoiceForm({
       payment_method: 'BANK_TRANSFER',
       amount: '',
       note: '',
+      issue_date: '',
     },
   });
 
@@ -118,6 +122,10 @@ export default function GenerateInvoiceForm({
       payment_method: values.payment_method as PaymentMethod,
       amount: Number(values.amount),
       note: values.note || undefined,
+      // Convert the local datetime to ISO; omit when left blank (API defaults to now).
+      issue_date: values.issue_date
+        ? new Date(values.issue_date).toISOString()
+        : undefined,
     });
   }
 
@@ -221,6 +229,21 @@ export default function GenerateInvoiceForm({
             Additional Charges first so the order total reflects it.
           </p>
         )}
+      </div>
+
+      {/* Issue date (optional back-date) */}
+      <div className="space-y-1.5">
+        <Label htmlFor="invoice_issue_date">Tanggal Invoice (opsional)</Label>
+        <Input
+          id="invoice_issue_date"
+          type="datetime-local"
+          step={60}
+          {...register('issue_date')}
+        />
+        <p className="text-[11px] text-gray-400">
+          Kosongkan untuk sekarang. Isi untuk membuat invoice tanggal lampau
+          (mis. order kemarin). Format 24 jam.
+        </p>
       </div>
 
       {/* Note */}

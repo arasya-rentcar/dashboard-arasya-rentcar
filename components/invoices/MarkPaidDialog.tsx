@@ -172,6 +172,7 @@ export default function MarkPaidDialog({
               <Label>Tanggal Bayar</Label>
               <Input
                 type="datetime-local"
+                step={60}
                 value={paidAt}
                 onChange={(e) => setPaidAt(e.target.value)}
               />

@@ -97,9 +97,16 @@ type InvoiceWithOrder = Invoice & { order: OrderListItem };
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
+  // #14: 24-hour time, pinned to WIB.
   return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    hourCycle: "h23",
+    timeZone: "Asia/Jakarta",
   }).format(new Date(value));
 }
 

@@ -577,6 +577,8 @@ export interface GenerateInvoiceInput {
   payment_method: PaymentMethod;
   amount: number;
   note?: string;
+  // Sprint 5: optional back-dated issue date (ISO). Defaults to now on the API.
+  issue_date?: string;
 }
 
 export interface ReviseInvoiceInput {

@@ -14,14 +14,20 @@ export function formatCurrency(value: string | number): string {
   }).format(num);
 }
 
+// All dates are stored UTC; display them in WIB (Asia/Jakarta) so times are
+// consistent regardless of the viewer's browser timezone.
+const WIB_TZ = 'Asia/Jakarta';
+
 export function formatDate(date: string): string {
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: WIB_TZ,
   }).format(new Date(date));
 }
 
+// #14: 24-hour time, pinned to WIB.
 export function formatDateTime(date: string): string {
   return new Intl.DateTimeFormat('id-ID', {
     day: '2-digit',
@@ -29,6 +35,20 @@ export function formatDateTime(date: string): string {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+    timeZone: WIB_TZ,
+  }).format(new Date(date));
+}
+
+// #14: time-only, 24-hour, WIB (e.g. "08:00").
+export function formatTimeWib(date: string): string {
+  return new Intl.DateTimeFormat('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+    timeZone: WIB_TZ,
   }).format(new Date(date));
 }
 

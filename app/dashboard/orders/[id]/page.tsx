@@ -59,6 +59,7 @@ import {
   Invoice,
   ReviseInvoiceInput,
   OrderStatus,
+  PaymentStatus,
   TripStatus,
 } from "@/types";
 
@@ -68,6 +69,12 @@ const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
   IN_PROGRESS: "bg-amber-50 text-amber-700 border-amber-200",
   DONE: "bg-emerald-50 text-emerald-700 border-emerald-200",
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
+};
+
+const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
+  UNPAID: "bg-red-50 text-red-700 border-red-200",
+  DP_PAID: "bg-amber-50 text-amber-700 border-amber-200",
+  PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
 export default function OrderDetailPage({
@@ -409,7 +416,24 @@ export default function OrderDetailPage({
               </Link>
             </Button>
             <div className="h-4 w-px bg-gray-200" />
-            <span className="font-mono text-xs text-gray-500">{order.id}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-sm font-semibold text-gray-900">
+                {(order as { order_code?: string | null }).order_code ||
+                  order.id.slice(0, 8)}
+              </span>
+              <Badge
+                variant="outline"
+                className={`text-xs ${ORDER_STATUS_STYLES[order.order_status]}`}
+              >
+                {order.order_status}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`text-xs ${PAYMENT_STATUS_STYLES[order.payment_status] ?? ""}`}
+              >
+                {order.payment_status.replace("_", " ")}
+              </Badge>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button

@@ -223,6 +223,7 @@ export default function OrderServiceItemsEditor<
                   <Label>Pickup Time</Label>
                   <Input
                     type="datetime-local"
+                    step={60}
                     {...register(`service_items.${index}.start_at` as never)}
                   />
                 </div>
@@ -230,6 +231,7 @@ export default function OrderServiceItemsEditor<
                   <Label>Dropoff Time</Label>
                   <Input
                     type="datetime-local"
+                    step={60}
                     {...register(`service_items.${index}.end_at` as never)}
                   />
                 </div>
