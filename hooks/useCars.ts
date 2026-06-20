@@ -58,3 +58,17 @@ export function useUpdateCar() {
     },
   });
 }
+
+// Sprint 3: upload a car photo.
+export function useUploadCarPhoto() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, photo }: { id: string; photo: File }) => {
+      const res = await carsApi.uploadPhoto(id, photo);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+    },
+  });
+}

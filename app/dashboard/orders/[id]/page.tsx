@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
+import MarkPaidDialog from "@/components/invoices/MarkPaidDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,6 +84,7 @@ export default function OrderDetailPage({
   const [additionalInvoiceOpen, setAdditionalInvoiceOpen] = useState(false);
   const [combinedInvoiceOpen, setCombinedInvoiceOpen] = useState(false);
   const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
+  const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -121,16 +123,29 @@ export default function OrderDetailPage({
     }
   }
 
-  async function handleMarkInvoicePaid(invoice: Invoice) {
+  // Sprint 3: paying requires a proof file, so open a dialog instead of paying
+  // directly (also prevents accidental "mark paid" clicks).
+  function handleMarkInvoicePaid(invoice: Invoice) {
+    setMarkPaidInvoice(invoice);
+  }
+
+  async function confirmMarkInvoicePaid(payload: {
+    proof: File;
+    payment_method?: string;
+    paid_at?: string;
+    amount_received?: number;
+  }) {
+    if (!markPaidInvoice) return;
     try {
       await markInvoicePaidMutation.mutateAsync({
         id,
-        invoiceId: invoice.id,
-        data: { payment_method: invoice.payment_method },
+        invoiceId: markPaidInvoice.id,
+        data: payload,
       });
       toast.success(
-        `${invoice.invoice_number} marked paid — now a receipt (kwitansi)`,
+        `${markPaidInvoice.invoice_number} marked paid — now a receipt (kwitansi)`,
       );
+      setMarkPaidInvoice(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -1057,6 +1072,17 @@ export default function OrderDetailPage({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Sprint 3: Mark Paid (requires payment proof) */}
+      <MarkPaidDialog
+        invoice={markPaidInvoice}
+        open={!!markPaidInvoice}
+        onOpenChange={(v) => {
+          if (!v) setMarkPaidInvoice(null);
+        }}
+        onConfirm={confirmMarkInvoicePaid}
+        isSubmittingPaid={markInvoicePaidMutation.isPending}
+      />
     </DashboardShell>
   );
 }

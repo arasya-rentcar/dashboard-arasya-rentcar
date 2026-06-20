@@ -59,6 +59,18 @@ const INVOICE_STATUS_STYLES: Record<InvoiceStatus, string> = {
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
 };
 
+// #6: order-level payment bucket styling/labels (Belum Bayar / DP / Lunas).
+const PAYMENT_STATUS_STYLES: Record<string, string> = {
+  UNPAID: "bg-red-50 text-red-700 border-red-200",
+  DP_PAID: "bg-blue-50 text-blue-700 border-blue-200",
+  PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+};
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  UNPAID: "Belum Bayar",
+  DP_PAID: "DP",
+  PAID: "Lunas",
+};
+
 const DELIVERY_STATUS_STYLES = {
   PENDING: "bg-amber-50 text-amber-700 border-amber-200",
   SENT: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -106,6 +118,9 @@ function invoiceCanSend(inv: InvoiceWithOrder) {
 export default function InvoicesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  // #6: order-level payment bucket (Belum Bayar / DP / Lunas) from
+  // order.payment_status (UNPAID / DP_PAID / PAID).
+  const [payFilter, setPayFilter] = useState<string>("ALL");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [recipientByInvoice, setRecipientByInvoice] = useState<
@@ -137,7 +152,9 @@ export default function InvoicesPage() {
       inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
       inv.order.customer_name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "ALL" || inv.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchPay =
+      payFilter === "ALL" || inv.order.payment_status === payFilter;
+    return matchSearch && matchStatus && matchPay;
   });
 
   const PAGE_SIZE = 10;
@@ -221,6 +238,17 @@ export default function InvoicesPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <Select value={payFilter} onValueChange={setPayFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Semua Pembayaran</SelectItem>
+                <SelectItem value="UNPAID">Belum Bayar</SelectItem>
+                <SelectItem value="DP_PAID">DP</SelectItem>
+                <SelectItem value="PAID">Lunas</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-36">
                 <SelectValue />
@@ -447,12 +475,23 @@ function FragmentInvoiceRow({
           {formatCurrency(inv.amount)}
         </TableCell>
         <TableCell>
-          <Badge
-            variant="outline"
-            className={`text-xs ${INVOICE_STATUS_STYLES[inv.status]}`}
-          >
-            {inv.status}
-          </Badge>
+          <div className="flex flex-col items-start gap-1">
+            {/* Order-level payment bucket (the business view). */}
+            <Badge
+              variant="outline"
+              className={`text-xs ${PAYMENT_STATUS_STYLES[inv.order.payment_status] ?? ""}`}
+            >
+              {PAYMENT_STATUS_LABELS[inv.order.payment_status] ??
+                inv.order.payment_status}
+            </Badge>
+            {/* Per-invoice status kept visible so admin sees which doc is settled. */}
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${INVOICE_STATUS_STYLES[inv.status]}`}
+            >
+              {inv.status}
+            </Badge>
+          </div>
         </TableCell>
         <TableCell onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-1">

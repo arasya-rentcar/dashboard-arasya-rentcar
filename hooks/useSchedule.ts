@@ -57,6 +57,53 @@ export function useDriverAvailability(date?: string, type?: string) {
   });
 }
 
+export interface StockUnitBooking {
+  line_id: string;
+  order_id?: string;
+  order_code?: string | null;
+  customer_name?: string;
+  route: string;
+  status: string;
+}
+export interface ScheduleStockResult {
+  date: string;
+  date_wib: string;
+  drivers: {
+    total: number;
+    down: number;
+    used: number;
+    free: number;
+    down_list: { id: string; name: string }[];
+    used_list: { id: string; name: string; phone: string; bookings: StockUnitBooking[] }[];
+    free_list: { id: string; name: string; phone: string }[];
+  };
+  cars: {
+    total: number;
+    down: number;
+    used: number;
+    free: number;
+    down_list: { id: string; model: string; plate_number: string; unit_code: string | null }[];
+    used_list: {
+      id: string;
+      model: string;
+      plate_number: string;
+      unit_code: string | null;
+      bookings: StockUnitBooking[];
+    }[];
+    free_list: { id: string; model: string; plate_number: string; unit_code: string | null }[];
+  };
+}
+
+export function useScheduleStock(date?: string) {
+  return useQuery<ScheduleStockResult>({
+    queryKey: ['schedule-stock', date],
+    queryFn: async () => {
+      const res = await scheduleApi.stock({ date });
+      return res.data.data;
+    },
+  });
+}
+
 export function useAssignScheduleLine() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -68,6 +115,25 @@ export function useAssignScheduleLine() {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['driver-availability'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+  });
+}
+
+export function useSendConfirmation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      force,
+    }: {
+      id: string;
+      force?: boolean;
+    }) => {
+      const res = await scheduleApi.sendConfirmation(id, { force });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
     },
   });
 }

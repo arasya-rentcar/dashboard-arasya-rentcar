@@ -219,9 +219,15 @@ export function useMarkInvoicePaid() {
     }: {
       id: string;
       invoiceId: string;
-      data?: { payment_method?: string; paid_at?: string };
+      // Sprint 3: proof file is required.
+      data: {
+        proof: File;
+        payment_method?: string;
+        paid_at?: string;
+        amount_received?: number;
+      };
     }) => {
-      const res = await ordersApi.markInvoicePaid(id, invoiceId, data ?? {});
+      const res = await ordersApi.markInvoicePaid(id, invoiceId, data);
       return res.data.data;
     },
     onSuccess: (_data, variables) => {

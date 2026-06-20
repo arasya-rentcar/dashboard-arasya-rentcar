@@ -80,6 +80,9 @@ export interface Car {
   status: CarStatus;
   type: FleetType;
   origin_location?: string;
+  // Sprint 3 (UI placeholder; real photos uploaded manually later).
+  photo_url?: string | null;
+  photos?: string[];
 }
 
 export interface TripLog {
@@ -252,6 +255,8 @@ export type ScheduleStatus =
   | "DONE"
   | "CANCELLED";
 
+export type ConfirmationState = 'NOT_SENT' | 'SENT' | 'CHANGED';
+
 export interface ScheduleLine {
   id: string;
   service_date?: string | null;
@@ -270,6 +275,9 @@ export interface ScheduleLine {
   driver_name_raw?: string | null;
   plate_raw?: string | null;
   notes?: string | null;
+  // #A1/#A2 trip-team confirmation badge state.
+  confirmation_state?: ConfirmationState;
+  confirmation_sent_at?: string | null;
   order?: {
     id: string;
     order_code?: string | null;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, CalendarCheck, Users, ExternalLink } from 'lucide-react';
+import { Search, CalendarCheck, Users, ExternalLink, Boxes } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,8 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
+import StockTab from '@/components/schedule/StockTab';
+import ConfirmationCell from '@/components/schedule/ConfirmationCell';
 
 const PAGE_SIZE = 30;
 
@@ -41,11 +43,28 @@ const STATUS_STYLES: Record<ScheduleStatus, string> = {
 };
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  // "today" in Asia/Jakarta (WIB), independent of the browser timezone.
+  const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  return wib.toISOString().slice(0, 10);
+}
+
+function addDaysStr(base: string, days: number) {
+  const d = new Date(`${base}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// Monday-based start of the ISO week containing `base` (string YYYY-MM-DD).
+function weekRange(base: string): { from: string; to: string } {
+  const d = new Date(`${base}T00:00:00Z`);
+  const dow = (d.getUTCDay() + 6) % 7; // 0 = Monday
+  const from = addDaysStr(base, -dow);
+  const to = addDaysStr(from, 6);
+  return { from, to };
 }
 
 export default function SchedulePage() {
-  const [tab, setTab] = useState<'agenda' | 'availability'>('agenda');
+  const [tab, setTab] = useState<'agenda' | 'availability' | 'stock'>('agenda');
 
   return (
     <DashboardShell title="Schedule">
@@ -71,9 +90,25 @@ export default function SchedulePage() {
           >
             <Users className="h-4 w-4" /> Driver Availability
           </button>
+          <button
+            onClick={() => setTab('stock')}
+            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+              tab === 'stock'
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            <Boxes className="h-4 w-4" /> Stock
+          </button>
         </div>
 
-        {tab === 'agenda' ? <AgendaTab /> : <AvailabilityTab />}
+        {tab === 'agenda' ? (
+          <AgendaTab />
+        ) : tab === 'availability' ? (
+          <AvailabilityTab />
+        ) : (
+          <StockTab />
+        )}
       </div>
     </DashboardShell>
   );
@@ -83,8 +118,9 @@ function AgendaTab() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState('ALL');
   const [status, setStatus] = useState('ALL');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  // Default to today (WIB) per Sprint 4 — quick chips switch the range.
+  const [dateFrom, setDateFrom] = useState(todayStr());
+  const [dateTo, setDateTo] = useState(todayStr());
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ScheduleLine | null>(null);
 
@@ -93,7 +129,8 @@ function AgendaTab() {
     type: type === 'ALL' ? undefined : type,
     status: status === 'ALL' ? undefined : status,
     date_from: dateFrom || undefined,
-    date_to: dateTo ? `${dateTo}T23:59:59` : undefined,
+    // Backend normalizes both ends to WIB day-bounds, so the bare date is fine.
+    date_to: dateTo || undefined,
     page,
     page_size: PAGE_SIZE,
   });
@@ -124,6 +161,48 @@ function AgendaTab() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
+          <div className="flex items-end gap-1.5">
+            <DateChip
+              label="Hari ini"
+              active={dateFrom === todayStr() && dateTo === todayStr()}
+              onClick={() => {
+                setDateFrom(todayStr());
+                setDateTo(todayStr());
+              }}
+            />
+            <DateChip
+              label="Besok"
+              active={
+                dateFrom === addDaysStr(todayStr(), 1) &&
+                dateTo === addDaysStr(todayStr(), 1)
+              }
+              onClick={() => {
+                const t = addDaysStr(todayStr(), 1);
+                setDateFrom(t);
+                setDateTo(t);
+              }}
+            />
+            <DateChip
+              label="Minggu ini"
+              active={
+                dateFrom === weekRange(todayStr()).from &&
+                dateTo === weekRange(todayStr()).to
+              }
+              onClick={() => {
+                const w = weekRange(todayStr());
+                setDateFrom(w.from);
+                setDateTo(w.to);
+              }}
+            />
+            <DateChip
+              label="Semua"
+              active={!dateFrom && !dateTo}
+              onClick={() => {
+                setDateFrom('');
+                setDateTo('');
+              }}
+            />
+          </div>
           <div>
             <label className="text-xs text-gray-400 block mb-1">From</label>
             <Input
@@ -190,10 +269,11 @@ function AgendaTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>Tgl Service</TableHead>
               <TableHead>Customer / Order</TableHead>
               <TableHead>Route</TableHead>
               <TableHead>Assigned</TableHead>
+              <TableHead>Konfirmasi</TableHead>
               <TableHead className="text-right">Revenue</TableHead>
               <TableHead className="text-right">Margin</TableHead>
               <TableHead>Status</TableHead>
@@ -203,13 +283,13 @@ function AgendaTab() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-gray-400">
+                <TableCell colSpan={9} className="text-center py-10 text-gray-400">
                   Loading…
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10 text-gray-400">
+                <TableCell colSpan={9} className="text-center py-10 text-gray-400">
                   No schedule lines match these filters.
                 </TableCell>
               </TableRow>
@@ -273,6 +353,9 @@ function AgendaTab() {
                       </div>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <ConfirmationCell line={line} />
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatCurrency(line.total_price)}
                   </TableCell>
@@ -333,6 +416,30 @@ function AgendaTab() {
         onClose={() => setEditing(null)}
       />
     </div>
+  );
+}
+
+function DateChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+        active
+          ? 'bg-gray-900 text-white border-gray-900'
+          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 

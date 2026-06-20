@@ -101,7 +101,23 @@ export default function InvoiceSection({
   payingInvoiceId,
 }: Props) {
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [proofLoadingId, setProofLoadingId] = useState<string | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
+
+  // Sprint 3: fetch a short-lived signed URL for the payment proof and open it.
+  async function handleViewProof(inv: Invoice) {
+    setProofLoadingId(inv.id);
+    try {
+      const res = await ordersApi.getPaymentProof(orderId, inv.id);
+      const url = res.data?.data?.url as string | undefined;
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      else toast.error('Bukti pembayaran tidak ditemukan.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setProofLoadingId(null);
+    }
+  }
   const [statementOpen, setStatementOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -332,6 +348,18 @@ export default function InvoiceSection({
                         <ReceiptText className="h-3.5 w-3.5 mr-1" />
                         Kwitansi
                       </a>
+                    </Button>
+                  )}
+                  {inv.status === 'PAID' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      disabled={proofLoadingId === inv.id}
+                      onClick={() => handleViewProof(inv)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      {proofLoadingId === inv.id ? 'Membuka…' : 'Bukti Bayar'}
                     </Button>
                   )}
                   {active && onSend && (

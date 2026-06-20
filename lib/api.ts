@@ -57,8 +57,29 @@ export const ordersApi = {
     api.post(`/orders/${id}/invoice/${invoiceId}/revise`, data),
   sendInvoiceWhatsapp: (id: string, invoiceId: string, data: object) =>
     api.post(`/orders/${id}/invoice/${invoiceId}/send-whatsapp`, data),
-  markInvoicePaid: (id: string, invoiceId: string, data: object = {}) =>
-    api.post(`/orders/${id}/invoice/${invoiceId}/mark-paid`, data),
+  // Sprint 3: mark-paid is multipart — a payment proof file is REQUIRED.
+  markInvoicePaid: (
+    id: string,
+    invoiceId: string,
+    data: {
+      proof: File;
+      payment_method?: string;
+      paid_at?: string;
+      amount_received?: number;
+    },
+  ) => {
+    const fd = new FormData();
+    fd.append("proof", data.proof);
+    if (data.payment_method) fd.append("payment_method", data.payment_method);
+    if (data.paid_at) fd.append("paid_at", data.paid_at);
+    if (data.amount_received != null)
+      fd.append("amount_received", String(data.amount_received));
+    return api.post(`/orders/${id}/invoice/${invoiceId}/mark-paid`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  getPaymentProof: (id: string, invoiceId: string) =>
+    api.get(`/orders/${id}/invoice/${invoiceId}/payment-proof`),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
   getStatement: (id: string, invoiceIds?: string[]) =>
     invoiceIds && invoiceIds.length > 0
@@ -119,8 +140,13 @@ export const scheduleApi = {
     api.get("/schedule", { params }),
   driverAvailability: (params: { date?: string; type?: string } = {}) =>
     api.get("/schedule/driver-availability", { params }),
+  stock: (params: { date?: string } = {}) =>
+    api.get("/schedule/stock", { params }),
   assignLine: (id: string, data: object) =>
     api.put(`/schedule/lines/${id}`, data),
+  // #A1/#A2 trip-team confirmation (customer + driver). force=re-send.
+  sendConfirmation: (id: string, data: { include_driver?: boolean; force?: boolean } = {}) =>
+    api.post(`/schedule/lines/${id}/send-confirmation`, data),
 };
 
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
@@ -163,6 +189,14 @@ export const carsApi = {
   getById: (id: string) => api.get(`/cars/${id}`),
   create: (data: object) => api.post("/cars", data),
   update: (id: string, data: object) => api.put(`/cars/${id}`, data),
+  // Sprint 3: upload a car photo (multipart, field "photo").
+  uploadPhoto: (id: string, photo: File) => {
+    const fd = new FormData();
+    fd.append("photo", photo);
+    return api.post(`/cars/${id}/photo`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 // ─── Trips ────────────────────────────────────────────────────────────────────

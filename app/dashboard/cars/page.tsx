@@ -8,6 +8,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import DashboardShell from "@/components/layout/DashboardShell";
+import CarPhotoCell from "@/components/cars/CarPhotoCell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -183,6 +184,9 @@ export default function CarsPage() {
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
                   No
                 </TableHead>
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-16">
+                  Foto
+                </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   Unit Code
                 </TableHead>
@@ -210,7 +214,7 @@ export default function CarsPage() {
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(8)].map((_, j) => (
+                    {[...Array(9)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -220,7 +224,7 @@ export default function CarsPage() {
               ) : filtered?.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     No cars found.
@@ -231,6 +235,10 @@ export default function CarsPage() {
                   <TableRow key={car.id} className="hover:bg-gray-50/50">
                     <TableCell className="text-sm text-gray-400 tabular-nums">
                       {start + idx + 1}
+                    </TableCell>
+                    <TableCell>
+                      {/* Sprint 3: click thumbnail to upload/replace photo. */}
+                      <CarPhotoCell car={car} />
                     </TableCell>
                     <TableCell className="font-mono text-sm font-semibold text-gray-900">
                       {car.unit_code || "—"}
