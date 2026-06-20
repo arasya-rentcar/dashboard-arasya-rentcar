@@ -978,3 +978,85 @@ export interface RevenueReport {
     };
   };
 }
+
+// ── Dashboard v2 — single-page owner/finance view ────────────────────────────
+export interface DashV2Accrual {
+  revenue: number;
+  ops_cost: number;
+  driver_cost: number;
+  vendor_cost: number;
+  margin: number;
+  margin_pct: number | null;
+  trips: number;
+}
+export interface DashV2Cash {
+  collected: number;
+  paid_out: number;
+  net_cash: number;
+}
+export interface DashV2InternalChannel {
+  revenue: number;
+  ops_cost: number;
+  driver_cost: number;
+  margin: number;
+  margin_pct: number | null;
+  trips: number;
+}
+export interface DashV2VendorChannel {
+  billed: number;
+  vendor_cost: number;
+  margin: number;
+  margin_pct: number | null;
+  trips: number;
+}
+export interface DashV2OverdueAR {
+  id: string;
+  order_code: string | null;
+  customer: string;
+  amount: number;
+  service_date: string | null;
+  days_overdue: number;
+}
+export interface DashV2OverdueAP {
+  id: string;
+  kind: 'DRIVER' | 'VENDOR';
+  counterparty: string;
+  amount: number;
+  service_date: string | null;
+  days_overdue: number;
+  order_id: string | null;
+  order_code: string | null;
+}
+export interface DashV2Outstanding {
+  ar_outstanding: number;
+  ap_outstanding: number;
+  ar_overdue_count: number;
+  ap_overdue_count: number;
+  ar_overdue_top: DashV2OverdueAR[];
+  ap_overdue_top: DashV2OverdueAP[];
+}
+export interface DashV2TrendPoint {
+  month: string;          // YYYY-MM (WIB calendar month)
+  revenue: number;
+  margin: number;
+  margin_pct: number | null;
+}
+export interface DashboardV2 {
+  range: {
+    date_from: string;
+    date_to: string;
+    prior_from: string;
+    prior_to: string;
+  };
+  accrual: DashV2Accrual & {
+    delta: { revenue: number | null; margin: number | null; ops_cost: number | null };
+    prior: DashV2Accrual;
+  };
+  cash: DashV2Cash & {
+    delta: { net_cash: number | null };
+    prior: DashV2Cash;
+  };
+  channel: { internal: DashV2InternalChannel; vendor: DashV2VendorChannel };
+  outstanding: DashV2Outstanding;
+  trend: DashV2TrendPoint[];
+}

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { analyticsApi } from "@/lib/api";
-import { DashboardAnalytics, RevenueReport } from "@/types";
+import { DashboardAnalytics, RevenueReport, DashboardV2 } from "@/types";
 
 export function useDashboardAnalytics(
   params: { date_from?: string; date_to?: string } = {},
@@ -11,6 +11,21 @@ export function useDashboardAnalytics(
       const res = await analyticsApi.dashboard(params);
       return res.data.data;
     },
+  });
+}
+
+// Dashboard v2 — single-page owner/finance overview (margin-leading,
+// accrual + cash separation, current outstanding + overdue, 6-month trend).
+export function useDashboardV2(
+  params: { date_from?: string; date_to?: string } = {},
+) {
+  return useQuery<DashboardV2>({
+    queryKey: ["dashboard-v2", params],
+    queryFn: async () => {
+      const res = await analyticsApi.dashboardV2(params);
+      return res.data.data;
+    },
+    placeholderData: (prev) => prev,
   });
 }
 
