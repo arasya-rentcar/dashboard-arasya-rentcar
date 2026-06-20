@@ -108,6 +108,39 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "customerPicker": {
+    "noPhone": "Tanpa no. HP",
+    "orderCount": "{count} order",
+    "change": "Ganti",
+    "searchPlaceholder": "Cari customer lama (nama / no. HP)…",
+    "searching": "Mencari…",
+    "noMatch": "Tidak ada yang cocok. Isi PIC baru di bawah — otomatis dibuat."
+  },
+  "vendorPicker": {
+    "title": "Pelaksana Order",
+    "hint": "Internal = armada sendiri. Vendor = mitra + unitnya. Freelance = eksternal tanpa vendor.",
+    "selectVendor": "Pilih vendor…",
+    "selectUnit": "Pilih unit…",
+    "vendorNoUnit": "Vendor belum punya unit",
+    "selectVendorFirst": "Pilih vendor dulu",
+    "freelanceNote": "Order eksternal tanpa vendor (freelance). Detail mobil/biaya dicatat via finance/payable nanti."
+  },
+  "refund": {
+    "title": "Tandai Sudah Refund",
+    "due": "Refund yang harus dibayar",
+    "dueHint": "Kelebihan pembayaran customer di atas total order.",
+    "intro": "Bukti refund wajib diupload (transfer balik / tanda terima). Semua arus kas harus tercatat.",
+    "proofLabel": "Bukti Refund",
+    "amount": "Jumlah Refund",
+    "amountHint": "Kosongkan untuk pakai nilai default ({amount}).",
+    "noteLabel": "Catatan (opsional)",
+    "notePlaceholder": "mis. Transfer balik via BCA a.n. ...",
+    "fileTypeError": "File harus JPEG, PNG, WebP, atau PDF.",
+    "fileSizeError": "Ukuran file maksimal 10MB.",
+    "proofRequired": "Bukti refund wajib diupload.",
+    "processing": "Memproses…",
+    "submitBtn": "Tandai Sudah Refund"
+  },
   "confirmation": {
     "notSent": "Belum dikirim",
     "sent": "Terkirim",

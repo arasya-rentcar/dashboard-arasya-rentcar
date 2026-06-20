@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,8 @@ export default function RefundDialog({
   onConfirm: (payload: RefundPayload) => Promise<void> | void;
   isSubmitting?: boolean;
 }) {
+  const t = useTranslations("refund");
+  const tc = useTranslations("common");
   const [proof, setProof] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>("");
@@ -56,11 +59,11 @@ export default function RefundDialog({
       return;
     }
     if (!ACCEPT.split(",").includes(f.type)) {
-      setFileError("File harus JPEG, PNG, WebP, atau PDF.");
+      setFileError(t("fileTypeError"));
       return;
     }
     if (f.size > MAX_BYTES) {
-      setFileError("Ukuran file maksimal 10MB.");
+      setFileError(t("fileSizeError"));
       return;
     }
     setProof(f);
@@ -68,7 +71,7 @@ export default function RefundDialog({
 
   async function submit() {
     if (!proof) {
-      setFileError("Bukti refund wajib diupload.");
+      setFileError(t("proofRequired"));
       return;
     }
     await onConfirm({
@@ -89,30 +92,29 @@ export default function RefundDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Tandai Sudah Refund</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="rounded-lg bg-red-50 border border-red-100 p-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-red-700">Refund yang harus dibayar</span>
+              <span className="text-red-700">{t("due")}</span>
               <span className="font-semibold text-red-700">
                 {formatCurrency(refundDue)}
               </span>
             </div>
             <p className="text-[11px] text-red-500/80 mt-1">
-              Kelebihan pembayaran customer di atas total order.
+              {t("dueHint")}
             </p>
           </div>
 
           <p className="text-sm text-gray-500">
-            Bukti refund wajib diupload (transfer balik / tanda terima). Semua
-            arus kas harus tercatat.
+            {t("intro")}
           </p>
 
           <div className="space-y-1.5">
             <Label>
-              Bukti Refund <span className="text-red-600">*</span>
+              {t("proofLabel")} <span className="text-red-600">*</span>
             </Label>
             <Input
               type="file"
@@ -128,7 +130,7 @@ export default function RefundDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Jumlah Refund</Label>
+            <Label>{t("amount")}</Label>
             <Input
               type="number"
               inputMode="numeric"
@@ -137,14 +139,14 @@ export default function RefundDialog({
               onChange={(e) => setAmount(e.target.value)}
             />
             <p className="text-[11px] text-gray-400">
-              Kosongkan untuk pakai nilai default ({formatCurrency(refundDue)}).
+              {t("amountHint", { amount: formatCurrency(refundDue) })}
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Catatan (opsional)</Label>
+            <Label>{t("noteLabel")}</Label>
             <Input
-              placeholder="mis. Transfer balik via BCA a.n. ..."
+              placeholder={t("notePlaceholder")}
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -157,10 +159,10 @@ export default function RefundDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Batal
+            {tc("cancel")}
           </Button>
           <Button onClick={submit} disabled={!proof || isSubmitting}>
-            {isSubmitting ? "Memproses…" : "Tandai Sudah Refund"}
+            {isSubmitting ? t("processing") : t("submitBtn")}
           </Button>
         </DialogFooter>
       </DialogContent>

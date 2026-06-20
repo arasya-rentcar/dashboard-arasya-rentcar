@@ -108,6 +108,39 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "customerPicker": {
+    "noPhone": "No phone",
+    "orderCount": "{count, plural, one {# order} other {# orders}}",
+    "change": "Change",
+    "searchPlaceholder": "Search existing customer (name / phone)…",
+    "searching": "Searching…",
+    "noMatch": "No match. Fill in a new PIC below — created automatically."
+  },
+  "vendorPicker": {
+    "title": "Order Fulfilled By",
+    "hint": "Internal = own fleet. Vendor = partner + its unit. Freelance = external without a vendor.",
+    "selectVendor": "Select vendor…",
+    "selectUnit": "Select unit…",
+    "vendorNoUnit": "Vendor has no unit yet",
+    "selectVendorFirst": "Select a vendor first",
+    "freelanceNote": "External order without a vendor (freelance). Car/cost details are recorded via finance/payable later."
+  },
+  "refund": {
+    "title": "Mark as Refunded",
+    "due": "Refund to be paid",
+    "dueHint": "Customer overpayment above the order total.",
+    "intro": "Refund proof is required (return transfer / receipt). Every cash movement must be recorded.",
+    "proofLabel": "Refund Proof",
+    "amount": "Refund Amount",
+    "amountHint": "Leave empty to use the default value ({amount}).",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "e.g. Return transfer via BCA a/n ...",
+    "fileTypeError": "File must be JPEG, PNG, WebP, or PDF.",
+    "fileSizeError": "File must be at most 10MB.",
+    "proofRequired": "Refund proof is required.",
+    "processing": "Processing…",
+    "submitBtn": "Mark as Refunded"
+  },
   "confirmation": {
     "notSent": "Not sent",
     "sent": "Sent",

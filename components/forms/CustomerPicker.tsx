@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Search, UserPlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -18,6 +19,7 @@ export default function CustomerPicker({
   onSelect: (c: Customer) => void;
   onClear: () => void;
 }) {
+  const t = useTranslations("customerPicker");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const { data, isLoading } = useCustomers({
@@ -39,8 +41,8 @@ export default function CustomerPicker({
             </p>
           </div>
           <p className="ml-6 truncate text-xs text-gray-500">
-            {selected.phone || "No phone"} · {selected.total_orders} order
-            {selected.total_orders === 1 ? "" : "s"}
+            {selected.phone || t("noPhone")} ·{" "}
+            {t("orderCount", { count: selected.total_orders })}
           </p>
         </div>
         <button
@@ -48,7 +50,7 @@ export default function CustomerPicker({
           onClick={onClear}
           className="ml-3 flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-white hover:text-gray-900"
         >
-          <X className="h-3.5 w-3.5" /> Ganti
+          <X className="h-3.5 w-3.5" /> {t("change")}
         </button>
       </div>
     );
@@ -59,7 +61,7 @@ export default function CustomerPicker({
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
-          placeholder="Cari customer lama (nama / no. HP)…"
+          placeholder={t("searchPlaceholder")}
           className="pl-9"
           value={search}
           onChange={(e) => {
@@ -72,11 +74,11 @@ export default function CustomerPicker({
       {open && (
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           {isLoading ? (
-            <p className="px-3 py-3 text-xs text-gray-400">Mencari…</p>
+            <p className="px-3 py-3 text-xs text-gray-400">{t("searching")}</p>
           ) : results.length === 0 ? (
             <div className="flex items-center gap-2 px-3 py-3 text-xs text-gray-500">
               <UserPlus className="h-4 w-4" />
-              Tidak ada yang cocok. Isi PIC baru di bawah — otomatis dibuat.
+              {t("noMatch")}
             </div>
           ) : (
             <ul className="max-h-56 overflow-y-auto py-1">
@@ -96,7 +98,7 @@ export default function CustomerPicker({
                         {c.name}
                       </p>
                       <p className="truncate text-xs text-gray-500">
-                        {c.phone || "No phone"}
+                        {c.phone || t("noPhone")}
                       </p>
                     </div>
                     <span className="ml-2 shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">

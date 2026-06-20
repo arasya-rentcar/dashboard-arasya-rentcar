@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Building2, Car } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useExternalVendors, useExternalVendor } from "@/hooks/useExternalVendors";
@@ -22,6 +23,8 @@ export default function VendorUnitPicker({
   value: VendorUnitValue;
   onChange: (v: VendorUnitValue) => void;
 }) {
+  const tv = useTranslations("vendorPicker");
+  const tt = useTranslations("terms");
   const [mode, setMode] = useState<"INTERNAL" | "VENDOR" | "FREELANCE">(
     value.is_external
       ? value.external_vendor_id
@@ -52,18 +55,17 @@ export default function VendorUnitPicker({
   }
 
   const tabs: { key: typeof mode; label: string }[] = [
-    { key: "INTERNAL", label: "Internal" },
-    { key: "VENDOR", label: "Vendor" },
-    { key: "FREELANCE", label: "Freelance" },
+    { key: "INTERNAL", label: tt("internal") },
+    { key: "VENDOR", label: tt("vendor") },
+    { key: "FREELANCE", label: tt("freelance") },
   ];
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
       <div className="mb-3">
-        <h3 className="text-sm font-semibold text-gray-950">Pelaksana Order</h3>
+        <h3 className="text-sm font-semibold text-gray-950">{tv("title")}</h3>
         <p className="mt-1 text-xs text-gray-500">
-          Internal = armada sendiri. Vendor = mitra + unitnya. Freelance =
-          eksternal tanpa vendor.
+          {tv("hint")}
         </p>
       </div>
 
@@ -88,7 +90,7 @@ export default function VendorUnitPicker({
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5" /> Vendor
+              <Building2 className="h-3.5 w-3.5" /> {tt("vendor")}
             </Label>
             <select
               className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -101,7 +103,7 @@ export default function VendorUnitPicker({
                 })
               }
             >
-              <option value="">Pilih vendor…</option>
+              <option value="">{tv("selectVendor")}</option>
               {vendors.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.name}
@@ -111,7 +113,7 @@ export default function VendorUnitPicker({
           </div>
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5">
-              <Car className="h-3.5 w-3.5" /> Unit
+              <Car className="h-3.5 w-3.5" /> {tt("unit")}
             </Label>
             <select
               className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50"
@@ -128,9 +130,9 @@ export default function VendorUnitPicker({
               <option value="">
                 {value.external_vendor_id
                   ? cars.length
-                    ? "Pilih unit…"
-                    : "Vendor belum punya unit"
-                  : "Pilih vendor dulu"}
+                    ? tv("selectUnit")
+                    : tv("vendorNoUnit")
+                  : tv("selectVendorFirst")}
               </option>
               {cars.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -145,8 +147,7 @@ export default function VendorUnitPicker({
 
       {mode === "FREELANCE" && (
         <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-          Order eksternal tanpa vendor (freelance). Detail mobil/biaya dicatat
-          via finance/payable nanti.
+          {tv("freelanceNote")}
         </p>
       )}
     </section>
