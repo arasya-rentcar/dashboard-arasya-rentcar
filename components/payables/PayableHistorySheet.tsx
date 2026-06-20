@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Check, ExternalLink } from "lucide-react";
 import {
   Sheet,
@@ -34,13 +35,14 @@ function SummaryCards({
   summary: PayableHistorySummary;
   kind: "DRIVER" | "VENDOR";
 }) {
+  const t = useTranslations("payables");
   const earned =
     kind === "DRIVER" ? summary.total_earned : summary.total_billed;
   return (
     <div className="grid grid-cols-3 gap-2">
       <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
         <p className="text-[10px] font-medium uppercase text-gray-500">
-          {kind === "DRIVER" ? "Total Fee" : "Total Tagihan"}
+          {kind === "DRIVER" ? t('totalFee') : t('totalBilled')}
         </p>
         <p className="mt-0.5 text-sm font-bold text-gray-900">
           {formatCurrency(earned ?? 0)}
@@ -48,7 +50,7 @@ function SummaryCards({
       </div>
       <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
         <p className="text-[10px] font-medium uppercase text-emerald-600">
-          Dibayar
+          {t('paidCard')}
         </p>
         <p className="mt-0.5 text-sm font-bold text-emerald-800">
           {formatCurrency(summary.total_paid)}
@@ -56,7 +58,7 @@ function SummaryCards({
       </div>
       <div className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2">
         <p className="text-[10px] font-medium uppercase text-amber-600">
-          Outstanding
+          {t('outstandingCard')}
         </p>
         <p className="mt-0.5 text-sm font-bold text-amber-800">
           {formatCurrency(summary.outstanding)}
@@ -73,6 +75,8 @@ export default function PayableHistorySheet({
   open,
   onOpenChange,
 }: Props) {
+  const t = useTranslations("payables");
+  const tt = useTranslations("terms");
   const driverQ = useDriverPayableHistory(
     kind === "DRIVER" && open ? id : undefined,
   );
@@ -89,10 +93,9 @@ export default function PayableHistorySheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
         <SheetHeader>
-          <SheetTitle>Riwayat Tagihan — {name || "—"}</SheetTitle>
+          <SheetTitle>{t('historyTitle', { name: name || "—" })}</SheetTitle>
           <SheetDescription>
-            Histori jumlah terutang & pembayaran untuk{" "}
-            {kind === "DRIVER" ? "driver" : "vendor"} ini.
+            {t('historyDesc', { role: kind === "DRIVER" ? tt('driver') : tt('vendor') })}
           </SheetDescription>
         </SheetHeader>
 
@@ -102,10 +105,10 @@ export default function PayableHistorySheet({
           )}
 
           {isLoading ? (
-            <p className="py-8 text-center text-sm text-gray-400">Loading...</p>
+            <p className="py-8 text-center text-sm text-gray-400">{t('loading')}</p>
           ) : items.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-400">
-              Belum ada tagihan.
+              {t('noHistory')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -143,8 +146,7 @@ export default function PayableHistorySheet({
                         </p>
                         {Number(p.extras_amount) !== 0 && (
                           <p className="mt-0.5 text-xs text-gray-400">
-                            Base {formatCurrency(p.base_amount)} · Lainnya{" "}
-                            {formatCurrency(p.extras_amount)}
+                            {t('baseOthers', { base: formatCurrency(p.base_amount), others: formatCurrency(p.extras_amount) })}
                           </p>
                         )}
                       </div>
@@ -154,7 +156,7 @@ export default function PayableHistorySheet({
                         </p>
                         {isPaid ? (
                           <Badge className="mt-1 border-emerald-200 bg-emerald-50 text-emerald-700">
-                            LUNAS
+                            {t('paid')}
                             {p.paid_at ? ` · ${formatDate(p.paid_at)}` : ""}
                           </Badge>
                         ) : (
@@ -166,7 +168,7 @@ export default function PayableHistorySheet({
                               markPaid.mutate({ id: p.id, data: {} })
                             }
                           >
-                            <Check className="h-3 w-3" /> Bayar
+                            <Check className="h-3 w-3" /> {t('pay')}
                           </Button>
                         )}
                       </div>

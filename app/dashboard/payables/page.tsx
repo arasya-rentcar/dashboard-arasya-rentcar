@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Search, Users, Handshake, CheckCheck } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { PayableKind } from "@/types";
 const PAGE_SIZE = 30;
 
 export default function PayablesPage() {
+  const t = useTranslations("payables");
   const [tab, setTab] = useState<PayableKind>("DRIVER");
   const [status, setStatus] = useState<string>("");
   const [search, setSearch] = useState("");
@@ -75,7 +77,7 @@ export default function PayablesPage() {
   }
 
   return (
-    <DashboardShell title="Tagihan (Debts)">
+    <DashboardShell title={t('pageTitle')}>
       <div className="space-y-4">
         {/* Tabs */}
         <div className="flex gap-2">
@@ -87,7 +89,7 @@ export default function PayablesPage() {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            <Users className="h-4 w-4" /> Tagihan Driver
+            <Users className="h-4 w-4" /> {t('driverPayables')}
           </button>
           <button
             onClick={() => switchTab("VENDOR")}
@@ -97,7 +99,7 @@ export default function PayablesPage() {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            <Handshake className="h-4 w-4" /> Tagihan Vendor
+            <Handshake className="h-4 w-4" /> {t('vendorPayables')}
           </button>
         </div>
 
@@ -105,7 +107,7 @@ export default function PayablesPage() {
         <div className="grid grid-cols-2 gap-3 sm:max-w-md">
           <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
             <p className="text-xs font-medium text-amber-700">
-              Outstanding (Belum Dibayar)
+              {t('outstandingLabel')}
             </p>
             <p className="mt-1 text-xl font-bold text-amber-900">
               {formatCurrency(totals.outstanding)}
@@ -113,7 +115,7 @@ export default function PayablesPage() {
           </div>
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
             <p className="text-xs font-medium text-emerald-700">
-              Sudah Dibayar (filtered)
+              {t('paidFiltered')}
             </p>
             <p className="mt-1 text-xl font-bold text-emerald-900">
               {formatCurrency(totals.paid)}
@@ -126,7 +128,7 @@ export default function PayablesPage() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Search name, order code, keterangan..."
+              placeholder={t('searchPlaceholder')}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -143,12 +145,12 @@ export default function PayablesPage() {
             }}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={t('colStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All status</SelectItem>
-              <SelectItem value="UNPAID">Belum dibayar</SelectItem>
-              <SelectItem value="PAID">Lunas</SelectItem>
+              <SelectItem value="ALL">{t('allStatus')}</SelectItem>
+              <SelectItem value="UNPAID">{t('statusUnpaid')}</SelectItem>
+              <SelectItem value="PAID">{t('statusPaid')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -157,7 +159,7 @@ export default function PayablesPage() {
         {selected.size > 0 && (
           <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5">
             <span className="text-sm font-medium text-emerald-800">
-              {selected.size} dipilih · {formatCurrency(selectedTotal)}
+              {t('selectedSummary', { count: selected.size, amount: formatCurrency(selectedTotal) })}
             </span>
             <Button
               size="sm"
@@ -166,7 +168,7 @@ export default function PayablesPage() {
               onClick={paySelected}
             >
               <CheckCheck className="h-4 w-4" />
-              {bulk.isPending ? "Memproses..." : "Bayar Terpilih"}
+              {bulk.isPending ? t('processing') : t('paySelected')}
             </Button>
           </div>
         )}
@@ -189,7 +191,7 @@ export default function PayablesPage() {
             start={(data.pagination.page - 1) * PAGE_SIZE}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
-            label="tagihan"
+            label={t('paginationLabel')}
           />
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Pencil, Check, RotateCcw, ExternalLink } from "lucide-react";
 import {
   Table,
@@ -38,6 +39,8 @@ export default function PayablesTable({
   onToggle,
   onToggleAll,
 }: Props) {
+  const t = useTranslations("payables");
+  const tt = useTranslations("terms");
   const markPaid = useMarkPayablePaid();
   const markUnpaid = useMarkPayableUnpaid();
   const [editing, setEditing] = useState<Payable | null>(null);
@@ -60,28 +63,28 @@ export default function PayablesTable({
                   aria-label="select all"
                 />
               </TableHead>
-              <TableHead>Tanggal</TableHead>
-              <TableHead>{kind === "DRIVER" ? "Driver" : "Vendor"}</TableHead>
-              <TableHead>Order</TableHead>
-              <TableHead>Trip</TableHead>
-              <TableHead className="text-right">Base</TableHead>
-              <TableHead className="text-right">Lainnya</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('colDate')}</TableHead>
+              <TableHead>{kind === "DRIVER" ? tt('driver') : tt('vendor')}</TableHead>
+              <TableHead>{t('colOrder')}</TableHead>
+              <TableHead>{t('colTrip')}</TableHead>
+              <TableHead className="text-right">{t('colBase')}</TableHead>
+              <TableHead className="text-right">{t('colOthers')}</TableHead>
+              <TableHead className="text-right">{t('colTotal')}</TableHead>
+              <TableHead>{t('colStatus')}</TableHead>
+              <TableHead className="text-right">{t('colActions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
                 <TableCell colSpan={10} className="py-8 text-center text-gray-400">
-                  Loading...
+                  {t('loading')}
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="py-8 text-center text-gray-400">
-                  No tagihan found.
+                  {t('noPayables')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -141,12 +144,12 @@ export default function PayablesTable({
                     <TableCell>
                       {isPaid ? (
                         <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">
-                          LUNAS
+                          {t('paid')}
                           {p.paid_at ? ` · ${formatDate(p.paid_at)}` : ""}
                         </Badge>
                       ) : (
                         <Badge className="border-amber-200 bg-amber-50 text-amber-700">
-                          BELUM
+                          {t('unpaid')}
                         </Badge>
                       )}
                     </TableCell>
@@ -165,7 +168,7 @@ export default function PayablesTable({
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8 text-gray-400 hover:text-amber-600"
-                            title="Mark unpaid"
+                            title={t('markUnpaid')}
                             disabled={markUnpaid.isPending}
                             onClick={() => markUnpaid.mutate(p.id)}
                           >
@@ -180,7 +183,7 @@ export default function PayablesTable({
                               markPaid.mutate({ id: p.id, data: {} })
                             }
                           >
-                            <Check className="h-3 w-3" /> Bayar
+                            <Check className="h-3 w-3" /> {t('pay')}
                           </Button>
                         )}
                       </div>

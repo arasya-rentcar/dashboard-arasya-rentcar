@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -33,6 +34,9 @@ export default function PayableEditDialog({
   open,
   onOpenChange,
 }: Props) {
+  const t = useTranslations("payables");
+  const tt = useTranslations("terms");
+  const tc = useTranslations("common");
   const update = useUpdatePayable();
   const [base, setBase] = useState("0");
   const [keterangan, setKeterangan] = useState("");
@@ -93,7 +97,7 @@ export default function PayableEditDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            Edit Tagihan {payable?.kind === "DRIVER" ? "Driver" : "Vendor"}
+            {t('editTitle', { kind: payable?.kind === "DRIVER" ? tt('driver') : tt('vendor') })}
           </DialogTitle>
         </DialogHeader>
 
@@ -112,14 +116,13 @@ export default function PayableEditDialog({
 
             {isPaid && (
               <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                This payable is already PAID. Editing amounts will not change its
-                paid status.
+                {t('alreadyPaidNote')}
               </p>
             )}
 
             <div className="space-y-1.5">
               <Label>
-                {payable.kind === "DRIVER" ? "FEE (base)" : "HARGA (base)"}
+                {payable.kind === "DRIVER" ? t('feeBase') : t('priceBase')}
               </Label>
               <Input
                 type="number"
@@ -130,7 +133,7 @@ export default function PayableEditDialog({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>LAINNYA (extras)</Label>
+                <Label>{t('extrasLabel')}</Label>
                 <Button
                   type="button"
                   size="sm"
@@ -138,18 +141,18 @@ export default function PayableEditDialog({
                   onClick={addExtra}
                   className="h-7 gap-1 text-xs"
                 >
-                  <Plus className="h-3 w-3" /> Add
+                  <Plus className="h-3 w-3" /> {t('addExtra')}
                 </Button>
               </div>
               {extras.length === 0 && (
                 <p className="text-xs text-gray-400">
-                  No extras. Use negative amounts for deductions (e.g. bekel).
+                  {t('noExtras')}
                 </p>
               )}
               {extras.map((e, i) => (
                 <div key={i} className="flex gap-2">
                   <Input
-                    placeholder="Label (overtime, makan, inap...)"
+                    placeholder={t('extraLabelPlaceholder')}
                     value={e.label}
                     onChange={(ev) => setExtra(i, { label: ev.target.value })}
                     className="flex-1"
@@ -175,17 +178,17 @@ export default function PayableEditDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Keterangan</Label>
+              <Label>{t('noteLabel')}</Label>
               <Textarea
                 rows={2}
                 value={keterangan}
                 onChange={(e) => setKeterangan(e.target.value)}
-                placeholder="Catatan tambahan..."
+                placeholder={t('notePlaceholder')}
               />
             </div>
 
             <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-3 text-white">
-              <span className="text-sm font-medium">TOTAL</span>
+              <span className="text-sm font-medium">{t('totalCaps')}</span>
               <span className="text-lg font-bold">{formatCurrency(total)}</span>
             </div>
 
@@ -195,10 +198,10 @@ export default function PayableEditDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {tc('cancel')}
           </Button>
           <Button onClick={handleSave} disabled={update.isPending}>
-            {update.isPending ? "Saving..." : "Save"}
+            {update.isPending ? t('savingBtn') : t('saveBtn')}
           </Button>
         </DialogFooter>
       </DialogContent>
