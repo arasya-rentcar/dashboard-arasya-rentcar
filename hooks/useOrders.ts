@@ -235,3 +235,23 @@ export function useMarkInvoicePaid() {
     },
   });
 }
+
+// Sprint 5: mark refund settled (refund proof file REQUIRED).
+export function useMarkRefunded() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { proof: File; amount?: number; note?: string };
+    }) => {
+      const res = await ordersApi.markRefunded(id, data);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateOrderViews(queryClient, variables.id);
+    },
+  });
+}

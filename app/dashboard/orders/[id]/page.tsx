@@ -10,10 +10,14 @@ import {
   AlertTriangle,
   Plus,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
 import MarkPaidDialog from "@/components/invoices/MarkPaidDialog";
+import RefundDialog, {
+  type RefundPayload,
+} from "@/components/orders/RefundDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +50,7 @@ import {
   useAddAdjustment,
   useSendInvoiceWhatsapp,
   useMarkInvoicePaid,
+  useMarkRefunded,
 } from "@/hooks/useOrders";
 import { useAdvanceTripStatus } from "@/hooks/useTrips";
 import {
@@ -92,6 +97,7 @@ export default function OrderDetailPage({
   const [combinedInvoiceOpen, setCombinedInvoiceOpen] = useState(false);
   const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -104,6 +110,7 @@ export default function OrderDetailPage({
   const addAdjustmentMutation = useAddAdjustment(id);
   const sendInvoiceMutation = useSendInvoiceWhatsapp();
   const markInvoicePaidMutation = useMarkInvoicePaid();
+  const markRefundedMutation = useMarkRefunded();
 
   async function handleSendInvoice(invoice: Invoice) {
     const phone =
@@ -199,6 +206,11 @@ export default function OrderDetailPage({
       .reduce((sum, inv) => sum + Number(inv.amount), 0) ?? 0;
   const orderFinalPrice = Number(order?.final_price ?? 0);
   const invoiceDifference = orderFinalPrice - alreadyPaid;
+  // Sprint 5: refund owed = actual money received (paid_to_date) beyond the
+  // order total. paid_to_date is the source of truth for cash received.
+  const paidToDate = Number(order?.paid_to_date ?? 0);
+  const refundDue = Math.max(paidToDate - orderFinalPrice, 0);
+  const isRefunded = Boolean(order?.is_refunded);
   // Rental base = sum of service lines (excludes billable additionals, which the
   // combined invoice adds back explicitly).
   const rentalBase = (order?.service_items ?? []).reduce(
@@ -352,6 +364,16 @@ export default function OrderDetailPage({
     }
   }
 
+  async function handleMarkRefunded(payload: RefundPayload) {
+    try {
+      await markRefundedMutation.mutateAsync({ id, data: payload });
+      toast.success("Refund ditandai sudah dibayar");
+      setRefundOpen(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
   async function handleReviseInvoice(data: ReviseInvoiceInput) {
     if (!revisionInvoice) return;
     try {
@@ -433,6 +455,22 @@ export default function OrderDetailPage({
               >
                 {order.payment_status.replace("_", " ")}
               </Badge>
+              {refundDue > 0 && !isRefunded && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-red-50 text-red-700 border-red-200"
+                >
+                  Refund due
+                </Badge>
+              )}
+              {isRefunded && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-gray-100 text-gray-600 border-gray-200"
+                >
+                  Refunded
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -448,6 +486,17 @@ export default function OrderDetailPage({
               <Button onClick={() => setAssignOpen(true)} size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Assign Driver
+              </Button>
+            )}
+            {refundDue > 0 && !isRefunded && (
+              <Button
+                onClick={() => setRefundOpen(true)}
+                size="sm"
+                variant="outline"
+                className="border-red-200 text-red-700 hover:bg-red-50"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Tandai Refund
               </Button>
             )}
           </div>
@@ -1106,6 +1155,14 @@ export default function OrderDetailPage({
         }}
         onConfirm={confirmMarkInvoicePaid}
         isSubmittingPaid={markInvoicePaidMutation.isPending}
+      />
+
+      <RefundDialog
+        refundDue={refundDue}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        onConfirm={handleMarkRefunded}
+        isSubmitting={markRefundedMutation.isPending}
       />
     </DashboardShell>
   );

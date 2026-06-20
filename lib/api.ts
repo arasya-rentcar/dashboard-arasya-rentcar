@@ -80,6 +80,20 @@ export const ordersApi = {
   },
   getPaymentProof: (id: string, invoiceId: string) =>
     api.get(`/orders/${id}/invoice/${invoiceId}/payment-proof`),
+  // Sprint 5: mark refund settled — multipart, refund proof REQUIRED.
+  markRefunded: (
+    id: string,
+    data: { proof: File; amount?: number; note?: string },
+  ) => {
+    const fd = new FormData();
+    fd.append("proof", data.proof);
+    if (data.amount != null) fd.append("amount", String(data.amount));
+    if (data.note) fd.append("note", data.note);
+    return api.post(`/orders/${id}/mark-refunded`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  getRefundProof: (id: string) => api.get(`/orders/${id}/refund-proof`),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
   getStatement: (id: string, invoiceIds?: string[]) =>
     invoiceIds && invoiceIds.length > 0

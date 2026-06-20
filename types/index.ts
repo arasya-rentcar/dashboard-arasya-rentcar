@@ -204,6 +204,7 @@ export interface OrderCustomer {
 
 export interface Order {
   id: string;
+  order_code?: string | null;
   customer_name: string;
   customer_phone: string;
   customers?: OrderCustomer[];
@@ -214,8 +215,15 @@ export interface Order {
   service_start_at?: string | null;
   service_end_at?: string | null;
   final_price: string;
+  paid_to_date?: string | number;
   order_status: OrderStatus;
   payment_status: PaymentStatus;
+  // Sprint 5: refund settlement.
+  is_refunded?: boolean;
+  refunded_at?: string | null;
+  refund_amount?: string | number | null;
+  refund_proof_url?: string | null;
+  refund_note?: string | null;
   created_at: string;
   updated_at: string;
   trip?: Trip | null;
