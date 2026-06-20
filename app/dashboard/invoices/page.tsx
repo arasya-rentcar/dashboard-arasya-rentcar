@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronRight,
@@ -65,10 +66,10 @@ const PAYMENT_STATUS_STYLES: Record<string, string> = {
   DP_PAID: "bg-blue-50 text-blue-700 border-blue-200",
   PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
-const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  UNPAID: "Belum Bayar",
-  DP_PAID: "DP",
-  PAID: "Lunas",
+const PAYMENT_STATUS_KEYS: Record<string, string> = {
+  UNPAID: "payUnpaid",
+  DP_PAID: "payDp",
+  PAID: "payPaid",
 };
 
 const DELIVERY_STATUS_STYLES = {
@@ -85,12 +86,12 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   COMBINED: "border-indigo-200 text-indigo-700 bg-indigo-50",
 };
 
-const TYPE_LABELS: Record<InvoiceType, string> = {
-  DP: "DP",
-  SETTLEMENT: "Settlement",
-  FULL: "Full",
-  ADDITIONAL: "Additional",
-  COMBINED: "Gabungan",
+const TYPE_KEYS: Record<InvoiceType, string> = {
+  DP: "typeDP",
+  SETTLEMENT: "typeSettlement",
+  FULL: "typeFull",
+  ADDITIONAL: "typeAdditional",
+  COMBINED: "typeCombined",
 };
 
 type InvoiceWithOrder = Invoice & { order: OrderListItem };
@@ -123,6 +124,7 @@ function invoiceCanSend(inv: InvoiceWithOrder) {
 }
 
 export default function InvoicesPage() {
+  const t = useTranslations("invoicesPage");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   // #6: order-level payment bucket (Belum Bayar / DP / Lunas) from
@@ -212,7 +214,7 @@ export default function InvoicesPage() {
   async function sendInvoice(inv: InvoiceWithOrder) {
     const recipient = selectedRecipient(inv);
     if (!recipient.phone) {
-      toast.error("Target WhatsApp number is required");
+      toast.error(t("errPhoneRequired"));
       return;
     }
     try {
@@ -225,21 +227,21 @@ export default function InvoicesPage() {
           message_note: noteByInvoice[inv.id] || undefined,
         },
       });
-      toast.success("Invoice PDF sent to WhatsApp");
+      toast.success(t("okSent"));
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
   }
 
   return (
-    <DashboardShell title="Invoices">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search invoices…"
+                placeholder={t('searchPlaceholder')}
                 className="pl-9"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -250,10 +252,10 @@ export default function InvoicesPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">Semua Pembayaran</SelectItem>
-                <SelectItem value="UNPAID">Belum Bayar</SelectItem>
-                <SelectItem value="DP_PAID">DP</SelectItem>
-                <SelectItem value="PAID">Lunas</SelectItem>
+                <SelectItem value="ALL">{t('allPayments')}</SelectItem>
+                <SelectItem value="UNPAID">{t('payUnpaid')}</SelectItem>
+                <SelectItem value="DP_PAID">{t('payDp')}</SelectItem>
+                <SelectItem value="PAID">{t('payPaid')}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -261,12 +263,12 @@ export default function InvoicesPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="DRAFT">Draft</SelectItem>
-                <SelectItem value="ISSUED">Issued</SelectItem>
-                <SelectItem value="REVISED">Revised</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="ALL">{t('allStatus')}</SelectItem>
+                <SelectItem value="DRAFT">{t('statusDraft')}</SelectItem>
+                <SelectItem value="ISSUED">{t('statusIssued')}</SelectItem>
+                <SelectItem value="REVISED">{t('statusRevised')}</SelectItem>
+                <SelectItem value="PAID">{t('statusPaid')}</SelectItem>
+                <SelectItem value="CANCELLED">{t('statusCancelled')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -278,25 +280,25 @@ export default function InvoicesPage() {
               <TableRow className="bg-gray-50">
                 <TableHead className="w-8" />
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
-                  No
+                  {t('colNo')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Invoice #
+                  {t('colInvoiceNum')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Customer
+                  {t('colCustomer')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">
-                  Type
+                  {t('colType')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Amount
+                  {t('colAmount')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Status
+                  {t('colStatus')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Actions
+                  {t('colActions')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -317,7 +319,7 @@ export default function InvoicesPage() {
                     colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No invoices yet.
+                    {t('noInvoices')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -381,7 +383,7 @@ export default function InvoicesPage() {
           start={start}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
-          label="invoices"
+          label={t('paginationLabel')}
         />
       </div>
 
@@ -391,7 +393,7 @@ export default function InvoicesPage() {
       >
         <DialogContent className="!w-[96vw] !max-w-[1400px] h-[94vh] p-4 gap-3">
           <DialogHeader>
-            <DialogTitle>Invoice PDF</DialogTitle>
+            <DialogTitle>{t('invoicePdf')}</DialogTitle>
           </DialogHeader>
           {previewUrl && (
             <iframe
@@ -445,6 +447,7 @@ function FragmentInvoiceRow({
   onNoteChange: (value: string) => void;
   onSend: () => void;
 }) {
+  const t = useTranslations("invoicesPage");
   return (
     <>
       <TableRow
@@ -463,7 +466,7 @@ function FragmentInvoiceRow({
           <div>{inv.invoice_number}</div>
           {(inv.revision ?? 0) > 0 && (
             <div className="text-xs text-amber-600 font-sans">
-              Revision R{inv.revision}
+              {t('revision', { n: inv.revision ?? 0 })}
             </div>
           )}
         </TableCell>
@@ -475,7 +478,7 @@ function FragmentInvoiceRow({
             variant="outline"
             className={`text-xs ${TYPE_STYLES[inv.invoice_type]}`}
           >
-            {TYPE_LABELS[inv.invoice_type]}
+            {t(TYPE_KEYS[inv.invoice_type])}
           </Badge>
         </TableCell>
         <TableCell className="text-sm font-semibold text-gray-900">
@@ -488,8 +491,9 @@ function FragmentInvoiceRow({
               variant="outline"
               className={`text-xs ${PAYMENT_STATUS_STYLES[inv.order.payment_status] ?? ""}`}
             >
-              {PAYMENT_STATUS_LABELS[inv.order.payment_status] ??
-                inv.order.payment_status}
+              {PAYMENT_STATUS_KEYS[inv.order.payment_status]
+                ? t(PAYMENT_STATUS_KEYS[inv.order.payment_status])
+                : inv.order.payment_status}
             </Badge>
             {/* Per-invoice status kept visible so admin sees which doc is settled. */}
             <Badge
@@ -515,7 +519,7 @@ function FragmentInvoiceRow({
             <Button variant="ghost" size="sm" asChild>
               <Link href={`/dashboard/orders/${inv.order.id}`}>
                 <ExternalLink className="h-4 w-4 mr-1" />
-                Order
+                {t('order')}
               </Link>
             </Button>
           </div>
@@ -528,7 +532,7 @@ function FragmentInvoiceRow({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                    <FileText className="h-4 w-4" /> PDF Preview
+                    <FileText className="h-4 w-4" /> {t('pdfPreview')}
                   </div>
                   {inv.file_url && (
                     <Button
@@ -536,7 +540,7 @@ function FragmentInvoiceRow({
                       size="sm"
                       onClick={() => onPreview(inv.file_url!)}
                     >
-                      Large View
+                      {t('largeView')}
                     </Button>
                   )}
                 </div>
@@ -548,8 +552,7 @@ function FragmentInvoiceRow({
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed bg-white p-8 text-center text-sm text-gray-500">
-                    PDF belum tersedia. Generate/sync invoice PDF sebelum kirim
-                    WhatsApp.
+                    {t('pdfNotAvailable')}
                   </div>
                 )}
               </div>
@@ -557,37 +560,37 @@ function FragmentInvoiceRow({
               <div className="space-y-4">
                 <div className="rounded-lg border bg-white p-4 space-y-3">
                   <div className="text-sm font-semibold text-gray-900">
-                    Send PDF to Customer WhatsApp
+                    {t('sendToWhatsapp')}
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Recipient</Label>
+                    <Label>{t('recipient')}</Label>
                     <Select
                       value={recipientValue}
                       onValueChange={onRecipientChange}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Choose recipient" />
+                        <SelectValue placeholder={t('chooseRecipient')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="primary">
-                          Primary customer / PIC
+                          {t('primaryCustomer')}
                         </SelectItem>
                         {recipients.map((recipient, index) => (
                           <SelectItem
                             key={`${recipient.name}-${recipient.phone}-${index}`}
                             value={String(index)}
                           >
-                            {recipient.name || "Customer"} — {recipient.phone}
+                            {recipient.name || t('customerFallback')} — {recipient.phone}
                           </SelectItem>
                         ))}
-                        <SelectItem value="manual">Manual number</SelectItem>
+                        <SelectItem value="manual">{t('manualNumber')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   {recipientValue === "manual" && (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label>Name</Label>
+                        <Label>{t('name')}</Label>
                         <Input
                           value={manualName}
                           onChange={(e) => onManualNameChange(e.target.value)}
@@ -595,7 +598,7 @@ function FragmentInvoiceRow({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>WhatsApp Number</Label>
+                        <Label>{t('whatsappNumber')}</Label>
                         <Input
                           value={manualPhone}
                           onChange={(e) => onManualPhoneChange(e.target.value)}
@@ -605,18 +608,17 @@ function FragmentInvoiceRow({
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <Label>Optional note</Label>
+                    <Label>{t('optionalNote')}</Label>
                     <Textarea
                       value={note}
                       onChange={(e) => onNoteChange(e.target.value)}
-                      placeholder="Mohon dicek ya Pak/Bu."
+                      placeholder={t('notePlaceholder')}
                       rows={3}
                     />
                   </div>
                   {!canSend && (
                     <p className="text-xs text-amber-700">
-                      Invoice PDF wajib tersedia dan status tidak boleh
-                      DRAFT/REVISED/CANCELLED.
+                      {t('sendWarning')}
                     </p>
                   )}
                   <Button
@@ -629,17 +631,17 @@ function FragmentInvoiceRow({
                     ) : (
                       <Send className="mr-2 h-4 w-4" />
                     )}
-                    Send PDF via WhatsApp
+                    {t('sendPdfWhatsapp')}
                   </Button>
                 </div>
 
                 <div className="rounded-lg border bg-white p-4">
                   <div className="mb-3 text-sm font-semibold text-gray-900">
-                    Send History
+                    {t('sendHistory')}
                   </div>
                   {logs.length === 0 ? (
                     <div className="text-sm text-gray-500">
-                      No WhatsApp sends yet.
+                      {t('noSends')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -650,7 +652,7 @@ function FragmentInvoiceRow({
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div className="font-medium text-gray-900">
-                              {log.target_name || "Customer"}
+                              {log.target_name || t('customerFallback')}
                             </div>
                             <Badge
                               variant="outline"
@@ -674,7 +676,7 @@ function FragmentInvoiceRow({
                             className="mt-2"
                             onClick={() => onPreview(log.file_url)}
                           >
-                            <Eye className="h-4 w-4 mr-1" /> View PDF
+                            <Eye className="h-4 w-4 mr-1" /> {t('viewPdf')}
                           </Button>
                         </div>
                       ))}
