@@ -168,6 +168,8 @@ export const scheduleApi = {
 export const analyticsApi = {
   dashboard: (params: Record<string, string | undefined> = {}) =>
     api.get("/analytics/dashboard", { params }),
+  revenue: (params: Record<string, string | undefined> = {}) =>
+    api.get("/analytics/revenue", { params }),
 };
 
 export const payablesApi = {

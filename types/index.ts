@@ -925,3 +925,56 @@ export interface AuthResponse {
     user: User;
   };
 }
+
+// ─── #5 Revenue Report ───────────────────────────────────────────────────────
+export interface RevenueInternalSlot {
+  gross: number;
+  ops: number;
+  net_margin: number | null;
+  trips: number;
+}
+export interface RevenueInternalRow {
+  car_id: string | null;
+  car_label: string;
+  plate: string | null;
+  unit_code: string | null;
+  final: RevenueInternalSlot;
+  estimated: RevenueInternalSlot;
+}
+export interface RevenueVendorSlot {
+  customer_billed: number;
+  vendor_cost: number;
+  arasya_margin: number;
+  trips: number;
+}
+export interface RevenueVendorUnit {
+  external_car_id: string | null;
+  car_label: string;
+  plate: string | null;
+  final: RevenueVendorSlot;
+  estimated: RevenueVendorSlot;
+}
+export interface RevenueVendorRow {
+  vendor_id: string | null;
+  vendor_name: string;
+  final: RevenueVendorSlot;
+  estimated: RevenueVendorSlot;
+  units: RevenueVendorUnit[];
+}
+export interface RevenueReport {
+  range: { from: string; to: string };
+  internal_cars: {
+    rows: RevenueInternalRow[];
+    totals: {
+      final: { gross: number; ops: number; net_margin: number; trips: number };
+      estimated: { gross: number; ops: number; net_margin: number; trips: number };
+    };
+  };
+  vendor_margin: {
+    rows: RevenueVendorRow[];
+    totals: {
+      final: RevenueVendorSlot;
+      estimated: RevenueVendorSlot;
+    };
+  };
+}
