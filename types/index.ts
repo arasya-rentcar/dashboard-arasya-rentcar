@@ -931,7 +931,9 @@ export interface RevenueInternalSlot {
   gross: number;
   ops: number;
   net_margin: number | null;
+  driver_fee: number;
   trips: number;
+  orders: number;
 }
 export interface RevenueInternalRow {
   car_id: string | null;
@@ -946,6 +948,7 @@ export interface RevenueVendorSlot {
   vendor_cost: number;
   arasya_margin: number;
   trips: number;
+  orders: number;
 }
 export interface RevenueVendorUnit {
   external_car_id: string | null;
@@ -961,13 +964,31 @@ export interface RevenueVendorRow {
   estimated: RevenueVendorSlot;
   units: RevenueVendorUnit[];
 }
+export interface RevenueDriverRow {
+  driver_id: string | null;
+  driver_name: string;
+  driver_phone: string | null;
+  fee_paid: number;
+  fee_pending: number;
+  fee_total: number;
+  trips: number;
+  orders: number;
+}
+export interface RevenueOrderCounts {
+  internal: number;
+  vendor: number;
+  freelance: number;
+  external_total: number;
+  total: number;
+}
 export interface RevenueReport {
   range: { from: string; to: string };
+  order_counts: RevenueOrderCounts;
   internal_cars: {
     rows: RevenueInternalRow[];
     totals: {
-      final: { gross: number; ops: number; net_margin: number; trips: number };
-      estimated: { gross: number; ops: number; net_margin: number; trips: number };
+      final: { gross: number; ops: number; net_margin: number; driver_fee: number; trips: number; orders: number };
+      estimated: { gross: number; ops: number; net_margin: number; driver_fee: number; trips: number; orders: number };
     };
   };
   vendor_margin: {
@@ -975,6 +996,16 @@ export interface RevenueReport {
     totals: {
       final: RevenueVendorSlot;
       estimated: RevenueVendorSlot;
+    };
+  };
+  driver_fees: {
+    rows: RevenueDriverRow[];
+    totals: {
+      fee_paid: number;
+      fee_pending: number;
+      fee_total: number;
+      trips: number;
+      orders: number;
     };
   };
 }

@@ -70,6 +70,53 @@ export default function RevenuePage() {
           </div>
         ) : (
           <>
+            {/* ── Order count KPI strip ────────────────────────────────── */}
+            {data?.order_counts && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                        Total Order Periode
+                      </p>
+                      <p className="text-2xl font-bold tabular-nums text-gray-900">
+                        {data.order_counts.total}
+                      </p>
+                    </div>
+                    <div className="h-10 w-px bg-gray-200" />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-blue-600">Internal</p>
+                      <p className="text-xl font-semibold tabular-nums text-blue-700">
+                        {data.order_counts.internal}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-purple-600">Vendor</p>
+                      <p className="text-xl font-semibold tabular-nums text-purple-700">
+                        {data.order_counts.vendor}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-amber-700">Freelance</p>
+                      <p className="text-xl font-semibold tabular-nums text-amber-700">
+                        {data.order_counts.freelance}
+                      </p>
+                    </div>
+                    <div className="h-10 w-px bg-gray-200" />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">Eksternal total</p>
+                      <p className="text-xl font-semibold tabular-nums text-gray-700">
+                        {data.order_counts.external_total}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-[11px] text-gray-400">
+                    Hitungan <b>order unik</b> (bukan trip). Satu order bisa berisi banyak trip / service line.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* ── Section A — Internal cars ────────────────────────────── */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -81,13 +128,15 @@ export default function RevenuePage() {
                 )}
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
+                <table className="w-full min-w-[960px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="py-2 pr-3">Unit</th>
                       <th className="py-2 px-3 text-right">Gross (Final)</th>
                       <th className="py-2 px-3 text-right">Ops</th>
+                      <th className="py-2 px-3 text-right">Driver Fee</th>
                       <th className="py-2 px-3 text-right">Net Margin</th>
+                      <th className="py-2 px-3 text-right">Orders</th>
                       <th className="py-2 px-3 text-right">Trips</th>
                       <th className="py-2 px-3 text-right text-amber-600">
                         Gross (Est.)
@@ -119,8 +168,14 @@ export default function RevenuePage() {
                           <td className="px-3 text-right tabular-nums text-gray-500">
                             {formatCurrency(r.final.ops)}
                           </td>
+                          <td className="px-3 text-right tabular-nums text-gray-500">
+                            {formatCurrency(r.final.driver_fee)}
+                          </td>
                           <td className="px-3 text-right font-medium tabular-nums text-emerald-700">
                             {moneyOrDash(r.final.net_margin)}
+                          </td>
+                          <td className="px-3 text-right tabular-nums text-blue-700">
+                            {r.final.orders}
                           </td>
                           <td className="px-3 text-right tabular-nums text-gray-500">
                             {r.final.trips}
@@ -135,7 +190,7 @@ export default function RevenuePage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-400">
+                        <td colSpan={9} className="py-8 text-center text-gray-400">
                           Belum ada line internal di bulan ini.
                         </td>
                       </tr>
@@ -151,8 +206,14 @@ export default function RevenuePage() {
                         <td className="px-3 text-right tabular-nums text-gray-500">
                           {formatCurrency(A.totals.final.ops)}
                         </td>
+                        <td className="px-3 text-right tabular-nums text-gray-500">
+                          {formatCurrency(A.totals.final.driver_fee)}
+                        </td>
                         <td className="px-3 text-right tabular-nums text-emerald-700">
                           {formatCurrency(A.totals.final.net_margin)}
+                        </td>
+                        <td className="px-3 text-right tabular-nums text-blue-700">
+                          {A.totals.final.orders}
                         </td>
                         <td className="px-3 text-right tabular-nums text-gray-500">
                           {A.totals.final.trips}
@@ -182,13 +243,14 @@ export default function RevenuePage() {
                 </p>
               </CardHeader>
               <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[820px] text-sm">
+                <table className="w-full min-w-[920px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="py-2 pr-3">Vendor</th>
                       <th className="py-2 px-3 text-right">Billed (Final)</th>
                       <th className="py-2 px-3 text-right">Vendor Cost</th>
                       <th className="py-2 px-3 text-right">Margin</th>
+                      <th className="py-2 px-3 text-right">Orders</th>
                       <th className="py-2 px-3 text-right">Trips</th>
                       <th className="py-2 pl-3 text-right text-amber-600">
                         Margin (Est.)
@@ -235,6 +297,9 @@ export default function RevenuePage() {
                               <td className="px-3 text-right font-medium tabular-nums text-emerald-700">
                                 {formatCurrency(v.final.arasya_margin)}
                               </td>
+                              <td className="px-3 text-right tabular-nums text-blue-700">
+                                {v.final.orders}
+                              </td>
                               <td className="px-3 text-right tabular-nums text-gray-500">
                                 {v.final.trips}
                               </td>
@@ -261,6 +326,9 @@ export default function RevenuePage() {
                                   <td className="px-3 text-right tabular-nums text-emerald-700">
                                     {formatCurrency(u.final.arasya_margin)}
                                   </td>
+                                  <td className="px-3 text-right tabular-nums text-blue-700">
+                                    {u.final.orders}
+                                  </td>
                                   <td className="px-3 text-right tabular-nums text-gray-500">
                                     {u.final.trips}
                                   </td>
@@ -274,7 +342,7 @@ export default function RevenuePage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-400">
+                        <td colSpan={7} className="py-8 text-center text-gray-400">
                           Belum ada order vendor/eksternal di bulan ini.
                         </td>
                       </tr>
@@ -293,11 +361,107 @@ export default function RevenuePage() {
                         <td className="px-3 text-right tabular-nums text-emerald-700">
                           {formatCurrency(B.totals.final.arasya_margin)}
                         </td>
+                        <td className="px-3 text-right tabular-nums text-blue-700">
+                          {B.totals.final.orders}
+                        </td>
                         <td className="px-3 text-right tabular-nums text-gray-500">
                           {B.totals.final.trips}
                         </td>
                         <td className="pl-3 text-right tabular-nums text-amber-600">
                           {formatCurrency(B.totals.estimated.arasya_margin)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  ) : null}
+                </table>
+              </CardContent>
+            </Card>
+
+            {/* ── Section C — Driver Fee Report ─────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Driver Fee Report — per Driver Internal
+                </CardTitle>
+                <p className="text-xs text-gray-500">
+                  Total fee yang “dihasilkan” driver di periode ini (akrual,
+                  basis tanggal layanan). <b className="text-emerald-700">Diterima</b>{" "}
+                  = sudah dibayar, <b className="text-amber-700">Pending</b> = masih
+                  hutang ke driver.
+                </p>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                      <th className="py-2 pr-3">Driver</th>
+                      <th className="py-2 px-3 text-right">Total Fee</th>
+                      <th className="py-2 px-3 text-right text-emerald-700">Diterima</th>
+                      <th className="py-2 px-3 text-right text-amber-700">Pending</th>
+                      <th className="py-2 px-3 text-right">Orders</th>
+                      <th className="py-2 pl-3 text-right">Trips</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data?.driver_fees.rows.length ? (
+                      data.driver_fees.rows.map((d) => (
+                        <tr
+                          key={d.driver_id ?? d.driver_name}
+                          className="border-b last:border-0"
+                        >
+                          <td className="py-2.5 pr-3">
+                            <div className="font-medium text-gray-900">
+                              {d.driver_name}
+                            </div>
+                            {d.driver_phone && (
+                              <div className="text-xs text-gray-400">
+                                {d.driver_phone}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 text-right font-medium tabular-nums text-gray-900">
+                            {formatCurrency(d.fee_total)}
+                          </td>
+                          <td className="px-3 text-right tabular-nums text-emerald-700">
+                            {formatCurrency(d.fee_paid)}
+                          </td>
+                          <td className="px-3 text-right tabular-nums text-amber-700">
+                            {formatCurrency(d.fee_pending)}
+                          </td>
+                          <td className="px-3 text-right tabular-nums text-blue-700">
+                            {d.orders}
+                          </td>
+                          <td className="pl-3 text-right tabular-nums text-gray-500">
+                            {d.trips}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-400">
+                          Belum ada fee driver internal di periode ini.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {data?.driver_fees.rows.length ? (
+                    <tfoot>
+                      <tr className="border-t-2 font-semibold">
+                        <td className="py-2.5 pr-3">Total</td>
+                        <td className="px-3 text-right tabular-nums text-gray-900">
+                          {formatCurrency(data.driver_fees.totals.fee_total)}
+                        </td>
+                        <td className="px-3 text-right tabular-nums text-emerald-700">
+                          {formatCurrency(data.driver_fees.totals.fee_paid)}
+                        </td>
+                        <td className="px-3 text-right tabular-nums text-amber-700">
+                          {formatCurrency(data.driver_fees.totals.fee_pending)}
+                        </td>
+                        <td className="px-3 text-right tabular-nums text-blue-700">
+                          {data.driver_fees.totals.orders}
+                        </td>
+                        <td className="pl-3 text-right tabular-nums text-gray-500">
+                          {data.driver_fees.totals.trips}
                         </td>
                       </tr>
                     </tfoot>
