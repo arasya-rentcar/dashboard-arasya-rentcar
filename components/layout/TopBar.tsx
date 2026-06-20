@@ -4,6 +4,8 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Sidebar from './Sidebar';
+import WibClock from './WibClock';
+import LanguageToggle from './LanguageToggle';
 
 interface TopBarProps {
   title: string;
@@ -25,6 +27,16 @@ export default function TopBar({ title }: TopBarProps) {
       </Sheet>
 
       <h1 className="text-base font-semibold text-gray-900">{title}</h1>
+
+      {/* Live WIB clock — top-left, the single place "WIB" is shown. */}
+      <div className="ml-3">
+        <WibClock />
+      </div>
+
+      {/* Language toggle pinned to the right. */}
+      <div className="ml-auto">
+        <LanguageToggle />
+      </div>
     </header>
   );
 }

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { useRevenueReport } from "@/hooks/useAnalytics";
 
@@ -30,6 +31,9 @@ function currentMonth() {
 }
 
 export default function RevenuePage() {
+  const t = useTranslations("revenue");
+  const tt = useTranslations("terms");
+  const tc = useTranslations("common");
   const [month, setMonth] = useState(currentMonth());
   const { from, to } = useMemo(() => monthBounds(month), [month]);
   const { data, isLoading, isFetching } = useRevenueReport({
@@ -42,19 +46,18 @@ export default function RevenuePage() {
   const B = data?.vendor_margin;
 
   return (
-    <DashboardShell title="Revenue">
+    <DashboardShell title={t("title")}>
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="flex items-center gap-2 text-sm text-gray-500">
               <TrendingUp className="h-4 w-4" />
-              Pendapatan per unit internal + margin vendor. Basis tanggal
-              layanan (WIB). <b>Final</b> = order selesai, <b>Estimasi</b> =
-              order masih berjalan.
+              {t("intro")} <b>{t("introFinal")}</b> = {t("introFinalDesc")},{" "}
+              <b>{t("introEstimated")}</b> = {t("introEstimatedDesc")}.
             </p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs text-gray-500">Bulan</Label>
+            <Label className="text-xs text-gray-500">{t("month")}</Label>
             <Input
               type="month"
               value={month}
@@ -66,7 +69,7 @@ export default function RevenuePage() {
 
         {isLoading ? (
           <div className="flex items-center gap-2 py-16 text-sm text-gray-400">
-            <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
+            <Loader2 className="h-4 w-4 animate-spin" /> {tc("loading")}
           </div>
         ) : (
           <>
@@ -77,7 +80,7 @@ export default function RevenuePage() {
                   <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm">
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-gray-500">
-                        Total Order Periode
+                        {t("kpiTotalOrders")}
                       </p>
                       <p className="text-2xl font-bold tabular-nums text-gray-900">
                         {data.order_counts.total}
@@ -85,33 +88,33 @@ export default function RevenuePage() {
                     </div>
                     <div className="h-10 w-px bg-gray-200" />
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-blue-600">Internal</p>
+                      <p className="text-[11px] uppercase tracking-wide text-blue-600">{tt("internal")}</p>
                       <p className="text-xl font-semibold tabular-nums text-blue-700">
                         {data.order_counts.internal}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-purple-600">Vendor</p>
+                      <p className="text-[11px] uppercase tracking-wide text-purple-600">{tt("vendor")}</p>
                       <p className="text-xl font-semibold tabular-nums text-purple-700">
                         {data.order_counts.vendor}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-amber-700">Freelance</p>
+                      <p className="text-[11px] uppercase tracking-wide text-amber-700">{tt("freelance")}</p>
                       <p className="text-xl font-semibold tabular-nums text-amber-700">
                         {data.order_counts.freelance}
                       </p>
                     </div>
                     <div className="h-10 w-px bg-gray-200" />
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-gray-500">Eksternal total</p>
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">{t("kpiExternalTotal")}</p>
                       <p className="text-xl font-semibold tabular-nums text-gray-700">
                         {data.order_counts.external_total}
                       </p>
                     </div>
                   </div>
                   <p className="mt-3 text-[11px] text-gray-400">
-                    Hitungan <b>order unik</b> (bukan trip). Satu order bisa berisi banyak trip / service line.
+                    {t("kpiNote")}
                   </p>
                 </CardContent>
               </Card>
@@ -121,7 +124,7 @@ export default function RevenuePage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base">
-                  Internal Cars — Revenue per Unit
+                  {t("sectionInternalTitle")}
                 </CardTitle>
                 {isFetching && (
                   <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -131,18 +134,18 @@ export default function RevenuePage() {
                 <table className="w-full min-w-[960px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
-                      <th className="py-2 pr-3">Unit</th>
-                      <th className="py-2 px-3 text-right">Gross (Final)</th>
-                      <th className="py-2 px-3 text-right">Ops</th>
-                      <th className="py-2 px-3 text-right">Driver Fee</th>
-                      <th className="py-2 px-3 text-right">Net Margin</th>
-                      <th className="py-2 px-3 text-right">Orders</th>
-                      <th className="py-2 px-3 text-right">Trips</th>
+                      <th className="py-2 pr-3">{t("colUnit")}</th>
+                      <th className="py-2 px-3 text-right">{t("colGrossFinal")}</th>
+                      <th className="py-2 px-3 text-right">{tt("opsCost")}</th>
+                      <th className="py-2 px-3 text-right">{tt("driverFee")}</th>
+                      <th className="py-2 px-3 text-right">{tt("netMargin")}</th>
+                      <th className="py-2 px-3 text-right">{tt("orders")}</th>
+                      <th className="py-2 px-3 text-right">{tt("trips")}</th>
                       <th className="py-2 px-3 text-right text-amber-600">
-                        Gross (Est.)
+                        {t("colGrossEst")}
                       </th>
                       <th className="py-2 pl-3 text-right text-amber-600">
-                        Margin (Est.)
+                        {t("colMarginEst")}
                       </th>
                     </tr>
                   </thead>
@@ -191,7 +194,7 @@ export default function RevenuePage() {
                     ) : (
                       <tr>
                         <td colSpan={9} className="py-8 text-center text-gray-400">
-                          Belum ada line internal di bulan ini.
+                          {t("emptyInternal")}
                         </td>
                       </tr>
                     )}
@@ -199,7 +202,7 @@ export default function RevenuePage() {
                   {A?.rows.length ? (
                     <tfoot>
                       <tr className="border-t-2 font-semibold">
-                        <td className="py-2.5 pr-3">Total</td>
+                        <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums">
                           {formatCurrency(A.totals.final.gross)}
                         </td>
@@ -235,25 +238,24 @@ export default function RevenuePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">
-                  Vendor Margin / Performance
+                  {t("sectionVendorTitle")}
                 </CardTitle>
                 <p className="text-xs text-gray-500">
-                  Eksternal bersifat pass-through — &quot;revenue&quot; di sini =
-                  markup Arasya atas biaya vendor (billed − vendor cost).
+                  {t("sectionVendorNote")}
                 </p>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full min-w-[920px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
-                      <th className="py-2 pr-3">Vendor</th>
-                      <th className="py-2 px-3 text-right">Billed (Final)</th>
-                      <th className="py-2 px-3 text-right">Vendor Cost</th>
-                      <th className="py-2 px-3 text-right">Margin</th>
-                      <th className="py-2 px-3 text-right">Orders</th>
-                      <th className="py-2 px-3 text-right">Trips</th>
+                      <th className="py-2 pr-3">{t("colVendor")}</th>
+                      <th className="py-2 px-3 text-right">{t("colBilledFinal")}</th>
+                      <th className="py-2 px-3 text-right">{t("colVendorCost")}</th>
+                      <th className="py-2 px-3 text-right">{tt("margin")}</th>
+                      <th className="py-2 px-3 text-right">{tt("orders")}</th>
+                      <th className="py-2 px-3 text-right">{tt("trips")}</th>
                       <th className="py-2 pl-3 text-right text-amber-600">
-                        Margin (Est.)
+                        {t("colMarginEst")}
                       </th>
                     </tr>
                   </thead>
@@ -343,7 +345,7 @@ export default function RevenuePage() {
                     ) : (
                       <tr>
                         <td colSpan={7} className="py-8 text-center text-gray-400">
-                          Belum ada order vendor/eksternal di bulan ini.
+                          {t("emptyVendor")}
                         </td>
                       </tr>
                     )}
@@ -351,7 +353,7 @@ export default function RevenuePage() {
                   {B?.rows.length ? (
                     <tfoot>
                       <tr className="border-t-2 font-semibold">
-                        <td className="py-2.5 pr-3">Total</td>
+                        <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums">
                           {formatCurrency(B.totals.final.customer_billed)}
                         </td>
@@ -381,25 +383,26 @@ export default function RevenuePage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">
-                  Driver Fee Report — per Driver Internal
+                  {t("sectionDriverTitle")}
                 </CardTitle>
                 <p className="text-xs text-gray-500">
-                  Total fee yang “dihasilkan” driver di periode ini (akrual,
-                  basis tanggal layanan). <b className="text-emerald-700">Diterima</b>{" "}
-                  = sudah dibayar, <b className="text-amber-700">Pending</b> = masih
-                  hutang ke driver.
+                  {t("sectionDriverNote")}{" "}
+                  <b className="text-emerald-700">{tt("paid")}</b>{" "}
+                  {t("driverNotePaid")},{" "}
+                  <b className="text-amber-700">{tt("outstanding")}</b>{" "}
+                  {t("driverNoteOutstanding")}.
                 </p>
               </CardHeader>
               <CardContent className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
                   <thead>
                     <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
-                      <th className="py-2 pr-3">Driver</th>
-                      <th className="py-2 px-3 text-right">Total Fee</th>
-                      <th className="py-2 px-3 text-right text-emerald-700">Diterima</th>
-                      <th className="py-2 px-3 text-right text-amber-700">Pending</th>
-                      <th className="py-2 px-3 text-right">Orders</th>
-                      <th className="py-2 pl-3 text-right">Trips</th>
+                      <th className="py-2 pr-3">{t("colDriver")}</th>
+                      <th className="py-2 px-3 text-right">{t("colTotalFee")}</th>
+                      <th className="py-2 px-3 text-right text-emerald-700">{tt("paid")}</th>
+                      <th className="py-2 px-3 text-right text-amber-700">{tt("outstanding")}</th>
+                      <th className="py-2 px-3 text-right">{tt("orders")}</th>
+                      <th className="py-2 pl-3 text-right">{tt("trips")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -439,7 +442,7 @@ export default function RevenuePage() {
                     ) : (
                       <tr>
                         <td colSpan={6} className="py-8 text-center text-gray-400">
-                          Belum ada fee driver internal di periode ini.
+                          {t("emptyDriver")}
                         </td>
                       </tr>
                     )}
@@ -447,7 +450,7 @@ export default function RevenuePage() {
                   {data?.driver_fees.rows.length ? (
                     <tfoot>
                       <tr className="border-t-2 font-semibold">
-                        <td className="py-2.5 pr-3">Total</td>
+                        <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums text-gray-900">
                           {formatCurrency(data.driver_fees.totals.fee_total)}
                         </td>

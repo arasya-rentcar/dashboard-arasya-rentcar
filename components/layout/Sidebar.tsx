@@ -17,28 +17,31 @@ import {
   CalendarDays,
   Wallet,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/orders", label: "Orders", icon: ClipboardList },
-  { href: "/dashboard/schedule", label: "Schedule", icon: CalendarDays },
-  { href: "/dashboard/customers", label: "Customers", icon: UserRound },
-  { href: "/dashboard/drivers", label: "Drivers", icon: Users },
-  { href: "/dashboard/cars", label: "Cars", icon: Car },
-  { href: "/dashboard/external", label: "External", icon: Handshake },
-  { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
-  { href: "/dashboard/payables", label: "Tagihan", icon: Wallet },
-  { href: "/dashboard/agent", label: "Bot Agent", icon: Bot },
-  { href: "/dashboard/guide", label: "Guide", icon: HelpCircle },
-];
+  { href: "/dashboard", key: "dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/orders", key: "orders", icon: ClipboardList },
+  { href: "/dashboard/schedule", key: "schedule", icon: CalendarDays },
+  { href: "/dashboard/customers", key: "customers", icon: UserRound },
+  { href: "/dashboard/drivers", key: "drivers", icon: Users },
+  { href: "/dashboard/cars", key: "cars", icon: Car },
+  { href: "/dashboard/external", key: "external", icon: Handshake },
+  { href: "/dashboard/invoices", key: "invoices", icon: FileText },
+  { href: "/dashboard/payables", key: "payables", icon: Wallet },
+  { href: "/dashboard/agent", key: "agent", icon: Bot },
+  { href: "/dashboard/guide", key: "guide", icon: HelpCircle },
+] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
   // Read localStorage only on client to avoid SSR hydration mismatch
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => {
@@ -58,11 +61,12 @@ export default function Sidebar() {
           Arasya RentCar
         </span>
         <p className="text-xs text-gray-400 mt-0.5">Admin Dashboard</p>
+        {/* Brand line stays untranslated (proper noun). */}
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, key, icon: Icon }) => {
           const isActive =
             href === "/dashboard"
               ? pathname === "/dashboard"
@@ -79,7 +83,7 @@ export default function Sidebar() {
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              {label}
+              {t(key)}
             </Link>
           );
         })}
@@ -89,7 +93,7 @@ export default function Sidebar() {
       <div className="px-3 pb-4 border-t border-gray-100 pt-4">
         {user && (
           <div className="px-3 py-2 mb-2">
-            <p className="text-xs text-gray-400">Logged in as</p>
+            <p className="text-xs text-gray-400">{tc("loggedInAs")}</p>
             <p className="text-sm font-medium text-gray-700 truncate">
               {user.email}
             </p>
@@ -101,7 +105,7 @@ export default function Sidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          Logout
+          {t("logout")}
         </Button>
       </div>
     </aside>
