@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,12 +29,12 @@ import {
 import { Invoice, InvoiceType, PaymentMethod } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
-const TYPE_LABELS: Record<InvoiceType, string> = {
-  DP: 'DP',
-  SETTLEMENT: 'Settlement',
-  FULL: 'Full',
-  ADDITIONAL: 'Additional',
-  COMBINED: 'Gabungan',
+const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined'> = {
+  DP: 'typeDP',
+  SETTLEMENT: 'typeSettlement',
+  FULL: 'typeFull',
+  ADDITIONAL: 'typeAdditional',
+  COMBINED: 'typeCombined',
 };
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
@@ -100,6 +101,8 @@ export default function InvoiceSection({
   sendingInvoiceId,
   payingInvoiceId,
 }: Props) {
+  const t = useTranslations('invoiceSection');
+  const tc = useTranslations('common');
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [proofLoadingId, setProofLoadingId] = useState<string | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
@@ -111,7 +114,7 @@ export default function InvoiceSection({
       const res = await ordersApi.getPaymentProof(orderId, inv.id);
       const url = res.data?.data?.url as string | undefined;
       if (url) window.open(url, '_blank', 'noopener,noreferrer');
-      else toast.error('Bukti pembayaran tidak ditemukan.');
+      else toast.error(t('proofNotFound'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -135,7 +138,7 @@ export default function InvoiceSection({
 
   async function handleGenerateStatement() {
     if (selectedIds.length === 0) {
-      toast.error('Pilih minimal satu invoice');
+      toast.error(t('selectAtLeastOne'));
       return;
     }
     setStatementLoading(true);
@@ -149,7 +152,7 @@ export default function InvoiceSection({
         window.open(url, '_blank', 'noopener,noreferrer');
         setStatementOpen(false);
       } else {
-        toast.error('Statement URL not returned');
+        toast.error(t('statementUrlMissing'));
       }
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -170,16 +173,16 @@ export default function InvoiceSection({
       {/* Payment summary */}
       <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3 space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">Order Total</span>
+          <span className="text-gray-500">{t('orderTotal')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">Active Invoice</span>
+          <span className="text-gray-500">{t('activeInvoice')}</span>
           <span className="font-medium text-gray-700">{formatCurrency(totalPaid)}</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">Remaining</span>
+          <span className="text-gray-500">{t('remaining')}</span>
           <span className={`font-semibold ${isOverInvoiced ? 'text-red-600' : isFullyPaid ? 'text-emerald-600' : 'text-gray-900'}`}>
             {formatCurrency(remaining)}
           </span>
@@ -188,14 +191,14 @@ export default function InvoiceSection({
 
       {isOverInvoiced && (
         <div className="rounded-lg border border-red-100 bg-red-50 p-2 text-xs text-red-700">
-          Active invoice total exceeds order final price. Revise invoices or edit order price.
+          {t('overInvoiced')}
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <Button variant="outline" size="sm" className="w-full gap-2" onClick={onOpenGenerate}>
           <Plus className="h-4 w-4" />
-          Invoice Rental
+          {t('invoiceRental')}
         </Button>
         {onOpenAdditional && (
           <Button
@@ -205,7 +208,7 @@ export default function InvoiceSection({
             onClick={onOpenAdditional}
           >
             <Plus className="h-4 w-4" />
-            Invoice Additional
+            {t('invoiceAdditional')}
           </Button>
         )}
       </div>
@@ -218,7 +221,7 @@ export default function InvoiceSection({
           onClick={onOpenCombined}
         >
           <Plus className="h-4 w-4" />
-          Invoice Gabungan (Rental + Additional)
+          {t('invoiceCombined')}
         </Button>
       )}
 
@@ -230,19 +233,19 @@ export default function InvoiceSection({
           onClick={openStatementPicker}
         >
           <FileSpreadsheet className="h-4 w-4" />
-          Statement Gabungan (Pilih Invoice)
+          {t('statementCombinedPick')}
         </Button>
       )}
 
       {hasInvoice && remaining > 0 && !isOverInvoiced && (
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-2 text-xs text-amber-700">
-          Order total is higher than invoice. Click <span className="font-medium">Sync Current Invoice</span> to create a revised full invoice.
+          {t.rich('syncHint', { b: (chunks) => <span className="font-medium">{chunks}</span> })}
         </div>
       )}
 
       {isFullyPaid && invoices.length > 0 && !isOverInvoiced && (
         <p className="text-xs text-emerald-600 text-center font-medium">
-          Fully invoiced. Add charges by editing final price, then sync the invoice.
+          {t('fullyInvoicedHint')}
         </p>
       )}
 
@@ -250,8 +253,8 @@ export default function InvoiceSection({
       {invoices.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Invoices</p>
-            <span className="text-xs text-gray-400">{invoices.length} total</span>
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('invoicesLabel')}</p>
+            <span className="text-xs text-gray-400">{t('totalCount', { count: invoices.length })}</span>
           </div>
 
           {invoices.map((inv) => {
@@ -280,11 +283,11 @@ export default function InvoiceSection({
                     <div className="flex flex-wrap gap-1.5">
                       {current && (
                         <Badge variant="outline" className="text-[10px] border-emerald-200 bg-emerald-50 text-emerald-700">
-                          Current
+                          {t('current')}
                         </Badge>
                       )}
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
-                        {TYPE_LABELS[inv.invoice_type]}
+                        {t(TYPE_KEYS[inv.invoice_type])}
                       </Badge>
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
                         {inv.status}
@@ -292,12 +295,12 @@ export default function InvoiceSection({
                       {inv.status === 'PAID' && (
                         <Badge variant="outline" className="text-[10px] border-emerald-300 bg-emerald-100 text-emerald-800 gap-0.5">
                           <ReceiptText className="h-2.5 w-2.5" />
-                          Kwitansi
+                          {t('receipt')}
                         </Badge>
                       )}
                       {inv.due_date && inv.status !== 'PAID' && (
                         <Badge variant="outline" className="text-[10px] border-orange-200 bg-orange-50 text-orange-700">
-                          Due {formatDate(inv.due_date)}
+                          {t('due', { date: formatDate(inv.due_date) })}
                         </Badge>
                       )}
                       {(inv.revision ?? 0) > 0 && (
@@ -312,16 +315,16 @@ export default function InvoiceSection({
                 <div className="rounded-lg bg-white/75 border border-gray-100 px-3 py-2">
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-xs text-gray-400">Amount</p>
+                      <p className="text-xs text-gray-400">{t('amount')}</p>
                       <p className="text-lg font-bold text-gray-900 leading-tight">{formatCurrency(inv.amount)}</p>
                     </div>
-                    <p className="text-xs text-gray-500 text-right">via {METHOD_LABELS[inv.payment_method]}</p>
+                    <p className="text-xs text-gray-500 text-right">{t('via', { method: METHOD_LABELS[inv.payment_method] })}</p>
                   </div>
                 </div>
 
                 {!active && (
                   <p className="rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-500">
-                    Historical invoice — not counted in active total.
+                    {t('historical')}
                   </p>
                 )}
 
@@ -331,14 +334,14 @@ export default function InvoiceSection({
                   {inv.file_url && (
                     <Button variant="outline" size="sm" className="w-full" onClick={() => setPreviewInvoice(inv)}>
                       <Eye className="h-3.5 w-3.5 mr-1" />
-                      Preview
+                      {t('preview')}
                     </Button>
                   )}
                   {inv.file_url && (
                     <Button variant="outline" size="sm" className="w-full" asChild>
                       <a href={inv.file_url} target="_blank" rel="noopener noreferrer">
                         <FileText className="h-3.5 w-3.5 mr-1" />
-                        Invoice
+                        {t('invoice')}
                       </a>
                     </Button>
                   )}
@@ -346,7 +349,7 @@ export default function InvoiceSection({
                     <Button variant="outline" size="sm" className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50" asChild>
                       <a href={inv.receipt_url} target="_blank" rel="noopener noreferrer">
                         <ReceiptText className="h-3.5 w-3.5 mr-1" />
-                        Kwitansi
+                        {t('receipt')}
                       </a>
                     </Button>
                   )}
@@ -359,7 +362,7 @@ export default function InvoiceSection({
                       onClick={() => handleViewProof(inv)}
                     >
                       <Eye className="h-3.5 w-3.5 mr-1" />
-                      {proofLoadingId === inv.id ? 'Membuka…' : 'Bukti Bayar'}
+                      {proofLoadingId === inv.id ? t('opening') : t('paymentProof')}
                     </Button>
                   )}
                   {active && onSend && (
@@ -371,7 +374,7 @@ export default function InvoiceSection({
                       onClick={() => onSend(inv)}
                     >
                       <Send className="h-3.5 w-3.5 mr-1" />
-                      {sendingInvoiceId === inv.id ? 'Sending…' : 'Send'}
+                      {sendingInvoiceId === inv.id ? t('sending') : t('send')}
                     </Button>
                   )}
                   {active && inv.status !== 'PAID' && onMarkPaid && (
@@ -383,13 +386,13 @@ export default function InvoiceSection({
                       onClick={() => onMarkPaid(inv)}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                      {payingInvoiceId === inv.id ? 'Saving…' : 'Mark Paid'}
+                      {payingInvoiceId === inv.id ? t('saving') : t('markPaid')}
                     </Button>
                   )}
                   {active && (
                     <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenRevise(inv)}>
                       <PencilLine className="h-3.5 w-3.5 mr-1" />
-                      Revise
+                      {t('revise')}
                     </Button>
                   )}
                 </div>
@@ -402,7 +405,7 @@ export default function InvoiceSection({
       {invoices.length === 0 && (
         <div className="text-center py-4">
           <FileText className="h-8 w-8 text-gray-200 mx-auto mb-2" />
-          <p className="text-xs text-gray-400">No invoices generated yet</p>
+          <p className="text-xs text-gray-400">{t('noInvoices')}</p>
         </div>
       )}
 
@@ -412,17 +415,16 @@ export default function InvoiceSection({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <FileSpreadsheet className="h-4 w-4 text-slate-600" />
-              Statement Gabungan
+              {t('statementCombined')}
             </DialogTitle>
           </DialogHeader>
           <p className="text-xs text-gray-500">
-            Pilih invoice yang ingin digabungkan ke dalam statement. Semua
-            terpilih secara default.
+            {t('statementPickHint')}
           </p>
 
           <div className="flex items-center justify-between border-y border-gray-100 py-2">
             <span className="text-xs font-medium text-gray-500">
-              {selectedIds.length} / {invoices.length} dipilih
+              {t('selectedCount', { selected: selectedIds.length, total: invoices.length })}
             </span>
             <div className="flex gap-2">
               <button
@@ -430,14 +432,14 @@ export default function InvoiceSection({
                 className="text-xs text-blue-600 hover:underline"
                 onClick={() => setSelectedIds(invoices.map((i) => i.id))}
               >
-                Pilih semua
+                {t('selectAll')}
               </button>
               <button
                 type="button"
                 className="text-xs text-gray-500 hover:underline"
                 onClick={() => setSelectedIds([])}
               >
-                Kosongkan
+                {t('clearAll')}
               </button>
             </div>
           </div>
@@ -464,7 +466,7 @@ export default function InvoiceSection({
                         {shortInvoiceNumber(inv.invoice_number)}
                       </span>
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
-                        {TYPE_LABELS[inv.invoice_type]}
+                        {t(TYPE_KEYS[inv.invoice_type])}
                       </Badge>
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
                         {inv.status}
@@ -482,7 +484,7 @@ export default function InvoiceSection({
 
           <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
             <Button variant="outline" size="sm" onClick={() => setStatementOpen(false)} disabled={statementLoading}>
-              Batal
+              {tc('cancel')}
             </Button>
             <Button
               size="sm"
@@ -491,7 +493,7 @@ export default function InvoiceSection({
               disabled={statementLoading || selectedIds.length === 0}
             >
               <FileSpreadsheet className="h-4 w-4" />
-              {statementLoading ? 'Membuat…' : 'Buat Statement'}
+              {statementLoading ? t('creating') : t('createStatement')}
             </Button>
           </div>
         </DialogContent>
@@ -501,12 +503,12 @@ export default function InvoiceSection({
         <DialogContent className="w-[98vw] max-w-[1500px] h-[96vh] p-0 overflow-hidden flex flex-col gap-0">
           <DialogHeader className="px-5 py-3 border-b border-gray-100 bg-white shrink-0">
             <DialogTitle className="flex items-center justify-between pr-8 gap-3">
-              <span className="truncate text-sm sm:text-base">Invoice Preview {previewInvoice ? `— ${previewInvoice.invoice_number}` : ''}</span>
+              <span className="truncate text-sm sm:text-base">{t('invoicePreview')}{previewInvoice ? ` — ${previewInvoice.invoice_number}` : ''}</span>
               {previewInvoice?.file_url && (
                 <Button variant="outline" size="sm" asChild className="shrink-0">
                   <a href={previewInvoice.file_url} target="_blank" rel="noopener noreferrer">
                     <Download className="h-3.5 w-3.5 mr-1" />
-                    Open / Download
+                    {t('openDownload')}
                   </a>
                 </Button>
               )}
