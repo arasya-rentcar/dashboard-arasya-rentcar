@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Image as ImageIcon, Loader2, Upload } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useUploadCarPhoto } from "@/hooks/useCars";
 import { getErrorMessage } from "@/lib/utils";
@@ -19,6 +20,7 @@ export default function CarPhotoCell({
   car: Car;
   variant?: "thumb" | "cover";
 }) {
+  const t = useTranslations("cars");
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadCarPhoto();
   const isUploading = uploadMutation.isPending;
@@ -29,17 +31,17 @@ export default function CarPhotoCell({
   function onPick(file: File | null) {
     if (!file) return;
     if (!ACCEPT.split(",").includes(file.type)) {
-      toast.error("Foto harus JPEG, PNG, atau WebP.");
+      toast.error(t("photoTypeError"));
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error("Ukuran foto maksimal 10MB.");
+      toast.error(t("photoSizeError"));
       return;
     }
     uploadMutation.mutate(
       { id: car.id, photo: file },
       {
-        onSuccess: () => toast.success(`Foto ${car.model} berhasil diupload.`),
+        onSuccess: () => toast.success(t("photoUploaded", { model: car.model })),
         onError: (err) => toast.error(getErrorMessage(err)),
       },
     );
@@ -48,7 +50,7 @@ export default function CarPhotoCell({
   return (
     <button
       type="button"
-      title={car.photo_url ? "Ganti foto" : "Upload foto"}
+      title={car.photo_url ? t("changePhoto") : t("uploadPhoto")}
       disabled={isUploading}
       onClick={() => inputRef.current?.click()}
       className={

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Send, Check, AlertTriangle, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,25 +10,26 @@ import { ScheduleLine, ConfirmationState } from '@/types';
 
 const BADGE: Record<
   ConfirmationState,
-  { label: string; cls: string; icon?: React.ReactNode }
+  { key: 'notSent' | 'sent' | 'changed'; cls: string; icon?: React.ReactNode }
 > = {
   NOT_SENT: {
-    label: 'Belum dikirim',
+    key: 'notSent',
     cls: 'bg-gray-50 text-gray-600 border-gray-200',
   },
   SENT: {
-    label: 'Terkirim',
+    key: 'sent',
     cls: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     icon: <Check className="h-3 w-3" />,
   },
   CHANGED: {
-    label: 'Berubah, perlu kirim ulang',
+    key: 'changed',
     cls: 'bg-amber-50 text-amber-700 border-amber-200',
     icon: <AlertTriangle className="h-3 w-3" />,
   },
 };
 
 export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
+  const t = useTranslations('confirmation');
   const [error, setError] = useState<string | null>(null);
   const send = useSendConfirmation();
 
@@ -49,17 +51,17 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
       await send.mutateAsync({ id: line.id, force: state !== 'NOT_SENT' });
     } catch (e: any) {
       setError(
-        e?.response?.data?.message || e?.message || 'Gagal mengirim konfirmasi',
+        e?.response?.data?.message || e?.message || t('sendFailed'),
       );
     }
   };
 
   const btnLabel =
     state === 'CHANGED'
-      ? 'Kirim Perubahan'
+      ? t('sendChanges')
       : state === 'SENT'
-        ? 'Kirim Ulang'
-        : 'Kirim ke Customer';
+        ? t('resend')
+        : t('sendToCustomer');
 
   return (
     <div className="space-y-1">
@@ -68,7 +70,7 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
         className={`text-[10px] inline-flex items-center gap-1 ${badge.cls}`}
       >
         {badge.icon}
-        {badge.label}
+        {t(badge.key)}
       </Badge>
       <div>
         <Button

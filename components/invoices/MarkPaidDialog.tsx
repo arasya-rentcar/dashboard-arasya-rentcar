@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +51,8 @@ export default function MarkPaidDialog({
   onConfirm: (payload: MarkPaidPayload) => Promise<void> | void;
   isSubmittingPaid?: boolean;
 }) {
+  const t = useTranslations("markPaid");
+  const tc = useTranslations("common");
   const [proof, setProof] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [method, setMethod] = useState<string>(invoice?.payment_method ?? "CASH");
@@ -71,11 +74,11 @@ export default function MarkPaidDialog({
       return;
     }
     if (!ACCEPT.split(",").includes(f.type)) {
-      setFileError("File harus JPEG, PNG, WebP, atau PDF.");
+      setFileError(t("fileTypeError"));
       return;
     }
     if (f.size > MAX_BYTES) {
-      setFileError("Ukuran file maksimal 10MB.");
+      setFileError(t("fileSizeError"));
       return;
     }
     setProof(f);
@@ -83,7 +86,7 @@ export default function MarkPaidDialog({
 
   async function submit() {
     if (!proof) {
-      setFileError("Bukti pembayaran wajib diupload.");
+      setFileError(t("proofRequired"));
       return;
     }
     await onConfirm({
@@ -108,19 +111,18 @@ export default function MarkPaidDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Tandai Lunas — {invoice?.invoice_number}
+            {t("title", { invoice: invoice?.invoice_number ?? "" })}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <p className="text-sm text-gray-500">
-            Bukti pembayaran wajib diupload. Untuk pembayaran tunai, upload foto
-            saat uang diterima.
+            {t("intro")}
           </p>
 
           <div className="space-y-1.5">
             <Label>
-              Bukti Pembayaran <span className="text-red-600">*</span>
+              {t("proofLabel")} <span className="text-red-600">*</span>
             </Label>
             <Input
               type="file"
@@ -138,7 +140,7 @@ export default function MarkPaidDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Metode Pembayaran</Label>
+            <Label>{t("method")}</Label>
             <Select value={method} onValueChange={setMethod}>
               <SelectTrigger>
                 <SelectValue />
@@ -155,7 +157,7 @@ export default function MarkPaidDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Jumlah Diterima</Label>
+              <Label>{t("amountReceived")}</Label>
               <Input
                 type="number"
                 inputMode="numeric"
@@ -164,12 +166,11 @@ export default function MarkPaidDialog({
                 onChange={(e) => setAmountReceived(e.target.value)}
               />
               <p className="text-[11px] text-gray-400">
-                Kosongkan jika sama dengan nilai invoice. Isi jika lebih
-                (kelebihan dicatat).
+                {t("amountHint")}
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label>Tanggal Bayar</Label>
+              <Label>{t("paymentDate")}</Label>
               <Input
                 type="datetime-local"
                 step={60}
@@ -177,7 +178,7 @@ export default function MarkPaidDialog({
                 onChange={(e) => setPaidAt(e.target.value)}
               />
               <p className="text-[11px] text-gray-400">
-                Kosongkan untuk sekarang.
+                {t("paymentDateHint")}
               </p>
             </div>
           </div>
@@ -189,10 +190,10 @@ export default function MarkPaidDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmittingPaid}
           >
-            Batal
+            {tc("cancel")}
           </Button>
           <Button onClick={submit} disabled={!proof || isSubmittingPaid}>
-            {isSubmittingPaid ? "Memproses…" : "Tandai Lunas"}
+            {isSubmittingPaid ? t("processing") : t("markPaidBtn")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -108,6 +108,39 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "confirmation": {
+    "notSent": "Not sent",
+    "sent": "Sent",
+    "changed": "Changed, needs resend",
+    "sendFailed": "Failed to send confirmation",
+    "sendChanges": "Send Changes",
+    "resend": "Resend",
+    "sendToCustomer": "Send to Customer"
+  },
+  "markPaid": {
+    "title": "Mark Paid — {invoice}",
+    "intro": "Payment proof is required. For cash payments, upload a photo taken when the money is received.",
+    "proofLabel": "Payment Proof",
+    "method": "Payment Method",
+    "amountReceived": "Amount Received",
+    "amountHint": "Leave empty if equal to the invoice amount. Fill in if more (the excess is recorded).",
+    "paymentDate": "Payment Date",
+    "paymentDateHint": "Leave empty for now.",
+    "fileTypeError": "File must be JPEG, PNG, WebP, or PDF.",
+    "fileSizeError": "File must be at most 10MB.",
+    "proofRequired": "Payment proof is required.",
+    "processing": "Processing…",
+    "markPaidBtn": "Mark Paid"
+  },
+  "cars": {
+    "baseNotSet": "Base not set",
+    "revenueOfUnit": "Revenue for this unit",
+    "changePhoto": "Change photo",
+    "uploadPhoto": "Upload photo",
+    "photoTypeError": "Photo must be JPEG, PNG, or WebP.",
+    "photoSizeError": "Photo must be at most 10MB.",
+    "photoUploaded": "Photo for {model} uploaded successfully."
+  },
   "revenuePanels": {
     "internalCars": "Internal Units",
     "vendorMargin": "Vendor Margin",

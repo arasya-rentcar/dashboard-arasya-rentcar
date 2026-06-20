@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, Edit, MapPin, Hash, TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import CarPhotoCell from "@/components/cars/CarPhotoCell";
 import CarRevenuePanel from "@/components/revenue/CarRevenuePanel";
 import { Badge } from "@/components/ui/badge";
@@ -14,12 +15,6 @@ const CAR_STATUS_STYLES: Record<CarStatus, string> = {
   MAINTENANCE: "bg-red-50 text-red-700 border-red-200",
 };
 
-const STATUS_LABEL: Record<CarStatus, string> = {
-  AVAILABLE: "Tersedia",
-  IN_USE: "Dipakai",
-  MAINTENANCE: "Servis",
-};
-
 // Sprint 5 (#Q7): car detail card. Surfaces the data that matters at a glance —
 // photo, unit code, model, plate, type, status, base location.
 export default function CarCard({
@@ -29,6 +24,10 @@ export default function CarCard({
   car: Car;
   onEdit: (car: Car) => void;
 }) {
+  const t = useTranslations("cars");
+  const tc = useTranslations("common");
+  const tt = useTranslations("terms");
+  const ts = useTranslations("carStatus");
   const [showRevenue, setShowRevenue] = useState(false);
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-md">
@@ -40,7 +39,7 @@ export default function CarCard({
             variant="outline"
             className={`text-[11px] shadow-sm ${CAR_STATUS_STYLES[car.status]}`}
           >
-            {STATUS_LABEL[car.status]}
+            {ts(car.status)}
           </Badge>
         </div>
         <div className="absolute right-2 top-2">
@@ -52,7 +51,7 @@ export default function CarCard({
                 : "text-[11px] shadow-sm bg-purple-50 text-purple-700 border-purple-200"
             }
           >
-            {car.type === "INTERNAL" ? "Internal" : "External"}
+            {car.type === "INTERNAL" ? tt("internal") : tt("external")}
           </Badge>
         </div>
       </div>
@@ -78,7 +77,7 @@ export default function CarCard({
 
         <div className="flex items-center gap-1.5 text-xs text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{car.origin_location || "Base belum diisi"}</span>
+          <span className="truncate">{car.origin_location || t("baseNotSet")}</span>
         </div>
 
         {showRevenue && (
@@ -95,13 +94,13 @@ export default function CarCard({
             onClick={() => onEdit(car)}
           >
             <Edit className="mr-1.5 h-3.5 w-3.5" />
-            Edit
+            {tc("edit")}
           </Button>
           <Button
             variant="outline"
             size="sm"
             className={showRevenue ? "px-2 bg-gray-50" : "px-2"}
-            title="Revenue unit ini"
+            title={t("revenueOfUnit")}
             onClick={() => setShowRevenue((v) => !v)}
           >
             <TrendingUp className="h-3.5 w-3.5" />

@@ -108,6 +108,39 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "confirmation": {
+    "notSent": "Belum dikirim",
+    "sent": "Terkirim",
+    "changed": "Berubah, perlu kirim ulang",
+    "sendFailed": "Gagal mengirim konfirmasi",
+    "sendChanges": "Kirim Perubahan",
+    "resend": "Kirim Ulang",
+    "sendToCustomer": "Kirim ke Customer"
+  },
+  "markPaid": {
+    "title": "Tandai Terbayar — {invoice}",
+    "intro": "Bukti pembayaran wajib diupload. Untuk pembayaran tunai, upload foto saat uang diterima.",
+    "proofLabel": "Bukti Pembayaran",
+    "method": "Metode Pembayaran",
+    "amountReceived": "Jumlah Diterima",
+    "amountHint": "Kosongkan jika sama dengan nilai invoice. Isi jika lebih (kelebihan dicatat).",
+    "paymentDate": "Tanggal Bayar",
+    "paymentDateHint": "Kosongkan untuk sekarang.",
+    "fileTypeError": "File harus JPEG, PNG, WebP, atau PDF.",
+    "fileSizeError": "Ukuran file maksimal 10MB.",
+    "proofRequired": "Bukti pembayaran wajib diupload.",
+    "processing": "Memproses…",
+    "markPaidBtn": "Tandai Terbayar"
+  },
+  "cars": {
+    "baseNotSet": "Base belum diisi",
+    "revenueOfUnit": "Pendapatan unit ini",
+    "changePhoto": "Ganti foto",
+    "uploadPhoto": "Upload foto",
+    "photoTypeError": "Foto harus JPEG, PNG, atau WebP.",
+    "photoSizeError": "Ukuran foto maksimal 10MB.",
+    "photoUploaded": "Foto {model} berhasil diupload."
+  },
   "revenuePanels": {
     "internalCars": "Unit Internal",
     "vendorMargin": "Margin Vendor",
