@@ -13,11 +13,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import {
-  PERIOD_LABELS,
   describePeriod,
   type PeriodPreset,
-  type RevenuePeriod,
 } from "@/lib/revenuePeriod";
 import { useRevenuePeriod, type RevenueSurface } from "@/hooks/useRevenuePeriod";
 
@@ -33,6 +32,8 @@ const PRESETS: PeriodPreset[] = [
 // shared period; "unlinked" hold their own. A subtle "lokal" badge signals the
 // override so the period is never misread.
 export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
+  const tp = useTranslations("period");
+  const tc = useTranslations("common");
   const { period, linked, setPeriod, unlink, relink } =
     useRevenuePeriod(surface);
   const [customOpen, setCustomOpen] = useState(period.preset === "CUSTOM");
@@ -52,7 +53,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
   const label =
     period.preset === "CUSTOM"
       ? describePeriod(period)
-      : PERIOD_LABELS[period.preset];
+      : tp(period.preset);
 
   return (
     <div className="flex items-center gap-1.5">
@@ -66,7 +67,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
           <DropdownMenuLabel className="text-xs text-gray-500">
-            Periode (WIB)
+            {tp("label")}
           </DropdownMenuLabel>
           {PRESETS.map((p) => (
             <DropdownMenuItem
@@ -77,7 +78,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
               }}
               className="flex items-center justify-between"
             >
-              {PERIOD_LABELS[p]}
+              {tp(p)}
               {period.preset === p && (
                 <Check className="h-4 w-4 text-emerald-600" />
               )}
@@ -91,7 +92,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
             }}
             className="flex items-center justify-between"
           >
-            Custom range
+            {tp("customRange")}
             {period.preset === "CUSTOM" && (
               <Check className="h-4 w-4 text-emerald-600" />
             )}
@@ -99,7 +100,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
           {customOpen && (
             <div className="space-y-2 px-2 py-2">
               <div className="space-y-1">
-                <label className="text-[11px] text-gray-500">Dari</label>
+                <label className="text-[11px] text-gray-500">{tp("from")}</label>
                 <Input
                   type="date"
                   value={from}
@@ -108,7 +109,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] text-gray-500">Sampai</label>
+                <label className="text-[11px] text-gray-500">{tp("to")}</label>
                 <Input
                   type="date"
                   value={to}
@@ -122,7 +123,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
                 disabled={!from || !to}
                 onClick={applyCustom}
               >
-                Terapkan
+                {tc("apply")}
               </Button>
             </div>
           )}
@@ -135,7 +136,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
           variant="ghost"
           size="sm"
           className="h-8 w-8 p-0 text-gray-400 hover:text-gray-700"
-          title="Terkunci ke periode bersama — klik untuk pakai periode sendiri"
+          title={tp("linkedTitle")}
           onClick={unlink}
         >
           <Link2 className="h-4 w-4" />
@@ -146,13 +147,13 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
             variant="outline"
             className="h-6 border-amber-200 bg-amber-50 px-1.5 text-[10px] text-amber-700"
           >
-            lokal
+            {tp("localBadge")}
           </Badge>
           <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-amber-600 hover:text-amber-800"
-            title="Pakai periode bersama lagi"
+            title={tp("unlinkedTitle")}
             onClick={relink}
           >
             <Link2Off className="h-4 w-4" />

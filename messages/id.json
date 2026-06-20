@@ -108,6 +108,47 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "revenuePanels": {
+    "internalCars": "Unit Internal",
+    "vendorMargin": "Margin Vendor",
+    "netMargin": "Margin Bersih",
+    "margin": "Margin",
+    "netMarginFinal": "Margin Bersih (Final)",
+    "marginFinal": "Margin (Final)",
+    "estPrefix": "+ est.",
+    "viewDetail": "Lihat detail",
+    "emptyOrders": "Belum ada order pada periode ini.",
+    "grossFinal": "Bruto (Final)",
+    "billedFinal": "Tertagih (Final)",
+    "estRunning": "Estimasi (order berjalan)",
+    "estRunningInline": "Estimasi (order berjalan): margin {margin} · {trips} trip",
+    "colBilled": "Tertagih",
+    "colCost": "Biaya",
+    "colVendorCost": "Biaya Vendor"
+  },
+  "stock": {
+    "date": "Tanggal",
+    "loading": "Memuat ketersediaan…",
+    "free": "Tersedia",
+    "used": "Dipakai",
+    "down": "Nonaktif",
+    "total": "Total",
+    "downOff": "Nonaktif (Off)",
+    "downMaintenance": "Nonaktif (Perawatan)"
+  },
+  "period": {
+    "label": "Periode",
+    "THIS_MONTH": "Bulan ini",
+    "LAST_MONTH": "Bulan lalu",
+    "LAST_30D": "30 hari terakhir",
+    "THIS_YEAR": "Tahun ini",
+    "customRange": "Rentang khusus",
+    "from": "Dari",
+    "to": "Sampai",
+    "localBadge": "lokal",
+    "linkedTitle": "Terkunci ke periode bersama — klik untuk pakai periode sendiri",
+    "unlinkedTitle": "Pakai periode bersama lagi"
+  },
   "dashboard": {
     "title": "Dashboard",
     "period": "Periode",

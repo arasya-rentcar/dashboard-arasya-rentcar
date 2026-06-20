@@ -108,6 +108,47 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "revenuePanels": {
+    "internalCars": "Internal Units",
+    "vendorMargin": "Vendor Margin",
+    "netMargin": "Net Margin",
+    "margin": "Margin",
+    "netMarginFinal": "Net Margin (Final)",
+    "marginFinal": "Margin (Final)",
+    "estPrefix": "+ est.",
+    "viewDetail": "View detail",
+    "emptyOrders": "No orders in this period.",
+    "grossFinal": "Gross (Final)",
+    "billedFinal": "Billed (Final)",
+    "estRunning": "Estimated (orders in progress)",
+    "estRunningInline": "Estimated (orders in progress): margin {margin} · {trips} trips",
+    "colBilled": "Billed",
+    "colCost": "Cost",
+    "colVendorCost": "Vendor Cost"
+  },
+  "stock": {
+    "date": "Date",
+    "loading": "Loading availability…",
+    "free": "Free",
+    "used": "In use",
+    "down": "Down",
+    "total": "Total",
+    "downOff": "Down (Off)",
+    "downMaintenance": "Down (Maintenance)"
+  },
+  "period": {
+    "label": "Period",
+    "THIS_MONTH": "This month",
+    "LAST_MONTH": "Last month",
+    "LAST_30D": "Last 30 days",
+    "THIS_YEAR": "This year",
+    "customRange": "Custom range",
+    "from": "From",
+    "to": "To",
+    "localBadge": "local",
+    "linkedTitle": "Locked to the shared period — click to use its own period",
+    "unlinkedTitle": "Use the shared period again"
+  },
   "dashboard": {
     "title": "Dashboard",
     "period": "Period",
