@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Edit, Plus, Search } from "lucide-react";
+import { Edit, Plus, Search, LayoutGrid, List } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm, Controller } from "react-hook-form";
@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import DashboardShell from "@/components/layout/DashboardShell";
 import CarPhotoCell from "@/components/cars/CarPhotoCell";
+import CarCard from "@/components/cars/CarCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +70,7 @@ export default function CarsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [view, setView] = useState<"cards" | "table">("cards");
 
   const { data: cars, isLoading } = useCars();
   const createMutation = useCreateCar();
@@ -171,12 +173,62 @@ export default function CarsPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Car
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg border border-gray-200 p-0.5">
+              <button
+                type="button"
+                onClick={() => setView("cards")}
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                  view === "cards"
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+                title="Tampilan kartu"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("table")}
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                  view === "table"
+                    ? "bg-gray-900 text-white"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+                title="Tampilan tabel"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Car
+            </Button>
+          </div>
         </div>
 
+        {view === "cards" ? (
+          isLoading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-64 animate-pulse rounded-xl border border-gray-200 bg-gray-100"
+                />
+              ))}
+            </div>
+          ) : filtered?.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-400">
+              No cars found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {pageItems.map((car) => (
+                <CarCard key={car.id} car={car} onEdit={openEdit} />
+              ))}
+            </div>
+          )
+        ) : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-none overflow-hidden">
           <Table>
             <TableHeader>
@@ -288,6 +340,7 @@ export default function CarsPage() {
             </TableBody>
           </Table>
         </div>
+        )}
 
         <TablePagination
           page={page}

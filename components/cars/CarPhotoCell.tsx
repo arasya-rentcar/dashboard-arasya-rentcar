@@ -12,10 +12,19 @@ const MAX_BYTES = 10 * 1024 * 1024;
 
 // Sprint 3: clickable car-photo thumbnail. Click to upload/replace the photo;
 // shows the current photo if set, otherwise a placeholder.
-export default function CarPhotoCell({ car }: { car: Car }) {
+export default function CarPhotoCell({
+  car,
+  variant = "thumb",
+}: {
+  car: Car;
+  variant?: "thumb" | "cover";
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadCarPhoto();
   const isUploading = uploadMutation.isPending;
+  const isCover = variant === "cover";
+  const iconSize = isCover ? "h-7 w-7" : "h-4 w-4";
+  const spinSize = isCover ? "h-6 w-6" : "h-4 w-4";
 
   function onPick(file: File | null) {
     if (!file) return;
@@ -42,7 +51,11 @@ export default function CarPhotoCell({ car }: { car: Car }) {
       title={car.photo_url ? "Ganti foto" : "Upload foto"}
       disabled={isUploading}
       onClick={() => inputRef.current?.click()}
-      className="group relative h-10 w-14 rounded border border-gray-200 overflow-hidden disabled:opacity-60"
+      className={
+        isCover
+          ? "group absolute inset-0 h-full w-full overflow-hidden disabled:opacity-60"
+          : "group relative h-10 w-14 rounded border border-gray-200 overflow-hidden disabled:opacity-60"
+      }
     >
       {car.photo_url ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -53,21 +66,21 @@ export default function CarPhotoCell({ car }: { car: Car }) {
         />
       ) : (
         <div className="h-full w-full border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-gray-300">
-          <ImageIcon className="h-4 w-4" />
+          <ImageIcon className={iconSize} />
         </div>
       )}
 
       {/* Hover/upload overlay */}
       <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white opacity-0 group-hover:opacity-100 transition-opacity">
         {isUploading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${spinSize} animate-spin`} />
         ) : (
-          <Upload className="h-4 w-4" />
+          <Upload className={iconSize} />
         )}
       </span>
       {isUploading && (
         <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-white">
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className={`${spinSize} animate-spin`} />
         </span>
       )}
 
