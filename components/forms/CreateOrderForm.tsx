@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +13,9 @@ import { formatCurrency } from "@/lib/utils";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
 } from "./OrderServiceItemsEditor";
+import CustomerPicker from "./CustomerPicker";
+import VendorUnitPicker, { type VendorUnitValue } from "./VendorUnitPicker";
+import type { Customer } from "@/types";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -103,6 +107,21 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
     control,
     name: "additionals",
   });
+  // Sprint 5 #15/#16: master-customer lock + vendor/unit selection.
+  const [masterCustomer, setMasterCustomer] = useState<Customer | null>(null);
+  const [vendorUnit, setVendorUnit] = useState<VendorUnitValue>({
+    is_external: false,
+  });
+
+  function selectMaster(c: Customer) {
+    setMasterCustomer(c);
+    // Lock the primary PIC fields to the chosen master record.
+    const primaryIdx = customers?.findIndex((x) => x.is_primary);
+    const idx = primaryIdx != null && primaryIdx >= 0 ? primaryIdx : 0;
+    setValue(`customers.${idx}.name`, c.name);
+    setValue(`customers.${idx}.phone`, c.phone || "");
+  }
+
   const customers = watch("customers");
   const items = watch("service_items");
   const additionals = watch("additionals");
@@ -145,8 +164,12 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
         is_billable: true,
       }));
     await onSubmit({
-      customer_name: mainCustomer.name,
-      customer_phone: mainCustomer.phone || "",
+      customer_id: masterCustomer?.id,
+      customer_name: masterCustomer?.name ?? mainCustomer.name,
+      customer_phone: masterCustomer?.phone ?? mainCustomer.phone ?? "",
+      is_external: vendorUnit.is_external || undefined,
+      external_vendor_id: vendorUnit.external_vendor_id,
+      external_car_id: vendorUnit.external_car_id,
       customers: values.customers.map((c, index) => ({
         name: c.name,
         phone: c.phone || undefined,
@@ -206,6 +229,22 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                 >
                   <Plus className="mr-1 h-3.5 w-3.5" /> Add PIC
                 </Button>
+              </div>
+              <div className="mb-4">
+                <Label className="mb-1.5 block text-xs text-gray-500">
+                  Customer lama (opsional)
+                </Label>
+                <CustomerPicker
+                  selected={masterCustomer}
+                  onSelect={selectMaster}
+                  onClear={() => setMasterCustomer(null)}
+                />
+                {masterCustomer && (
+                  <p className="mt-1.5 text-[11px] text-emerald-600">
+                    PIC utama dikunci ke customer ini. Order akan tercatat ke
+                    profil yang sama.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {fields.map((field, index) => (
@@ -271,6 +310,8 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               For a 1-day rental, the admin only needs to complete that first
               row once.
             </section>
+
+            <VendorUnitPicker value={vendorUnit} onChange={setVendorUnit} />
 
             <OrderServiceItemsEditor
               control={control}
