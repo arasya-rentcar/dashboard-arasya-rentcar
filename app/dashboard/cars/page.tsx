@@ -10,6 +10,7 @@ import { z } from "zod";
 import DashboardShell from "@/components/layout/DashboardShell";
 import CarPhotoCell from "@/components/cars/CarPhotoCell";
 import CarCard from "@/components/cars/CarCard";
+import PeriodToggle from "@/components/revenue/PeriodToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,6 +175,12 @@ export default function CarsPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
+            {view === "cards" && (
+              <div className="hidden items-center gap-1.5 sm:flex">
+                <span className="text-xs text-gray-400">Revenue:</span>
+                <PeriodToggle surface="cars" />
+              </div>
+            )}
             <div className="flex rounded-lg border border-gray-200 p-0.5">
               <button
                 type="button"

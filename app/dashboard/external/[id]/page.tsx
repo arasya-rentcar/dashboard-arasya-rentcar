@@ -32,6 +32,7 @@ import {
 } from '@/hooks/useExternalVendors';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
 import PartnerDetailView from '@/components/partners/PartnerDetailView';
+import VendorRevenuePanel from '@/components/revenue/VendorRevenuePanel';
 import { useVendorDetail2 } from '@/hooks/useExternalVendors';
 
 type Tab = 'cars' | 'orders' | 'finance';
@@ -147,6 +148,9 @@ export default function VendorDetailPage() {
         {vendor.notes && (
           <p className="text-sm text-gray-500">{vendor.notes}</p>
         )}
+
+        {/* Embedded vendor revenue (full report at /dashboard/revenue) */}
+        <VendorRevenuePanel vendorId={id} />
 
         {/* Tabs */}
         <div className="flex items-center gap-1 border-b border-gray-200">

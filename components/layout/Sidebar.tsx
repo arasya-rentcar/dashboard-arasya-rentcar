@@ -16,7 +16,6 @@ import {
   Handshake,
   CalendarDays,
   Wallet,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
@@ -33,7 +32,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/external", label: "External", icon: Handshake },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
   { href: "/dashboard/payables", label: "Tagihan", icon: Wallet },
-  { href: "/dashboard/revenue", label: "Revenue", icon: TrendingUp },
   { href: "/dashboard/agent", label: "Bot Agent", icon: Bot },
   { href: "/dashboard/guide", label: "Guide", icon: HelpCircle },
 ];

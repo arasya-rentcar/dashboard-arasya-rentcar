@@ -31,6 +31,7 @@ import { useDrivers } from '@/hooks/useDrivers';
 import { usePayablesSummary } from '@/hooks/usePayables';
 import { useDashboardAnalytics } from '@/hooks/useAnalytics';
 import AnalyticsSections from '@/components/dashboard/AnalyticsSections';
+import RevenueSummary from '@/components/revenue/RevenueSummary';
 import { User, Building2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import PaginatedTable from '@/components/dashboard/PaginatedTable';
@@ -298,6 +299,9 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+
+        {/* ── Revenue summary (embedded; full report at /dashboard/revenue) ── */}
+        <RevenueSummary />
 
         {/* ── Secondary metrics ──────────────────────────────────────────── */}
         <div>

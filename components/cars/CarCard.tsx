@@ -1,7 +1,9 @@
 "use client";
 
-import { Edit, MapPin, Hash } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, Edit, MapPin, Hash, TrendingUp } from "lucide-react";
 import CarPhotoCell from "@/components/cars/CarPhotoCell";
+import CarRevenuePanel from "@/components/revenue/CarRevenuePanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Car, CarStatus } from "@/types";
@@ -27,6 +29,7 @@ export default function CarCard({
   car: Car;
   onEdit: (car: Car) => void;
 }) {
+  const [showRevenue, setShowRevenue] = useState(false);
   return (
     <div className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-md">
       {/* Photo (click to upload/replace) */}
@@ -78,15 +81,33 @@ export default function CarCard({
           <span className="truncate">{car.origin_location || "Base belum diisi"}</span>
         </div>
 
-        <div className="mt-auto pt-2">
+        {showRevenue && (
+          <div className="pt-1">
+            <CarRevenuePanel carId={car.id} showToggle={false} />
+          </div>
+        )}
+
+        <div className="mt-auto flex gap-2 pt-2">
           <Button
             variant="outline"
             size="sm"
-            className="w-full"
+            className="flex-1"
             onClick={() => onEdit(car)}
           >
             <Edit className="mr-1.5 h-3.5 w-3.5" />
             Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className={showRevenue ? "px-2 bg-gray-50" : "px-2"}
+            title="Revenue unit ini"
+            onClick={() => setShowRevenue((v) => !v)}
+          >
+            <TrendingUp className="h-3.5 w-3.5" />
+            <ChevronDown
+              className={`ml-0.5 h-3 w-3 transition-transform ${showRevenue ? "rotate-180" : ""}`}
+            />
           </Button>
         </div>
       </div>
