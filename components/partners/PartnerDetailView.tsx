@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Check, ExternalLink, CalendarCheck, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export default function PartnerDetailView({
   trips,
   payments,
 }: Props) {
+  const tx = useTranslations("partnerDetail");
   const [tab, setTab] = useState<"trips" | "payments">("trips");
   const markPaid = useMarkPayablePaid();
   const earned =
@@ -73,24 +75,24 @@ export default function PartnerDetailView({
     <div className="space-y-5">
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Total Trip" value={String(summary.total_trips)} accent="blue" />
+        <StatCard label={tx('totalTrip')} value={String(summary.total_trips)} accent="blue" />
         <StatCard
-          label="Trip Selesai"
+          label={tx('completedTrip')}
           value={String(summary.completed_trips)}
           accent="gray"
         />
         <StatCard
-          label={kind === "DRIVER" ? "Total Fee" : "Total Tagihan"}
+          label={kind === "DRIVER" ? tx('totalFee') : tx('totalBilled')}
           value={formatCurrency(earned ?? 0)}
           accent="gray"
         />
         <StatCard
-          label="Sudah Dibayar"
+          label={tx('paid')}
           value={formatCurrency(summary.total_paid)}
           accent="emerald"
         />
         <StatCard
-          label="Outstanding"
+          label={tx('outstanding')}
           value={formatCurrency(summary.outstanding)}
           accent="amber"
         />
@@ -98,12 +100,12 @@ export default function PartnerDetailView({
 
       <div className="grid grid-cols-2 gap-3 sm:max-w-md">
         <StatCard
-          label="Revenue dari Trip"
+          label={tx('revenueFromTrips')}
           value={formatCurrency(summary.revenue_generated)}
           accent="gray"
         />
         <StatCard
-          label="Margin Dihasilkan"
+          label={tx('marginGenerated')}
           value={formatCurrency(summary.margin_generated)}
           accent="gray"
         />
@@ -119,7 +121,7 @@ export default function PartnerDetailView({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          <CalendarCheck className="h-4 w-4" /> Riwayat Trip ({trips.length})
+          <CalendarCheck className="h-4 w-4" /> {tx('tripHistory', { count: trips.length })}
         </button>
         <button
           onClick={() => setTab("payments")}
@@ -129,7 +131,7 @@ export default function PartnerDetailView({
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          <Wallet className="h-4 w-4" /> Riwayat Pembayaran ({payments.length})
+          <Wallet className="h-4 w-4" /> {tx('paymentHistory', { count: payments.length })}
         </button>
       </div>
 
@@ -139,20 +141,20 @@ export default function PartnerDetailView({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Order</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Trip</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{tx('colDate')}</TableHead>
+                <TableHead>{tx('colOrder')}</TableHead>
+                <TableHead>{tx('colCustomer')}</TableHead>
+                <TableHead>{tx('colTrip')}</TableHead>
+                <TableHead>{tx('colUnit')}</TableHead>
+                <TableHead className="text-right">{tx('colRevenue')}</TableHead>
+                <TableHead>{tx('colStatus')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {trips.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-8 text-center text-gray-400">
-                    Belum ada trip.
+                    {tx('noTrips')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -216,20 +218,20 @@ export default function PartnerDetailView({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tanggal</TableHead>
-                <TableHead>Order</TableHead>
-                <TableHead className="text-right">Base</TableHead>
-                <TableHead className="text-right">Lainnya</TableHead>
-                <TableHead className="text-right">Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
+                <TableHead>{tx('colDate')}</TableHead>
+                <TableHead>{tx('colOrder')}</TableHead>
+                <TableHead className="text-right">{tx('colBase')}</TableHead>
+                <TableHead className="text-right">{tx('colOthers')}</TableHead>
+                <TableHead className="text-right">{tx('colTotal')}</TableHead>
+                <TableHead>{tx('colStatus')}</TableHead>
+                <TableHead className="text-right">{tx('colActions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payments.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-8 text-center text-gray-400">
-                    Belum ada tagihan.
+                    {tx('noPayables')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -267,12 +269,12 @@ export default function PartnerDetailView({
                       <TableCell>
                         {isPaid ? (
                           <Badge className="border-emerald-200 bg-emerald-50 text-emerald-700">
-                            LUNAS
+                            {tx('statusPaid')}
                             {p.paid_at ? ` · ${formatDate(p.paid_at)}` : ""}
                           </Badge>
                         ) : (
                           <Badge className="border-amber-200 bg-amber-50 text-amber-700">
-                            BELUM
+                            {tx('statusUnpaid')}
                           </Badge>
                         )}
                       </TableCell>
@@ -284,7 +286,7 @@ export default function PartnerDetailView({
                             disabled={markPaid.isPending}
                             onClick={() => markPaid.mutate({ id: p.id, data: {} })}
                           >
-                            <Check className="h-3 w-3" /> Bayar
+                            <Check className="h-3 w-3" /> {tx('pay')}
                           </Button>
                         )}
                       </TableCell>
