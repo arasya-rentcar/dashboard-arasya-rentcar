@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -58,13 +59,13 @@ const tooltipContentStyle = {
 };
 const rpFormatter = (val: unknown) => formatCurrency(Number(val ?? 0));
 
-const AGING_LABELS: { key: keyof AgingBuckets; label: string; tone: string }[] =
+const AGING_LABELS: { key: keyof AgingBuckets; labelKey: string; tone: string }[] =
   [
-    { key: "current", label: "Belum jatuh tempo", tone: "text-gray-700" },
-    { key: "d1_7", label: "1–7 hari", tone: "text-amber-600" },
-    { key: "d8_14", label: "8–14 hari", tone: "text-orange-600" },
-    { key: "d15_30", label: "15–30 hari", tone: "text-red-600" },
-    { key: "d30plus", label: ">30 hari", tone: "text-red-800" },
+    { key: "current", labelKey: "agingCurrent", tone: "text-gray-700" },
+    { key: "d1_7", labelKey: "aging1_7", tone: "text-amber-600" },
+    { key: "d8_14", labelKey: "aging8_14", tone: "text-orange-600" },
+    { key: "d15_30", labelKey: "aging15_30", tone: "text-red-600" },
+    { key: "d30plus", labelKey: "aging30plus", tone: "text-red-800" },
   ];
 
 const AGING_COLORS = ["#9ca3af", "#f59e0b", "#ea580c", "#dc2626", "#991b1b"];
@@ -78,9 +79,10 @@ function AgingTable({
   data: AgingBuckets;
   barColor: string;
 }) {
+  const t = useTranslations("analytics");
   const total = Object.values(data).reduce((s, v) => s + v, 0);
   const chartData = AGING_LABELS.map((a) => ({
-    name: a.label,
+    name: t(a.labelKey),
     value: data[a.key],
   }));
   return (
@@ -117,11 +119,12 @@ function AgingTable({
 }
 
 function TrendChart({ data }: { data: DashboardAnalytics["monthly_trend"] }) {
+  const t = useTranslations("analytics");
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium text-gray-600">
-          Tren 6 Bulan (Turnover · Collected · Payout)
+          {t('trend6m')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -132,9 +135,9 @@ function TrendChart({ data }: { data: DashboardAnalytics["monthly_trend"] }) {
             <YAxis tickFormatter={compactRp} fontSize={11} width={48} />
             <Tooltip contentStyle={tooltipContentStyle} formatter={rpFormatter} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="turnover" name="Turnover" fill="#1f2937" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="collected" name="Collected" fill="#10b981" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="payout" name="Payout" fill="#f87171" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="turnover" name={t('turnover')} fill="#1f2937" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="collected" name={t('collected')} fill="#10b981" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="payout" name={t('payout')} fill="#f87171" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -153,9 +156,10 @@ function MixDonut({
   external: number;
   fmt: (v: number) => string;
 }) {
+  const t = useTranslations("analytics");
   const pieData = [
-    { name: "Internal", value: internal },
-    { name: "External", value: external },
+    { name: t('internal'), value: internal },
+    { name: t('external'), value: external },
   ];
   const total = internal + external;
   return (
@@ -179,11 +183,11 @@ function MixDonut({
       </ResponsiveContainer>
       <div className="flex gap-4 text-[11px]">
         <span className="flex items-center gap-1 text-blue-600">
-          <span className="h-2 w-2 rounded-sm bg-blue-500" /> Internal{" "}
+          <span className="h-2 w-2 rounded-sm bg-blue-500" /> {t('internal')}{" "}
           {total > 0 ? `${((internal / total) * 100).toFixed(0)}%` : "0%"}
         </span>
         <span className="flex items-center gap-1 text-purple-600">
-          <span className="h-2 w-2 rounded-sm bg-purple-500" /> External{" "}
+          <span className="h-2 w-2 rounded-sm bg-purple-500" /> {t('external')}{" "}
           {total > 0 ? `${((external / total) * 100).toFixed(0)}%` : "0%"}
         </span>
       </div>
@@ -198,6 +202,7 @@ export default function AnalyticsSections({
   data?: DashboardAnalytics;
   loading?: boolean;
 }) {
+  const t = useTranslations("analytics");
   if (loading || !data) {
     return (
       <div className="h-40 animate-pulse rounded-lg bg-gray-100" />
@@ -214,13 +219,13 @@ export default function AnalyticsSections({
       {/* 1 + 4. Receivables split + cashflow */}
       <div>
         <h2 className="mb-3 text-sm font-medium text-gray-500">
-          Receivables &amp; Cashflow
+          {t('receivablesCashflow')}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card className="border border-amber-100 bg-amber-50/40 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-amber-900">
-                Belum DP
+                {t('noDpTitle')}
               </CardTitle>
               <ArrowDownCircle className="h-4 w-4 text-amber-600" />
             </CardHeader>
@@ -228,13 +233,13 @@ export default function AnalyticsSections({
               <p className="text-xl font-semibold text-amber-700">
                 {formatCurrency(r.dp_pending)}
               </p>
-              <p className="mt-1 text-xs text-amber-900/60">Order tanpa pembayaran</p>
+              <p className="mt-1 text-xs text-amber-900/60">{t('noDpSub')}</p>
             </CardContent>
           </Card>
           <Card className="border border-blue-100 bg-blue-50/40 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-blue-900">
-                Pelunasan Tertunda
+                {t('settlementDueTitle')}
               </CardTitle>
               <ArrowDownCircle className="h-4 w-4 text-blue-600" />
             </CardHeader>
@@ -242,13 +247,13 @@ export default function AnalyticsSections({
               <p className="text-xl font-semibold text-blue-700">
                 {formatCurrency(r.settlement_due)}
               </p>
-              <p className="mt-1 text-xs text-blue-900/60">Sudah DP, sisa tagihan</p>
+              <p className="mt-1 text-xs text-blue-900/60">{t('settlementDueSub')}</p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Total Piutang
+                {t('totalReceivableTitle')}
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-gray-500" />
             </CardHeader>
@@ -257,14 +262,14 @@ export default function AnalyticsSections({
                 {formatCurrency(r.total)}
               </p>
               <p className="mt-1 text-xs text-gray-400">
-                Belum ditagih: {formatCurrency(r.unbilled)}
+                {t('unbilled', { amount: formatCurrency(r.unbilled) })}
               </p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
-                Cashflow 7 Hari
+                {t('cashflow7dTitle')}
               </CardTitle>
               <ArrowUpCircle className="h-4 w-4 text-gray-500" />
             </CardHeader>
@@ -275,8 +280,7 @@ export default function AnalyticsSections({
                 {formatCurrency(cf.net_7d)}
               </p>
               <p className="mt-1 text-xs text-gray-400">
-                Masuk {formatCurrency(cf.inflow_7d)} · Keluar{" "}
-                {formatCurrency(cf.outflow_7d)}
+                {t('inOut', { inflow: formatCurrency(cf.inflow_7d), outflow: formatCurrency(cf.outflow_7d) })}
               </p>
             </CardContent>
           </Card>
@@ -285,15 +289,15 @@ export default function AnalyticsSections({
 
       {/* 2. Aging buckets */}
       <div>
-        <h2 className="mb-3 text-sm font-medium text-gray-500">Aging (Umur Tagihan)</h2>
+        <h2 className="mb-3 text-sm font-medium text-gray-500">{t('agingTitle')}</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <AgingTable
-            title="Piutang (Receivables)"
+            title={t('receivablesChart')}
             data={data.aging.receivables}
             barColor="#3b82f6"
           />
           <AgingTable
-            title="Hutang (Payables)"
+            title={t('payablesChart')}
             data={data.aging.payables}
             barColor="#ef4444"
           />
@@ -303,18 +307,18 @@ export default function AnalyticsSections({
       {/* 6. Internal vs external mix */}
       <div>
         <h2 className="mb-3 text-sm font-medium text-gray-500">
-          Internal vs External
+          {t('internalExternal')}
         </h2>
         <Card className="shadow-none border border-gray-200">
           <CardContent className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
             <MixDonut
-              title={`Jumlah Trip (${totalTrips})`}
+              title={t('tripCount', { count: totalTrips })}
               internal={mix.internal.trips}
               external={mix.external.trips}
-              fmt={(v) => `${v} trip`}
+              fmt={(v) => t('tripUnit', { count: v })}
             />
             <MixDonut
-              title="Revenue"
+              title={t('revenue')}
               internal={mix.internal.revenue}
               external={mix.external.revenue}
               fmt={formatCurrency}
@@ -325,15 +329,15 @@ export default function AnalyticsSections({
 
       {/* 3. Margin per order */}
       <div>
-        <h2 className="mb-3 text-sm font-medium text-gray-500">Margin per Order</h2>
+        <h2 className="mb-3 text-sm font-medium text-gray-500">{t('marginPerOrder')}</h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <MarginTable
-            title="Margin Tertinggi"
+            title={t('marginTop')}
             icon={<TrendingUp className="h-4 w-4 text-emerald-600" />}
             rows={data.margin.top}
           />
           <MarginTable
-            title="Margin Terendah"
+            title={t('marginBottom')}
             icon={<TrendingDown className="h-4 w-4 text-red-600" />}
             rows={data.margin.bottom}
           />
@@ -343,11 +347,11 @@ export default function AnalyticsSections({
       {/* 5. Partner leaderboard */}
       <div>
         <h2 className="mb-3 text-sm font-medium text-gray-500">
-          Leaderboard Driver &amp; Vendor
+          {t('leaderboard')}
         </h2>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LeaderTable
-            title="Top Driver"
+            title={t('topDriver')}
             href="/dashboard/drivers"
             rows={data.leaderboard.drivers.map((d) => ({
               id: d.id,
@@ -355,11 +359,11 @@ export default function AnalyticsSections({
               trips: d.trips,
               revenue: d.revenue,
               extra: d.margin,
-              extraLabel: "margin",
+              extraLabel: t('extraMargin'),
             }))}
           />
           <LeaderTable
-            title="Top Vendor"
+            title={t('topVendor')}
             href="/dashboard/external"
             rows={data.leaderboard.vendors.map((v) => ({
               id: v.id,
@@ -367,7 +371,7 @@ export default function AnalyticsSections({
               trips: v.trips,
               revenue: v.revenue,
               extra: v.cost,
-              extraLabel: "cost",
+              extraLabel: t('extraCost'),
             }))}
           />
         </div>
@@ -376,7 +380,7 @@ export default function AnalyticsSections({
       {/* 7. Car utilization */}
       <div>
         <h2 className="mb-3 text-sm font-medium text-gray-500">
-          Utilisasi Mobil (Internal)
+          {t('carUtilization')}
         </h2>
         <Card className="shadow-none border border-gray-200">
           <CardContent className="pt-4">
@@ -384,10 +388,10 @@ export default function AnalyticsSections({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mobil</TableHead>
-                    <TableHead>Plat</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Hari Terpakai</TableHead>
+                    <TableHead>{t('colCar')}</TableHead>
+                    <TableHead>{t('colPlate')}</TableHead>
+                    <TableHead>{t('colStatus')}</TableHead>
+                    <TableHead className="text-right">{t('colDaysBooked')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -419,7 +423,7 @@ export default function AnalyticsSections({
 
       {/* 8. Monthly trend */}
       <div>
-        <h2 className="mb-3 text-sm font-medium text-gray-500">Tren Bulanan</h2>
+        <h2 className="mb-3 text-sm font-medium text-gray-500">{t('monthlyTrend')}</h2>
         <TrendChart data={data.monthly_trend} />
       </div>
     </div>
@@ -435,6 +439,7 @@ function MarginTable({
   icon: React.ReactNode;
   rows: DashboardAnalytics["margin"]["top"];
 }) {
+  const t = useTranslations("analytics");
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="flex flex-row items-center gap-2 pb-2">
@@ -443,14 +448,14 @@ function MarginTable({
       </CardHeader>
       <CardContent className="pt-0">
         {rows.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-400">Belum ada data.</p>
+          <p className="py-4 text-center text-sm text-gray-400">{t('noData')}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
-                <TableHead className="text-right">Margin</TableHead>
+                <TableHead>{t('colOrder')}</TableHead>
+                <TableHead className="text-right">{t('colRevenue')}</TableHead>
+                <TableHead className="text-right">{t('colMargin')}</TableHead>
                 <TableHead className="text-right">%</TableHead>
               </TableRow>
             </TableHeader>
@@ -502,24 +507,25 @@ function LeaderTable({
     extraLabel: string;
   }[];
 }) {
+  const t = useTranslations("analytics");
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
         <Link href={href} className="text-xs text-blue-600 hover:underline">
-          Lihat semua →
+          {t('viewAll')}
         </Link>
       </CardHeader>
       <CardContent className="pt-0">
         {rows.length === 0 ? (
-          <p className="py-4 text-center text-sm text-gray-400">Belum ada data.</p>
+          <p className="py-4 text-center text-sm text-gray-400">{t('noData')}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead className="text-right">Trip</TableHead>
-                <TableHead className="text-right">Revenue</TableHead>
+                <TableHead>{t('colName')}</TableHead>
+                <TableHead className="text-right">{t('colTrip')}</TableHead>
+                <TableHead className="text-right">{t('colRevenue')}</TableHead>
                 <TableHead className="text-right capitalize">
                   {rows[0]?.extraLabel}
                 </TableHead>
