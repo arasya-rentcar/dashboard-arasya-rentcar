@@ -108,6 +108,28 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "generateInvoice": {
+    "typeDP": "Down Payment (DP)",
+    "typeSettlement": "Settlement (Remaining Balance)",
+    "typeFull": "Full Payment",
+    "orderTotal": "Order Total",
+    "alreadyPaid": "Already Paid",
+    "remaining": "Remaining",
+    "invoiceType": "Invoice Type",
+    "selectType": "Select type",
+    "paymentMethod": "Payment Method",
+    "selectMethod": "Select method",
+    "amountIDR": "Amount (IDR)",
+    "dpHint": "Minimum {amount} (20% of rental). Customer may pay more.",
+    "settlementHint": "Remaining rental balance, due on day 1 of service.",
+    "additionalHint": "Bills the remaining balance from extra charges. Add the charge in Additional Charges first so the order total reflects it.",
+    "issueDate": "Invoice Date (optional)",
+    "issueDateHint": "Leave empty for now. Fill in to back-date the invoice (e.g. yesterday's order). 24-hour format.",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "e.g. Transfer via BCA",
+    "fullyInvoiced": "This order is fully invoiced. Edit the order final price first if you need to bill additional charges.",
+    "generateBtn": "Generate Invoice"
+  },
   "customerPicker": {
     "noPhone": "No phone",
     "orderCount": "{count, plural, one {# order} other {# orders}}",

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2 } from 'lucide-react';
@@ -46,10 +47,10 @@ interface Props {
 }
 
 // Rental-payment invoices only. Additional charges have their own dialog.
-const TYPE_OPTIONS: { value: InvoiceType; label: string }[] = [
-  { value: 'DP', label: 'Down Payment (DP)' },
-  { value: 'SETTLEMENT', label: 'Settlement (Remaining Balance)' },
-  { value: 'FULL', label: 'Full Payment' },
+const TYPE_OPTIONS: { value: InvoiceType; key: 'typeDP' | 'typeSettlement' | 'typeFull' }[] = [
+  { value: 'DP', key: 'typeDP' },
+  { value: 'SETTLEMENT', key: 'typeSettlement' },
+  { value: 'FULL', key: 'typeFull' },
 ];
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
@@ -65,6 +66,7 @@ export default function GenerateInvoiceForm({
   onSubmit,
   isLoading,
 }: Props) {
+  const t = useTranslations('generateInvoice');
   const remaining = finalPrice - alreadyPaid;
   const isFullyPaid = remaining <= 0;
 
@@ -134,36 +136,36 @@ export default function GenerateInvoiceForm({
       {/* Summary */}
       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-500">Order Total</span>
+          <span className="text-gray-500">{t('orderTotal')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
         </div>
         {alreadyPaid > 0 && (
           <div className="flex justify-between">
-            <span className="text-gray-500">Already Paid</span>
+            <span className="text-gray-500">{t('alreadyPaid')}</span>
             <span className="font-medium text-gray-700">{formatCurrency(alreadyPaid)}</span>
           </div>
         )}
         <div className="flex justify-between">
-          <span className="text-gray-500">Remaining</span>
+          <span className="text-gray-500">{t('remaining')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(Math.max(remaining, 0))}</span>
         </div>
       </div>
 
       {/* Invoice Type */}
       <div className="space-y-1.5">
-        <Label>Invoice Type</Label>
+        <Label>{t('invoiceType')}</Label>
         <Controller
           control={control}
           name="invoice_type"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
-                {availableTypes.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>
-                    {t.label}
+                {availableTypes.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {t(opt.key)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -177,14 +179,14 @@ export default function GenerateInvoiceForm({
 
       {/* Payment Method */}
       <div className="space-y-1.5">
-        <Label>Payment Method</Label>
+        <Label>{t('paymentMethod')}</Label>
         <Controller
           control={control}
           name="payment_method"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger>
-                <SelectValue placeholder="Select method" />
+                <SelectValue placeholder={t('selectMethod')} />
               </SelectTrigger>
               <SelectContent>
                 {METHOD_OPTIONS.map((m) => (
@@ -203,7 +205,7 @@ export default function GenerateInvoiceForm({
 
       {/* Amount */}
       <div className="space-y-1.5">
-        <Label htmlFor="invoice_amount">Amount (IDR)</Label>
+        <Label htmlFor="invoice_amount">{t('amountIDR')}</Label>
         <Input
           id="invoice_amount"
           type="number"
@@ -217,23 +219,22 @@ export default function GenerateInvoiceForm({
         )}
         {invoiceType === 'DP' && (
           <p className="text-xs text-gray-400">
-            Minimum {formatCurrency(minDp)} (20% of rental). Customer may pay more.
+            {t('dpHint', { amount: formatCurrency(minDp) })}
           </p>
         )}
         {invoiceType === 'SETTLEMENT' && (
-          <p className="text-xs text-gray-400">Remaining rental balance, due on day 1 of service.</p>
+          <p className="text-xs text-gray-400">{t('settlementHint')}</p>
         )}
         {invoiceType === 'ADDITIONAL' && (
           <p className="text-xs text-gray-400">
-            Bills the remaining balance from extra charges. Add the charge in
-            Additional Charges first so the order total reflects it.
+            {t('additionalHint')}
           </p>
         )}
       </div>
 
       {/* Issue date (optional back-date) */}
       <div className="space-y-1.5">
-        <Label htmlFor="invoice_issue_date">Tanggal Invoice (opsional)</Label>
+        <Label htmlFor="invoice_issue_date">{t('issueDate')}</Label>
         <Input
           id="invoice_issue_date"
           type="datetime-local"
@@ -241,31 +242,30 @@ export default function GenerateInvoiceForm({
           {...register('issue_date')}
         />
         <p className="text-[11px] text-gray-400">
-          Kosongkan untuk sekarang. Isi untuk membuat invoice tanggal lampau
-          (mis. order kemarin). Format 24 jam.
+          {t('issueDateHint')}
         </p>
       </div>
 
       {/* Note */}
       <div className="space-y-1.5">
-        <Label htmlFor="invoice_note">Note (optional)</Label>
+        <Label htmlFor="invoice_note">{t('noteLabel')}</Label>
         <Input
           id="invoice_note"
-          placeholder="e.g. Transfer via BCA"
+          placeholder={t('notePlaceholder')}
           {...register('note')}
         />
       </div>
 
       {isFullyPaid && (
         <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md p-2">
-          This order is fully invoiced. Edit the order final price first if you need to bill additional charges.
+          {t('fullyInvoiced')}
         </p>
       )}
 
       <div className="flex justify-end pt-2">
         <Button type="submit" disabled={isLoading || availableTypes.length === 0}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Generate Invoice
+          {t('generateBtn')}
         </Button>
       </div>
     </form>

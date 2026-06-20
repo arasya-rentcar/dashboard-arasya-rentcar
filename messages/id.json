@@ -108,6 +108,28 @@
     "en": "English",
     "id": "Bahasa Indonesia"
   },
+  "generateInvoice": {
+    "typeDP": "Uang Muka (DP)",
+    "typeSettlement": "Pelunasan (Sisa Tagihan)",
+    "typeFull": "Pembayaran Penuh",
+    "orderTotal": "Total Order",
+    "alreadyPaid": "Sudah Terbayar",
+    "remaining": "Sisa",
+    "invoiceType": "Tipe Invoice",
+    "selectType": "Pilih tipe",
+    "paymentMethod": "Metode Pembayaran",
+    "selectMethod": "Pilih metode",
+    "amountIDR": "Jumlah (IDR)",
+    "dpHint": "Minimum {amount} (20% dari sewa). Customer boleh bayar lebih.",
+    "settlementHint": "Sisa tagihan sewa, jatuh tempo di hari ke-1 layanan.",
+    "additionalHint": "Menagih sisa dari biaya tambahan. Tambahkan biaya di Biaya Tambahan dulu agar total order mencerminkannya.",
+    "issueDate": "Tanggal Invoice (opsional)",
+    "issueDateHint": "Kosongkan untuk sekarang. Isi untuk membuat invoice tanggal lampau (mis. order kemarin). Format 24 jam.",
+    "noteLabel": "Catatan (opsional)",
+    "notePlaceholder": "mis. Transfer via BCA",
+    "fullyInvoiced": "Order ini sudah ter-invoice penuh. Ubah harga final order dulu jika perlu menagih biaya tambahan.",
+    "generateBtn": "Buat Invoice"
+  },
   "customerPicker": {
     "noPhone": "Tanpa no. HP",
     "orderCount": "{count} order",
