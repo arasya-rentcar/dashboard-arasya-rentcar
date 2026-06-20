@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Search, CalendarCheck, Users, ExternalLink, Boxes } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
@@ -64,10 +65,11 @@ function weekRange(base: string): { from: string; to: string } {
 }
 
 export default function SchedulePage() {
+  const tx = useTranslations('schedule');
   const [tab, setTab] = useState<'agenda' | 'availability' | 'stock'>('agenda');
 
   return (
-    <DashboardShell title="Schedule">
+    <DashboardShell title={tx('title')}>
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
@@ -78,7 +80,7 @@ export default function SchedulePage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <CalendarCheck className="h-4 w-4" /> Agenda
+            <CalendarCheck className="h-4 w-4" /> {tx('agenda')}
           </button>
           <button
             onClick={() => setTab('availability')}
@@ -88,7 +90,7 @@ export default function SchedulePage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Users className="h-4 w-4" /> Driver Availability
+            <Users className="h-4 w-4" /> {tx('driverAvailability')}
           </button>
           <button
             onClick={() => setTab('stock')}
@@ -98,7 +100,7 @@ export default function SchedulePage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Boxes className="h-4 w-4" /> Stock
+            <Boxes className="h-4 w-4" /> {tx('stock')}
           </button>
         </div>
 
@@ -115,6 +117,8 @@ export default function SchedulePage() {
 }
 
 function AgendaTab() {
+  const tx = useTranslations('schedule');
+  const tt = useTranslations('terms');
   const [search, setSearch] = useState('');
   const [type, setType] = useState('ALL');
   const [status, setStatus] = useState('ALL');
@@ -154,7 +158,7 @@ function AgendaTab() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search customer, driver, route, invoice…"
+            placeholder={tx('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -163,7 +167,7 @@ function AgendaTab() {
         <div className="flex gap-2 flex-wrap">
           <div className="flex items-end gap-1.5">
             <DateChip
-              label="Hari ini"
+              label={tx('today')}
               active={dateFrom === todayStr() && dateTo === todayStr()}
               onClick={() => {
                 setDateFrom(todayStr());
@@ -171,7 +175,7 @@ function AgendaTab() {
               }}
             />
             <DateChip
-              label="Besok"
+              label={tx('tomorrow')}
               active={
                 dateFrom === addDaysStr(todayStr(), 1) &&
                 dateTo === addDaysStr(todayStr(), 1)
@@ -183,7 +187,7 @@ function AgendaTab() {
               }}
             />
             <DateChip
-              label="Minggu ini"
+              label={tx('thisWeek')}
               active={
                 dateFrom === weekRange(todayStr()).from &&
                 dateTo === weekRange(todayStr()).to
@@ -195,7 +199,7 @@ function AgendaTab() {
               }}
             />
             <DateChip
-              label="Semua"
+              label={tx('all')}
               active={!dateFrom && !dateTo}
               onClick={() => {
                 setDateFrom('');
@@ -204,7 +208,7 @@ function AgendaTab() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">From</label>
+            <label className="text-xs text-gray-400 block mb-1">{tx('from')}</label>
             <Input
               type="date"
               value={dateFrom}
@@ -213,7 +217,7 @@ function AgendaTab() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">To</label>
+            <label className="text-xs text-gray-400 block mb-1">{tx('to')}</label>
             <Input
               type="date"
               value={dateTo}
@@ -222,30 +226,30 @@ function AgendaTab() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Type</label>
+            <label className="text-xs text-gray-400 block mb-1">{tx('type')}</label>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All types</SelectItem>
-                <SelectItem value="INTERNAL">Internal</SelectItem>
-                <SelectItem value="EXTERNAL">External</SelectItem>
+                <SelectItem value="ALL">{tx('allTypes')}</SelectItem>
+                <SelectItem value="INTERNAL">{tt('internal')}</SelectItem>
+                <SelectItem value="EXTERNAL">{tt('external')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Status</label>
+            <label className="text-xs text-gray-400 block mb-1">{tx('status')}</label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All status</SelectItem>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-                <SelectItem value="DONE">Done</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="ALL">{tx('allStatus')}</SelectItem>
+                <SelectItem value="SCHEDULED">{tx('statusScheduled')}</SelectItem>
+                <SelectItem value="IN_PROGRESS">{tx('statusInProgress')}</SelectItem>
+                <SelectItem value="DONE">{tx('statusDone')}</SelectItem>
+                <SelectItem value="CANCELLED">{tx('statusCancelled')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -255,10 +259,10 @@ function AgendaTab() {
       {/* Totals */}
       {totals && (
         <div className="grid grid-cols-3 gap-3">
-          <SummaryCard label="Revenue" value={formatCurrency(totals.revenue)} />
-          <SummaryCard label="Ops Cost" value={formatCurrency(totals.ops_cost)} />
+          <SummaryCard label={tt('revenue')} value={formatCurrency(totals.revenue)} />
+          <SummaryCard label={tx('opsCost')} value={formatCurrency(totals.ops_cost)} />
           <SummaryCard
-            label="Margin"
+            label={tt('margin')}
             value={formatCurrency(totals.margin)}
             accent
           />
@@ -269,14 +273,14 @@ function AgendaTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tgl Service</TableHead>
-              <TableHead>Customer / Order</TableHead>
-              <TableHead>Route</TableHead>
-              <TableHead>Assigned</TableHead>
-              <TableHead>Konfirmasi</TableHead>
-              <TableHead className="text-right">Revenue</TableHead>
-              <TableHead className="text-right">Margin</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{tx('colServiceDate')}</TableHead>
+              <TableHead>{tx('colCustomerOrder')}</TableHead>
+              <TableHead>{tx('colRoute')}</TableHead>
+              <TableHead>{tx('colAssigned')}</TableHead>
+              <TableHead>{tx('colConfirmation')}</TableHead>
+              <TableHead className="text-right">{tt('revenue')}</TableHead>
+              <TableHead className="text-right">{tt('margin')}</TableHead>
+              <TableHead>{tx('status')}</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>
@@ -284,13 +288,13 @@ function AgendaTab() {
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-10 text-gray-400">
-                  Loading…
+                  {tx('loading')}
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center py-10 text-gray-400">
-                  No schedule lines match these filters.
+                  {tx('noLines')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -327,12 +331,12 @@ function AgendaTab() {
                           variant="outline"
                           className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] mb-1"
                         >
-                          External
+                          {tt('external')}
                         </Badge>
                         <div className="text-xs text-gray-700">
                           {line.external_vendor?.name ||
                             line.driver_name_raw ||
-                            'Unassigned'}
+                            tx('unassigned')}
                           {line.external_car?.model
                             ? ` · ${line.external_car.model}`
                             : ''}
@@ -343,7 +347,7 @@ function AgendaTab() {
                         <div className="text-xs text-gray-700">
                           {line.driver?.name ||
                             line.driver_name_raw ||
-                            'Unassigned'}
+                            tx('unassigned')}
                         </div>
                         <div className="text-[11px] text-gray-400">
                           {line.car?.plate_number ||
@@ -384,7 +388,7 @@ function AgendaTab() {
                       variant="outline"
                       onClick={() => setEditing(line)}
                     >
-                      Edit
+                      {tx('edit')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -401,12 +405,12 @@ function AgendaTab() {
               start={start}
               pageSize={pagination.page_size}
               onPageChange={setPage}
-              label="lines"
+              label={tx('paginationLabel')}
             />
           )}
         </div>
         {isFetching && !isLoading && (
-          <p className="px-3 pb-2 text-xs text-gray-400">Updating…</p>
+          <p className="px-3 pb-2 text-xs text-gray-400">{tx('updating')}</p>
         )}
       </div>
 
@@ -444,6 +448,8 @@ function DateChip({
 }
 
 function AvailabilityTab() {
+  const tx = useTranslations('schedule');
+  const tt = useTranslations('terms');
   const [date, setDate] = useState(todayStr());
   const [type, setType] = useState('INTERNAL');
   const { data, isLoading } = useDriverAvailability(
@@ -455,7 +461,7 @@ function AvailabilityTab() {
     <div className="space-y-4">
       <div className="flex gap-3 items-end">
         <div>
-          <label className="text-xs text-gray-400 block mb-1">Date</label>
+          <label className="text-xs text-gray-400 block mb-1">{tx('date')}</label>
           <Input
             type="date"
             value={date}
@@ -464,22 +470,22 @@ function AvailabilityTab() {
           />
         </div>
         <div>
-          <label className="text-xs text-gray-400 block mb-1">Type</label>
+          <label className="text-xs text-gray-400 block mb-1">{tx('type')}</label>
           <Select value={type} onValueChange={setType}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="INTERNAL">Internal</SelectItem>
-              <SelectItem value="EXTERNAL">External</SelectItem>
-              <SelectItem value="ALL">All</SelectItem>
+              <SelectItem value="INTERNAL">{tt('internal')}</SelectItem>
+              <SelectItem value="EXTERNAL">{tt('external')}</SelectItem>
+              <SelectItem value="ALL">{tx('all')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       {isLoading ? (
-        <p className="text-gray-400 text-sm py-10 text-center">Loading…</p>
+        <p className="text-gray-400 text-sm py-10 text-center">{tx('loading')}</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {data?.drivers.map((d) => (
@@ -505,7 +511,7 @@ function AvailabilityTab() {
                 </Badge>
               </div>
               {d.bookings.length === 0 ? (
-                <p className="text-xs text-gray-400">No bookings this day.</p>
+                <p className="text-xs text-gray-400">{tx('noBookings')}</p>
               ) : (
                 <ul className="space-y-1.5">
                   {d.bookings.map((b) => (
