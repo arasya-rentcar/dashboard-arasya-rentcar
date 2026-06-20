@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   TrendingUp,
   Wallet,
@@ -39,6 +40,7 @@ import type { DashboardV2, DashV2OverdueAR, DashV2OverdueAP } from '@/types';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
   const { period } = useRevenuePeriod('dashboard');
   const range = useMemo(() => resolvePeriod(period), [period]);
   const { data, isLoading, isFetching } = useDashboardV2({
@@ -47,12 +49,12 @@ export default function DashboardPage() {
   });
 
   return (
-    <DashboardShell title="Dashboard">
+    <DashboardShell title={t('title')}>
       <div className="space-y-6">
         {/* Header: one period selector, the page-wide source of truth. */}
         <div className="flex flex-wrap items-end justify-between gap-3 border-b border-gray-100 pb-3">
           <div>
-            <p className="text-xs text-gray-500">Periode (WIB)</p>
+            <p className="text-xs text-gray-500">{t('period')}</p>
             <p className="text-sm font-medium text-gray-800">
               {describePeriod(period)}
               {isFetching && (
@@ -80,43 +82,44 @@ export default function DashboardPage() {
 
 // ─── § 1 Health row ───────────────────────────────────────────────────────────
 function HealthRow({ data }: { data: DashboardV2 }) {
+  const t = useTranslations('dashboard');
   const a = data.accrual;
   const c = data.cash;
   const o = data.outstanding;
   return (
     <section>
       <SectionTitle
-        title="Kondisi periode ini"
-        sub="Margin operasional memimpin. Kas, piutang, hutang di sebelahnya untuk konteks."
+        title={t('healthTitle')}
+        sub={t('healthSub')}
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {/* Lead KPI: Operating Margin (accrual). */}
         <LeadKPI
           icon={<TrendingUp className="h-5 w-5" />}
-          label="Operating Margin"
-          basis="Accrual · basis tanggal layanan"
+          label={t('operatingMargin')}
+          basis={t('basisAccrualService')}
           value={formatCurrency(a.margin)}
           sub={
             a.margin_pct == null
               ? '—'
-              : `Margin ${(a.margin_pct * 100).toFixed(1)}%`
+              : t('marginPct', { pct: (a.margin_pct * 100).toFixed(1) })
           }
           delta={a.delta.margin}
         />
         <KPI
           icon={<Receipt className="h-4 w-4" />}
-          label="Revenue"
-          basis="Accrual"
+          label={t('revenue')}
+          basis={t('basisAccrual')}
           value={formatCurrency(a.revenue)}
-          sub={`${a.trips} trip`}
+          sub={t('tripsCount', { count: a.trips })}
           delta={a.delta.revenue}
         />
         <KPI
           icon={<Wallet className="h-4 w-4" />}
-          label="Net Cash Flow"
-          basis="Cash · uang masuk − uang keluar"
+          label={t('netCash')}
+          basis={t('basisNetCash')}
           value={formatCurrency(c.net_cash)}
-          sub={`Masuk ${formatCurrency(c.collected)} · Keluar ${formatCurrency(c.paid_out)}`}
+          sub={t('cashInOut', { in: formatCurrency(c.collected), out: formatCurrency(c.paid_out) })}
           delta={c.delta.net_cash}
         />
         <OutstandingKPI o={o} />
@@ -127,33 +130,34 @@ function HealthRow({ data }: { data: DashboardV2 }) {
 
 // ─── § 2 Channel split ────────────────────────────────────────────────────────
 function ChannelSplit({ data }: { data: DashboardV2 }) {
+  const t = useTranslations('dashboard');
   const i = data.channel.internal;
   const v = data.channel.vendor;
   return (
     <section>
-      <SectionTitle title="Per jalur" sub="Internal cars vs vendor." />
+      <SectionTitle title={t('channelTitle')} sub={t('channelSub')} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card className="border border-gray-200 shadow-none">
           <CardContent className="space-y-3 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Car className="h-4 w-4" /> Internal Cars
+                <Car className="h-4 w-4" /> {t('internalCars')}
               </div>
               <Link
                 href="/dashboard/cars"
                 className="text-xs text-blue-600 hover:underline"
               >
-                Lihat per unit →
+                {t('viewPerUnit')}
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <Row label="Revenue" value={i.revenue} />
-              <Row label="Ops cost" value={i.ops_cost} muted />
-              <Row label="Driver fee" value={i.driver_cost} muted />
-              <Row label="Trips" value={i.trips} raw />
+              <Row label={t('revenue')} value={i.revenue} />
+              <Row label={t('opsCost')} value={i.ops_cost} muted />
+              <Row label={t('driverFee')} value={i.driver_cost} muted />
+              <Row label={t('trips')} value={i.trips} raw />
             </div>
             <div className="border-t border-gray-100 pt-2">
-              <p className="text-[11px] text-gray-500">Margin</p>
+              <p className="text-[11px] text-gray-500">{t('margin')}</p>
               <p className="text-xl font-semibold text-emerald-700">
                 {formatCurrency(i.margin)}
                 <span className="ml-2 text-xs font-normal text-gray-500">
@@ -169,22 +173,22 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
           <CardContent className="space-y-3 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Handshake className="h-4 w-4" /> Vendor Channel
+                <Handshake className="h-4 w-4" /> {t('vendorChannel')}
               </div>
               <Link
                 href="/dashboard/external"
                 className="text-xs text-blue-600 hover:underline"
               >
-                Lihat per vendor →
+                {t('viewPerVendor')}
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <Row label="Billed" value={v.billed} />
-              <Row label="Vendor cost" value={v.vendor_cost} muted />
-              <Row label="Trips" value={v.trips} raw />
+              <Row label={t('billed')} value={v.billed} />
+              <Row label={t('vendorCost')} value={v.vendor_cost} muted />
+              <Row label={t('trips')} value={v.trips} raw />
             </div>
             <div className="border-t border-gray-100 pt-2">
-              <p className="text-[11px] text-gray-500">Margin</p>
+              <p className="text-[11px] text-gray-500">{t('margin')}</p>
               <p className="text-xl font-semibold text-emerald-700">
                 {formatCurrency(v.margin)}
                 <span className="ml-2 text-xs font-normal text-gray-500">
@@ -203,29 +207,31 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
 
 // ─── § 3 Needs attention (overdue) ────────────────────────────────────────────
 function NeedsAttention({ data }: { data: DashboardV2 }) {
+  const t = useTranslations('dashboard');
+  const tt = useTranslations('terms');
   const ar = data.outstanding.ar_overdue_top;
   const ap = data.outstanding.ap_overdue_top;
   return (
     <section>
       <SectionTitle
-        title="Perlu tindakan"
-        sub="Layanan sudah jalan tapi belum diselesaikan (jatuh tempo = hari layanan dimulai)."
+        title={t('attentionTitle')}
+        sub={t('attentionSub')}
       />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <OverdueCard
-          title="Piutang Overdue"
+          title={t('arOverdue')}
           color="amber"
           totalCount={data.outstanding.ar_overdue_count}
           totalAmount={data.outstanding.ar_outstanding}
-          empty="Tidak ada piutang lewat jatuh tempo."
+          empty={t('arEmpty')}
         >
           {ar.length > 0 && (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
-                  <th className="pb-1.5">Customer</th>
-                  <th className="pb-1.5 text-right">Amount</th>
-                  <th className="pb-1.5 text-right">Late</th>
+                  <th className="pb-1.5">{t('colCustomer')}</th>
+                  <th className="pb-1.5 text-right">{t('colAmount')}</th>
+                  <th className="pb-1.5 text-right">{t('colLate')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,7 +252,7 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
                       {formatCurrency(r.amount)}
                     </td>
                     <td className="py-2 text-right text-amber-700">
-                      {r.days_overdue}h
+                      {t('daysShort', { days: r.days_overdue })}
                     </td>
                   </tr>
                 ))}
@@ -255,19 +261,19 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
           )}
         </OverdueCard>
         <OverdueCard
-          title="Hutang Overdue"
+          title={t('apOverdue')}
           color="rose"
           totalCount={data.outstanding.ap_overdue_count}
           totalAmount={data.outstanding.ap_outstanding}
-          empty="Tidak ada hutang ke driver / vendor yang lewat jatuh tempo."
+          empty={t('apEmpty')}
         >
           {ap.length > 0 && (
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
-                  <th className="pb-1.5">Pihak</th>
-                  <th className="pb-1.5 text-right">Amount</th>
-                  <th className="pb-1.5 text-right">Late</th>
+                  <th className="pb-1.5">{t('colParty')}</th>
+                  <th className="pb-1.5 text-right">{t('colAmount')}</th>
+                  <th className="pb-1.5 text-right">{t('colLate')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,7 +288,7 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
                       </Link>
                       <p className="text-[11px] text-gray-400">
                         <Badge variant="outline" className="h-4 px-1 text-[10px]">
-                          {r.kind === 'DRIVER' ? 'Driver' : 'Vendor'}
+                          {r.kind === 'DRIVER' ? tt('driver') : tt('vendor')}
                         </Badge>{' '}
                         {r.order_code ?? ''}
                       </p>
@@ -291,7 +297,7 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
                       {formatCurrency(r.amount)}
                     </td>
                     <td className="py-2 text-right text-rose-700">
-                      {r.days_overdue}h
+                      {t('daysShort', { days: r.days_overdue })}
                     </td>
                   </tr>
                 ))}
@@ -306,11 +312,12 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
 
 // ─── § 4 Trend ────────────────────────────────────────────────────────────────
 function Trend({ data }: { data: DashboardV2 }) {
+  const t = useTranslations('dashboard');
   return (
     <section>
       <SectionTitle
-        title="Tren 6 bulan"
-        sub="Revenue dan margin per bulan kalender WIB (akhir bulan = batas atas periode aktif)."
+        title={t('trendTitle')}
+        sub={t('trendSub')}
       />
       <Card className="border border-gray-200 shadow-none">
         <CardContent className="p-4">
@@ -339,9 +346,14 @@ function Delta({ value }: { value: number | null }) {
   const pct = `${(Math.abs(value) * 100).toFixed(1)}%`;
   return (
     <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${cls}`}>
-      <Icon className="h-3 w-3" /> {pct} vs prev
+      <Icon className="h-3 w-3" /> {pct} <DeltaSuffix />
     </span>
   );
+}
+
+function DeltaSuffix() {
+  const t = useTranslations('dashboard');
+  return <>{t('deltaVsPrev')}</>;
 }
 
 function LeadKPI({
@@ -411,32 +423,33 @@ function KPI({
 }
 
 function OutstandingKPI({ o }: { o: DashboardV2['outstanding'] }) {
+  const t = useTranslations('dashboard');
   return (
     <Card className="border border-gray-200 shadow-none">
       <CardContent className="space-y-1.5 p-4">
         <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
-          <AlertCircle className="h-4 w-4" /> Outstanding
+          <AlertCircle className="h-4 w-4" /> {t('outstanding')}
         </div>
         <p className="text-[10px] uppercase tracking-wide text-gray-400">
-          Snapshot saat ini
+          {t('snapshotNow')}
         </p>
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <p className="text-[11px] text-gray-500">AR (piutang)</p>
+            <p className="text-[11px] text-gray-500">{t('arLabel')}</p>
             <p className="text-base font-semibold text-amber-700 tabular-nums">
               {formatCurrency(o.ar_outstanding)}
             </p>
             <p className="text-[11px] text-amber-700/80">
-              {o.ar_overdue_count} overdue
+              {t('overdueCount', { count: o.ar_overdue_count })}
             </p>
           </div>
           <div>
-            <p className="text-[11px] text-gray-500">AP (hutang)</p>
+            <p className="text-[11px] text-gray-500">{t('apLabel')}</p>
             <p className="text-base font-semibold text-rose-700 tabular-nums">
               {formatCurrency(o.ap_outstanding)}
             </p>
             <p className="text-[11px] text-rose-700/80">
-              {o.ap_overdue_count} overdue
+              {t('overdueCount', { count: o.ap_overdue_count })}
             </p>
           </div>
         </div>
@@ -483,6 +496,7 @@ function OverdueCard({
   children?: React.ReactNode;
   empty: string;
 }) {
+  const t = useTranslations('dashboard');
   const tone =
     color === 'amber'
       ? 'border-amber-200 bg-amber-50/40'
@@ -494,8 +508,7 @@ function OverdueCard({
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-gray-700">{title}</p>
           <p className={`text-xs font-medium ${accent}`}>
-            {totalCount} overdue ·{' '}
-            <span className="tabular-nums">{formatCurrency(totalAmount)}</span> total
+            {t('overdueSummary', { count: totalCount, amount: formatCurrency(totalAmount) })}
           </p>
         </div>
         {totalCount === 0 ? (
