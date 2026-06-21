@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Edit, Plus, Search, LayoutGrid, List } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -67,6 +68,10 @@ const editCarSchema = z.object({
 type EditCarForm = z.infer<typeof editCarSchema>;
 
 export default function CarsPage() {
+  const t = useTranslations("carsPage");
+  const tt = useTranslations("terms");
+  const ts = useTranslations("carStatus");
+  const tc = useTranslations("common");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
@@ -117,7 +122,7 @@ export default function CarsPage() {
   async function onSubmit(data: CreateCarForm) {
     try {
       await createMutation.mutateAsync(data);
-      toast.success("Car added successfully");
+      toast.success(t("okAdded"));
       setCreateOpen(false);
       reset();
     } catch (err) {
@@ -141,7 +146,7 @@ export default function CarsPage() {
     if (!editingCar) return;
     try {
       await updateMutation.mutateAsync({ id: editingCar.id, data });
-      toast.success("Car updated successfully");
+      toast.success(t("okUpdated"));
       setEditingCar(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -149,14 +154,14 @@ export default function CarsPage() {
   }
 
   return (
-    <DashboardShell title="Cars">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="flex gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search cars…"
+                placeholder={t('searchPlaceholder')}
                 className="pl-9"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -167,17 +172,17 @@ export default function CarsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="AVAILABLE">Available</SelectItem>
-                <SelectItem value="IN_USE">In Use</SelectItem>
-                <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                <SelectItem value="ALL">{t('allStatus')}</SelectItem>
+                <SelectItem value="AVAILABLE">{ts('AVAILABLE')}</SelectItem>
+                <SelectItem value="IN_USE">{ts('IN_USE')}</SelectItem>
+                <SelectItem value="MAINTENANCE">{ts('MAINTENANCE')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="flex items-center gap-2">
             {view === "cards" && (
               <div className="hidden items-center gap-1.5 sm:flex">
-                <span className="text-xs text-gray-400">Revenue:</span>
+                <span className="text-xs text-gray-400">{t('revenue')}</span>
                 <PeriodToggle surface="cars" />
               </div>
             )}
@@ -190,7 +195,7 @@ export default function CarsPage() {
                     ? "bg-gray-900 text-white"
                     : "text-gray-500 hover:bg-gray-100"
                 }`}
-                title="Tampilan kartu"
+                title={t('cardView')}
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
@@ -202,14 +207,14 @@ export default function CarsPage() {
                     ? "bg-gray-900 text-white"
                     : "text-gray-500 hover:bg-gray-100"
                 }`}
-                title="Tampilan tabel"
+                title={t('tableView')}
               >
                 <List className="h-4 w-4" />
               </button>
             </div>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Car
+              {t('addCar')}
             </Button>
           </div>
         </div>
@@ -226,7 +231,7 @@ export default function CarsPage() {
             </div>
           ) : filtered?.length === 0 ? (
             <div className="rounded-xl border border-gray-200 bg-white py-16 text-center text-sm text-gray-400">
-              No cars found.
+              {t('noCars')}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -241,31 +246,31 @@ export default function CarsPage() {
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
-                  No
+                  {t('colNo')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-16">
-                  Foto
+                  {t('colPhoto')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Unit Code
+                  {t('colUnitCode')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Model
+                  {t('colModel')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Plate Number
+                  {t('colPlate')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Type
+                  {t('colType')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">
-                  Asal / Base
+                  {t('colBase')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Status
+                  {t('colStatus')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide text-right">
-                  Action
+                  {t('colAction')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -286,7 +291,7 @@ export default function CarsPage() {
                     colSpan={9}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No cars found.
+                    {t('noCars')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -317,7 +322,7 @@ export default function CarsPage() {
                             : "text-xs bg-purple-50 text-purple-700 border-purple-200"
                         }
                       >
-                        {car.type}
+                        {car.type === "INTERNAL" ? tt('internal') : tt('external')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 hidden lg:table-cell">
@@ -328,7 +333,7 @@ export default function CarsPage() {
                         variant="outline"
                         className={`text-xs ${CAR_STATUS_STYLES[car.status]}`}
                       >
-                        {car.status.replace("_", " ")}
+                        {ts(car.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -338,7 +343,7 @@ export default function CarsPage() {
                         onClick={() => openEdit(car)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Edit
+                        {t('edit')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -356,7 +361,7 @@ export default function CarsPage() {
           start={start}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
-          label="cars"
+          label={t('paginationLabel')}
         />
       </div>
 
@@ -364,23 +369,23 @@ export default function CarsPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add New Car</DialogTitle>
+            <DialogTitle>{t('addNewCar')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="unit_code">Unit Code</Label>
+                <Label htmlFor="unit_code">{t('unitCode')}</Label>
                 <Input
                   id="unit_code"
-                  placeholder="e.g. FCB, ARA, VLZ1"
+                  placeholder={t('unitCodePlaceholder')}
                   {...register("unit_code")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="model">Model</Label>
+                <Label htmlFor="model">{t('model')}</Label>
                 <Input
                   id="model"
-                  placeholder="e.g. Toyota Avanza"
+                  placeholder={t('modelPlaceholder')}
                   {...register("model")}
                 />
                 {errors.model && (
@@ -391,10 +396,10 @@ export default function CarsPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="plate_number">Plate Number</Label>
+                <Label htmlFor="plate_number">{t('plateNumber')}</Label>
                 <Input
                   id="plate_number"
-                  placeholder="e.g. B 1234 XYZ"
+                  placeholder={t('platePlaceholder')}
                   {...register("plate_number")}
                 />
                 {errors.plate_number && (
@@ -404,21 +409,21 @@ export default function CarsPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label>{t('type')}</Label>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Internal / External" />
+                        <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INTERNAL">
-                          Internal Arasya
+                          {t('internalArasya')}
                         </SelectItem>
                         <SelectItem value="EXTERNAL">
-                          External / Rental Partner
+                          {t('externalPartner')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -428,10 +433,10 @@ export default function CarsPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="origin_location">Asal / Base Location</Label>
+              <Label htmlFor="origin_location">{t('baseLocation')}</Label>
               <Input
                 id="origin_location"
-                placeholder="e.g. Arasya pool, Depok, Bandung"
+                placeholder={t('basePlaceholder')}
                 {...register("origin_location")}
               />
             </div>
@@ -441,7 +446,7 @@ export default function CarsPage() {
                 {createMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Add Car
+                {t('addCar')}
               </Button>
             </div>
           </form>
@@ -455,23 +460,23 @@ export default function CarsPage() {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Car</DialogTitle>
+            <DialogTitle>{t('editCar')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit(onEditSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit_unit_code">Unit Code</Label>
+                <Label htmlFor="edit_unit_code">{t('unitCode')}</Label>
                 <Input
                   id="edit_unit_code"
-                  placeholder="e.g. FCB, ARA, VLZ1"
+                  placeholder={t('unitCodePlaceholder')}
                   {...registerEdit("unit_code")}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit_model">Model</Label>
+                <Label htmlFor="edit_model">{t('model')}</Label>
                 <Input
                   id="edit_model"
-                  placeholder="e.g. Toyota Avanza"
+                  placeholder={t('modelPlaceholder')}
                   {...registerEdit("model")}
                 />
                 {editErrors.model && (
@@ -484,10 +489,10 @@ export default function CarsPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit_plate_number">Plate Number</Label>
+                <Label htmlFor="edit_plate_number">{t('plateNumber')}</Label>
                 <Input
                   id="edit_plate_number"
-                  placeholder="e.g. B 1234 XYZ"
+                  placeholder={t('platePlaceholder')}
                   {...registerEdit("plate_number")}
                 />
                 {editErrors.plate_number && (
@@ -497,21 +502,21 @@ export default function CarsPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label>{t('type')}</Label>
                 <Controller
                   control={editControl}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Internal / External" />
+                        <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INTERNAL">
-                          Internal Arasya
+                          {t('internalArasya')}
                         </SelectItem>
                         <SelectItem value="EXTERNAL">
-                          External / Rental Partner
+                          {t('externalPartner')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -522,19 +527,19 @@ export default function CarsPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t('status')}</Label>
                 <Controller
                   control={editControl}
                   name="status"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder={t('status')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AVAILABLE">Available</SelectItem>
-                        <SelectItem value="IN_USE">In Use</SelectItem>
-                        <SelectItem value="MAINTENANCE">Maintenance</SelectItem>
+                        <SelectItem value="AVAILABLE">{ts('AVAILABLE')}</SelectItem>
+                        <SelectItem value="IN_USE">{ts('IN_USE')}</SelectItem>
+                        <SelectItem value="MAINTENANCE">{ts('MAINTENANCE')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -542,11 +547,11 @@ export default function CarsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="edit_origin_location">
-                  Asal / Base Location
+                  {t('baseLocation')}
                 </Label>
                 <Input
                   id="edit_origin_location"
-                  placeholder="e.g. Arasya pool, Depok, Bandung"
+                  placeholder={t('basePlaceholder')}
                   {...registerEdit("origin_location")}
                 />
               </div>
@@ -558,13 +563,13 @@ export default function CarsPage() {
                 variant="outline"
                 onClick={() => setEditingCar(null)}
               >
-                Cancel
+                {tc('cancel')}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Save Changes
+                {t('saveChanges')}
               </Button>
             </div>
           </form>

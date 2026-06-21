@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 /**
  * Final Orders has been merged into the unified Orders page.
@@ -10,12 +11,13 @@ import { useRouter } from 'next/navigation';
  */
 export default function FinalOrdersRedirect() {
   const router = useRouter();
+  const t = useTranslations('finalOrders');
   useEffect(() => {
     router.replace('/dashboard/orders?has_finance=true');
   }, [router]);
   return (
     <div className="flex h-full items-center justify-center p-10 text-sm text-gray-400">
-      Final Orders moved into Orders — redirecting…
+      {t('redirecting')}
     </div>
   );
 }

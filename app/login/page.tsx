@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations('login');
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function LoginPage() {
       const res = await authApi.login(values);
       const { token, user } = res.data.data;
       saveAuth(token, user);
-      toast.success('Login successful');
+      toast.success(t('okLogin'));
       router.push('/dashboard');
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -67,19 +69,19 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm shadow-sm">
         <CardHeader className="space-y-1 pb-4">
           <div className="mb-2">
-            <span className="text-xl font-semibold text-gray-900">Arasya RentCar</span>
+            <span className="text-xl font-semibold text-gray-900">{t('brand')}</span>
           </div>
-          <CardTitle className="text-lg">Sign in to continue</CardTitle>
-          <CardDescription>Enter your admin credentials below.</CardDescription>
+          <CardTitle className="text-lg">{t('signInTitle')}</CardTitle>
+          <CardDescription>{t('signInDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder={t('emailPlaceholder')}
                 {...register('email')}
               />
               {errors.email && (
@@ -88,7 +90,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('password')}</Label>
               <Input
                 id="password"
                 type="password"
@@ -102,7 +104,7 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
+              {t('signIn')}
             </Button>
           </form>
         </CardContent>
