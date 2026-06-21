@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
   UserPlus,
@@ -82,12 +83,29 @@ const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
   PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
 };
 
+const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
+  CREATED: "statusCreated",
+  ASSIGNED: "statusAssigned",
+  IN_PROGRESS: "statusInProgress",
+  DONE: "statusDone",
+  CANCELLED: "statusCancelled",
+};
+
+const PAYMENT_STATUS_KEYS: Record<string, string> = {
+  UNPAID: "payUnpaid",
+  DP_PAID: "payDpPaid",
+  PAID: "payPaid",
+};
+
 export default function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const t = useTranslations("orderDetail");
+  const tt = useTranslations("terms");
+  const tc = useTranslations("common");
   const [assignOpen, setAssignOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -122,7 +140,7 @@ export default function OrderDetailPage({
       order?.customer_name ||
       "";
     if (!phone) {
-      toast.error("No customer phone number on this order");
+      toast.error(t("okNoPhone"));
       return;
     }
     try {
@@ -131,7 +149,7 @@ export default function OrderDetailPage({
         invoiceId: invoice.id,
         data: { target_phone: phone, target_name: name },
       });
-      toast.success(`Invoice ${invoice.invoice_number} sent via WhatsApp`);
+      toast.success(t("okInvoiceSent", { number: invoice.invoice_number }));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -157,7 +175,7 @@ export default function OrderDetailPage({
         data: payload,
       });
       toast.success(
-        `${markPaidInvoice.invoice_number} marked paid — now a receipt (kwitansi)`,
+        t("okMarkedPaid", { number: markPaidInvoice.invoice_number }),
       );
       setMarkPaidInvoice(null);
     } catch (err) {
@@ -167,16 +185,16 @@ export default function OrderDetailPage({
   const advanceTripMutation = useAdvanceTripStatus(id);
 
   const ADDITIONAL_TYPES: { label: string; value: string }[] = [
-    { label: "Overtime", value: "OVERTIME" },
-    { label: "Parkir", value: "PARKING" },
-    { label: "Toll", value: "TOLL" },
-    { label: "Additional", value: "OTHER" },
+    { label: t("typeOvertime"), value: "OVERTIME" },
+    { label: t("typeParking"), value: "PARKING" },
+    { label: t("typeToll"), value: "TOLL" },
+    { label: t("typeAdditional"), value: "OTHER" },
   ];
 
   async function handleAddAdditional() {
     const amt = Number(adjAmount || 0);
     if (!amt || amt <= 0) {
-      toast.error("Enter an amount greater than 0");
+      toast.error(t("okEnterAmount"));
       return;
     }
     try {
@@ -184,13 +202,13 @@ export default function OrderDetailPage({
         type: adjType,
         description:
           adjDesc.trim() ||
-          ADDITIONAL_TYPES.find((t) => t.value === adjType)?.label ||
-          "Additional",
+          ADDITIONAL_TYPES.find((at) => at.value === adjType)?.label ||
+          t("typeAdditional"),
         amount: amt,
         quantity: 1,
         is_billable: true,
       });
-      toast.success("Additional charge added");
+      toast.success(t("okAdditionalAdded"));
       setAdditionalOpen(false);
       setAdjType("OVERTIME");
       setAdjDesc("");
@@ -229,7 +247,7 @@ export default function OrderDetailPage({
   const serviceDuration =
     serviceStart && serviceEnd
       ? formatDuration(serviceStart, serviceEnd)
-      : "Not finished yet";
+      : t("notFinishedYet");
 
   const serviceSummary = (() => {
     const items = order?.service_items ?? [];
@@ -253,7 +271,7 @@ export default function OrderDetailPage({
       .map((g) => ({
         key: g.key,
         date: g.date,
-        dateLabel: g.date ? formatDate(g.date) : "No date",
+        dateLabel: g.date ? formatDate(g.date) : t("noDate"),
         lines: g.lines,
       }));
 
@@ -286,7 +304,7 @@ export default function OrderDetailPage({
   async function handleAssign(data: { driver_id: string; car_id: string }) {
     try {
       await assignMutation.mutateAsync({ id, data });
-      toast.success("Driver assigned successfully");
+      toast.success(t("okDriverAssigned"));
       setAssignOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -347,7 +365,7 @@ export default function OrderDetailPage({
   ) {
     try {
       await updateOrderMutation.mutateAsync({ id, data });
-      toast.success("Order updated successfully");
+      toast.success(t("okOrderUpdated"));
       setEditOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -357,7 +375,7 @@ export default function OrderDetailPage({
   async function handleGenerateInvoice(data: GenerateInvoiceInput) {
     try {
       await generateInvoiceMutation.mutateAsync({ id, data });
-      toast.success("Invoice generated successfully");
+      toast.success(t("okInvoiceGenerated"));
       setInvoiceOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -367,7 +385,7 @@ export default function OrderDetailPage({
   async function handleMarkRefunded(payload: RefundPayload) {
     try {
       await markRefundedMutation.mutateAsync({ id, data: payload });
-      toast.success("Refund ditandai sudah dibayar");
+      toast.success(t("okRefundMarked"));
       setRefundOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -382,7 +400,7 @@ export default function OrderDetailPage({
         invoiceId: revisionInvoice.id,
         data,
       });
-      toast.success("Invoice revision created successfully");
+      toast.success(t("okRevisionCreated"));
       setRevisionInvoice(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -396,7 +414,7 @@ export default function OrderDetailPage({
         tripId: order.trip.id,
         nextStatus,
       });
-      toast.success(`Trip advanced to: ${nextStatus.replace(/_/g, " ")}`);
+      toast.success(t("okTripAdvanced", { status: nextStatus.replace(/_/g, " ") }));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -404,7 +422,7 @@ export default function OrderDetailPage({
 
   if (isLoading) {
     return (
-      <DashboardShell title="Order Detail">
+      <DashboardShell title={t('title')}>
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <div
@@ -419,14 +437,14 @@ export default function OrderDetailPage({
 
   if (!order) {
     return (
-      <DashboardShell title="Order Detail">
-        <div className="text-center py-16 text-gray-400">Order not found.</div>
+      <DashboardShell title={t('title')}>
+        <div className="text-center py-16 text-gray-400">{t('notFound')}</div>
       </DashboardShell>
     );
   }
 
   return (
-    <DashboardShell title="Order Detail">
+    <DashboardShell title={t('title')}>
       <div className="space-y-6">
         {/* Back + Header */}
         <div className="flex items-center justify-between">
@@ -434,7 +452,7 @@ export default function OrderDetailPage({
             <Button variant="ghost" size="sm" asChild>
               <Link href="/dashboard/orders">
                 <ArrowLeft className="h-4 w-4 mr-1" />
-                Orders
+                {t('orders')}
               </Link>
             </Button>
             <div className="h-4 w-px bg-gray-200" />
@@ -447,20 +465,22 @@ export default function OrderDetailPage({
                 variant="outline"
                 className={`text-xs ${ORDER_STATUS_STYLES[order.order_status]}`}
               >
-                {order.order_status}
+                {t(ORDER_STATUS_KEYS[order.order_status])}
               </Badge>
               <Badge
                 variant="outline"
                 className={`text-xs ${PAYMENT_STATUS_STYLES[order.payment_status] ?? ""}`}
               >
-                {order.payment_status.replace("_", " ")}
+                {PAYMENT_STATUS_KEYS[order.payment_status]
+                  ? t(PAYMENT_STATUS_KEYS[order.payment_status])
+                  : order.payment_status.replace("_", " ")}
               </Badge>
               {refundDue > 0 && !isRefunded && (
                 <Badge
                   variant="outline"
                   className="text-xs bg-red-50 text-red-700 border-red-200"
                 >
-                  Refund due
+                  {t('refundDue')}
                 </Badge>
               )}
               {isRefunded && (
@@ -468,7 +488,7 @@ export default function OrderDetailPage({
                   variant="outline"
                   className="text-xs bg-gray-100 text-gray-600 border-gray-200"
                 >
-                  Refunded
+                  {t('refunded')}
                 </Badge>
               )}
             </div>
@@ -480,12 +500,12 @@ export default function OrderDetailPage({
               variant="outline"
             >
               <PencilLine className="h-4 w-4 mr-2" />
-              Edit Order
+              {t('editOrder')}
             </Button>
             {order.order_status === "CREATED" && (
               <Button onClick={() => setAssignOpen(true)} size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
-                Assign Driver
+                {t('assignDriver')}
               </Button>
             )}
             {refundDue > 0 && !isRefunded && (
@@ -496,7 +516,7 @@ export default function OrderDetailPage({
                 className="border-red-200 text-red-700 hover:bg-red-50"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
-                Tandai Refund
+                {t('markRefund')}
               </Button>
             )}
           </div>
@@ -507,12 +527,10 @@ export default function OrderDetailPage({
             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
             <div>
               <p className="font-medium">
-                Service has started but rental is not fully paid
+                {t('serviceStartedUnpaidTitle')}
               </p>
               <p className="text-xs mt-1">
-                Full rental payment is due on day 1 of service. Current status:{" "}
-                {order.payment_status.replace("_", " ")}. Issue/settle the
-                remaining balance.
+                {t('serviceStartedUnpaidBody', { status: order.payment_status.replace("_", " ") })}
               </p>
             </div>
           </div>
@@ -526,18 +544,20 @@ export default function OrderDetailPage({
             <div>
               <p className="font-medium">
                 {invoiceDifference > 0
-                  ? "Order price is higher than active invoice total"
-                  : "Active invoice total exceeds order price"}
+                  ? t('priceHigher')
+                  : t('invoiceExceeds')}
               </p>
               <p>
-                Order total: {formatCurrency(orderFinalPrice)} | Active invoice
-                total: {formatCurrency(alreadyPaid)} | Difference:{" "}
-                {formatCurrency(invoiceDifference)}
+                {t('diffLine', {
+                  orderTotal: formatCurrency(orderFinalPrice),
+                  invoiceTotal: formatCurrency(alreadyPaid),
+                  difference: formatCurrency(invoiceDifference),
+                })}
               </p>
               <p className="text-xs mt-1">
                 {invoiceDifference > 0
-                  ? "Generate another invoice for the remaining amount, or revise the latest invoice if this is a correction."
-                  : "Edit order price upward or revise/cancel invoices before creating more invoices."}
+                  ? t('priceHigherHint')
+                  : t('invoiceExceedsHint')}
               </p>
             </div>
           </div>
@@ -550,50 +570,50 @@ export default function OrderDetailPage({
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Order Information</CardTitle>
+                  <CardTitle className="text-base">{t('orderInformation')}</CardTitle>
                   <Badge
                     variant="outline"
                     className={`text-xs ${ORDER_STATUS_STYLES[order.order_status]}`}
                   >
-                    {order.order_status}
+                    {t(ORDER_STATUS_KEYS[order.order_status])}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <InfoRow label="Primary PIC" value={order.customer_name} />
+                  <InfoRow label={t('primaryPic')} value={order.customer_name} />
                   <InfoRow
-                    label="Primary Phone"
+                    label={t('primaryPhone')}
                     value={order.customer_phone || "-"}
                   />
-                  <InfoRow label="Pickup" value={order.pickup_location} />
-                  <InfoRow label="Dropoff" value={order.dropoff_location} />
+                  <InfoRow label={t('pickup')} value={order.pickup_location} />
+                  <InfoRow label={t('dropoff')} value={order.dropoff_location} />
                   <InfoRow
-                    label="Order Date"
+                    label={t('orderDate')}
                     value={formatDateTime(order.order_date)}
                   />
                   <InfoRow
-                    label="Pickup Time"
+                    label={t('pickupTime')}
                     value={serviceStart ? formatDateTime(serviceStart) : "-"}
                   />
                   <InfoRow
-                    label="Dropoff Time"
+                    label={t('dropoffTime')}
                     value={serviceEnd ? formatDateTime(serviceEnd) : "-"}
                   />
-                  <InfoRow label="Service Duration" value={serviceDuration} />
+                  <InfoRow label={t('serviceDuration')} value={serviceDuration} />
                   <InfoRow
-                    label="Final Price"
+                    label={t('finalPrice')}
                     value={formatCurrency(order.final_price)}
                   />
                   <InfoRow
-                    label="Created At"
+                    label={t('createdAt')}
                     value={formatDateTime(order.created_at)}
                   />
                 </div>
                 {order.customers && order.customers.length > 1 && (
                   <div className="mt-5 pt-4 border-t border-gray-100">
                     <p className="text-xs text-gray-400 mb-2">
-                      All Customer / PIC
+                      {t('allCustomerPic')}
                     </p>
                     <div className="space-y-2">
                       {order.customers.map((customer, index) => (
@@ -611,7 +631,7 @@ export default function OrderDetailPage({
                           </div>
                           {customer.is_primary && (
                             <Badge variant="outline" className="text-xs">
-                              Primary
+                              {t('primary')}
                             </Badge>
                           )}
                         </div>
@@ -628,7 +648,7 @@ export default function OrderDetailPage({
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle className="text-base">
-                    Service Details / Invoice Lines
+                    {t('serviceDetails')}
                   </CardTitle>
                   {serviceSummary && (
                     <Badge
@@ -640,15 +660,14 @@ export default function OrderDetailPage({
                       }
                     >
                       {serviceSummary.dayCount > 1
-                        ? `${serviceSummary.dayCount}-day order`
-                        : "Single day"}
+                        ? t('dayOrder', { count: serviceSummary.dayCount })
+                        : t('singleDay')}
                     </Badge>
                   )}
                 </div>
                 {serviceSummary && serviceSummary.dayCount > 1 && (
                   <p className="text-xs text-gray-500 mt-1">
-                    {serviceSummary.rangeLabel} · {serviceSummary.lineCount}{" "}
-                    service lines
+                    {t('rangeSummary', { range: serviceSummary.rangeLabel, count: serviceSummary.lineCount })}
                   </p>
                 )}
               </CardHeader>
@@ -661,13 +680,13 @@ export default function OrderDetailPage({
                           <div className="flex items-center justify-between gap-3 mb-2">
                             <p className="text-sm font-semibold text-gray-900">
                               <span className="inline-flex items-center justify-center rounded bg-indigo-100 text-indigo-700 text-[11px] font-semibold px-1.5 py-0.5 mr-2 align-middle">
-                                Day {gIndex + 1}
+                                {t('day', { n: gIndex + 1 })}
                               </span>
                               {group.dateLabel}
                             </p>
                             {group.lines.length > 1 && (
                               <span className="text-[11px] text-gray-400">
-                                {group.lines.length} units
+                                {t('unitsCount', { count: group.lines.length })}
                               </span>
                             )}
                           </div>
@@ -703,10 +722,10 @@ export default function OrderDetailPage({
                                           ? `${item.service_kind} — `
                                           : ""}
                                         {carName ||
-                                          `Service Detail #${index + 1}`}
+                                          t('serviceDetailNum', { n: index + 1 })}
                                         {item.line_status === "CANCELLED" && (
                                           <span className="ml-2 text-[11px] text-red-600">
-                                            (cancelled)
+                                            {t('cancelledTag')}
                                           </span>
                                         )}
                                       </p>
@@ -740,11 +759,11 @@ export default function OrderDetailPage({
                                           >
                                             {driverLabel}
                                             {carLabel ? ` · ${carLabel}` : ""}
-                                            {item.is_external ? " · vendor" : ""}
+                                            {item.is_external ? ` · ${t('vendorTag')}` : ""}
                                           </span>
                                         ) : (
                                           <span className="inline-flex items-center rounded bg-gray-100 text-gray-500 px-1.5 py-0.5 text-[11px] font-medium">
-                                            No driver assigned
+                                            {t('noDriverAssigned')}
                                           </span>
                                         )}
                                       </div>
@@ -756,7 +775,7 @@ export default function OrderDetailPage({
                                     </div>
                                     <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
                                       <p className="text-xs text-gray-400">
-                                        Qty {item.quantity} ×{" "}
+                                        {t('qty', { qty: item.quantity })}{" "}
                                         {formatCurrency(item.unit_price)}
                                       </p>
                                       <p className="text-sm font-semibold text-gray-900">
@@ -769,7 +788,7 @@ export default function OrderDetailPage({
                                         onClick={() => openDayAssign(item)}
                                       >
                                         <UserCog className="h-3.5 w-3.5" />
-                                        {driverLabel ? "Change" : "Assign"}
+                                        {driverLabel ? t('change') : t('assign')}
                                       </Button>
                                     </div>
                                   </div>
@@ -782,10 +801,10 @@ export default function OrderDetailPage({
                     </div>
                     <div className="flex items-center justify-between border-t border-gray-200 mt-4 pt-3">
                       <p className="text-xs text-gray-500">
-                        Total · {serviceSummary.dayCount} day
-                        {serviceSummary.dayCount > 1 ? "s" : ""} ·{" "}
-                        {serviceSummary.lineCount} line
-                        {serviceSummary.lineCount > 1 ? "s" : ""}
+                        {t('totalSummary', {
+                          days: t('daysWord', { count: serviceSummary.dayCount }),
+                          lines: t('linesWord', { count: serviceSummary.lineCount }),
+                        })}
                       </p>
                       <p className="text-sm font-semibold text-gray-900">
                         {formatCurrency(serviceSummary.total)}
@@ -794,7 +813,7 @@ export default function OrderDetailPage({
                   </>
                 ) : (
                   <p className="text-sm text-gray-400">
-                    No itemized service details yet.
+                    {t('noServiceDetails')}
                   </p>
                 )}
               </CardContent>
@@ -805,7 +824,7 @@ export default function OrderDetailPage({
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle className="text-base">
-                    Additional Charges
+                    {t('additionalCharges')}
                   </CardTitle>
                   <Button
                     type="button"
@@ -813,7 +832,7 @@ export default function OrderDetailPage({
                     size="sm"
                     onClick={() => setAdditionalOpen(true)}
                   >
-                    <Plus className="mr-1 h-3.5 w-3.5" /> Add Additional
+                    <Plus className="mr-1 h-3.5 w-3.5" /> {t('addAdditional')}
                   </Button>
                 </div>
               </CardHeader>
@@ -832,7 +851,7 @@ export default function OrderDetailPage({
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
                               {adj.type}
-                              {adj.is_billable ? "" : " · non-billable"}
+                              {adj.is_billable ? "" : ` · ${t('nonBillable')}`}
                               {adj.created_at
                                 ? ` · ${formatDate(adj.created_at)}`
                                 : ""}
@@ -848,7 +867,7 @@ export default function OrderDetailPage({
                     </div>
                     <div className="flex items-center justify-between border-t border-gray-200 mt-3 pt-3">
                       <p className="text-xs text-gray-500">
-                        Additional total
+                        {t('additionalTotal')}
                       </p>
                       <p className="text-sm font-semibold text-gray-900">
                         {formatCurrency(
@@ -866,8 +885,7 @@ export default function OrderDetailPage({
                   </>
                 ) : (
                   <p className="text-sm text-gray-400">
-                    No additional charges. Use “Add Additional” for overtime,
-                    parkir, etc.
+                    {t('noAdditional')}
                   </p>
                 )}
               </CardContent>
@@ -877,29 +895,29 @@ export default function OrderDetailPage({
             {order.trip && (
               <Card className="shadow-none border border-gray-200">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-base">Trip Information</CardTitle>
+                  <CardTitle className="text-base">{t('tripInformation')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                    <InfoRow label="Driver" value={order.trip.driver.name} />
+                    <InfoRow label={tt('driver')} value={order.trip.driver.name} />
                     <InfoRow
-                      label="Driver Phone"
+                      label={t('driverPhone')}
                       value={order.trip.driver.phone}
                     />
-                    <InfoRow label="Car" value={order.trip.car.model} />
+                    <InfoRow label={t('car')} value={order.trip.car.model} />
                     <InfoRow
-                      label="Plate"
+                      label={t('plate')}
                       value={order.trip.car.plate_number}
                     />
                     {order.trip.started_at && (
                       <InfoRow
-                        label="Started"
+                        label={t('started')}
                         value={formatDateTime(order.trip.started_at)}
                       />
                     )}
                     {order.trip.finished_at && (
                       <InfoRow
-                        label="Finished"
+                        label={t('finished')}
                         value={formatDateTime(order.trip.finished_at)}
                       />
                     )}
@@ -908,7 +926,7 @@ export default function OrderDetailPage({
                   <Separator className="mb-6" />
 
                   <h4 className="text-sm font-medium text-gray-700 mb-4">
-                    Trip Progress
+                    {t('tripProgress')}
                   </h4>
                   <TripTimeline
                     currentStatus={order.trip.current_status}
@@ -928,7 +946,7 @@ export default function OrderDetailPage({
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">
-                    Invoices & Payment
+                    {t('invoicesPayment')}
                   </CardTitle>
                   <Badge
                     variant="outline"
@@ -940,7 +958,9 @@ export default function OrderDetailPage({
                           : "bg-red-50 text-red-700 border-red-200"
                     }`}
                   >
-                    {order.payment_status.replace("_", " ")}
+                    {PAYMENT_STATUS_KEYS[order.payment_status]
+                      ? t(PAYMENT_STATUS_KEYS[order.payment_status])
+                      : order.payment_status.replace("_", " ")}
                   </Badge>
                 </div>
               </CardHeader>
@@ -976,11 +996,11 @@ export default function OrderDetailPage({
       <Dialog open={additionalOpen} onOpenChange={setAdditionalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Additional Charge</DialogTitle>
+            <DialogTitle>{t('addAdditionalCharge')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Type</Label>
+              <Label>{t('type')}</Label>
               <select
                 className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={adjType}
@@ -994,15 +1014,15 @@ export default function OrderDetailPage({
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label>Label / Note</Label>
+              <Label>{t('labelNote')}</Label>
               <Input
-                placeholder="e.g. Overtime 2 jam"
+                placeholder={t('labelNotePlaceholder')}
                 value={adjDesc}
                 onChange={(e) => setAdjDesc(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Amount (Rp)</Label>
+              <Label>{t('amountRp')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -1012,7 +1032,7 @@ export default function OrderDetailPage({
               />
             </div>
             <p className="text-xs text-gray-500">
-              This amount is added to the order&rsquo;s final price.
+              {t('addedToFinal')}
             </p>
             <div className="flex justify-end gap-2">
               <Button
@@ -1020,7 +1040,7 @@ export default function OrderDetailPage({
                 variant="outline"
                 onClick={() => setAdditionalOpen(false)}
               >
-                Cancel
+                {tc('cancel')}
               </Button>
               <Button
                 type="button"
@@ -1030,7 +1050,7 @@ export default function OrderDetailPage({
                 {addAdjustmentMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Add Charge
+                {t('addCharge')}
               </Button>
             </div>
           </div>
@@ -1041,7 +1061,7 @@ export default function OrderDetailPage({
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="w-[96vw] max-w-[1280px] max-h-[96vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Edit Order</DialogTitle>
+            <DialogTitle>{t('editOrder')}</DialogTitle>
           </DialogHeader>
           <EditOrderForm
             order={order}
@@ -1056,7 +1076,7 @@ export default function OrderDetailPage({
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Assign Driver & Car</DialogTitle>
+            <DialogTitle>{t('assignDriverCar')}</DialogTitle>
           </DialogHeader>
           <AssignDriverForm
             onSubmit={handleAssign}
@@ -1069,7 +1089,7 @@ export default function OrderDetailPage({
       <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Invoice Rental (DP / Settlement)</DialogTitle>
+            <DialogTitle>{t('invoiceRental')}</DialogTitle>
           </DialogHeader>
           <GenerateInvoiceForm
             finalPrice={orderFinalPrice}
@@ -1094,7 +1114,7 @@ export default function OrderDetailPage({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Invoice an Additional Charge</DialogTitle>
+            <DialogTitle>{t('invoiceAdditional')}</DialogTitle>
           </DialogHeader>
           <AdditionalInvoiceForm
             finalPrice={orderFinalPrice}
@@ -1113,7 +1133,7 @@ export default function OrderDetailPage({
       <Dialog open={combinedInvoiceOpen} onOpenChange={setCombinedInvoiceOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Invoice Gabungan (Rental + Additional)</DialogTitle>
+            <DialogTitle>{t('invoiceCombined')}</DialogTitle>
           </DialogHeader>
           <CombinedInvoiceForm
             rentalBase={rentalBase}
@@ -1134,7 +1154,7 @@ export default function OrderDetailPage({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Current Invoice</DialogTitle>
+            <DialogTitle>{t('updateInvoice')}</DialogTitle>
           </DialogHeader>
           {revisionInvoice && (
             <ReviseInvoiceForm
