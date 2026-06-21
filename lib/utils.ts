@@ -5,13 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(value: string | number): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value;
+export function formatCurrency(value: string | number | null | undefined): string {
+  const num = typeof value === 'string' ? parseFloat(value) : (value ?? NaN);
+  // Guard against undefined/null/NaN so we never render "RpNaN" in the UI.
+  if (!Number.isFinite(num)) {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(0);
+  }
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
-  }).format(num);
+  }).format(num as number);
 }
 
 // All dates are stored UTC; display them in WIB (Asia/Jakarta) so times are
