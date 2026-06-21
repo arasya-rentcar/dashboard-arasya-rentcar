@@ -1182,6 +1182,9 @@
     "external": "Eksternal",
     "internal": "Internal",
     "editFinance": "Edit Keuangan",
+    "editDriverNote": "Edit Biaya Driver & Catatan",
+    "lineManaged": "Total User, Biaya Ops, RTR, dan Margin dihitung otomatis dari baris Jadwal order ini. Untuk mengubahnya, edit hari-hari order di menu Jadwal.",
+    "costsReadOnlyHint": "Diambil dari Jadwal · hanya-baca",
     "vendor": "Vendor",
     "totalUser": "Total User",
     "sellPrice": "Harga Jual",
@@ -1197,10 +1200,11 @@
     "totalOpsCost": "Total Biaya Ops",
     "driverCostOptional": "Biaya Driver (opsional)",
     "noteOptional": "Catatan (opsional)",
-    "marginPreview": "Pratinjau margin",
+    "marginPreview": "Margin saat ini",
+    "marginReadOnlyHint": "Dari baris Jadwal",
     "saving": "Menyimpan…",
-    "saveRecompute": "Simpan & Hitung Ulang Margin",
-    "savedToast": "Keuangan disimpan — margin dihitung ulang"
+    "saveRecompute": "Simpan",
+    "savedToast": "Tersimpan"
   },
   "markPaid": {
     "title": "Tandai Terbayar — {invoice}",

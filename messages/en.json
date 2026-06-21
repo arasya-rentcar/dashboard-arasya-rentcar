@@ -1182,6 +1182,9 @@
     "external": "External",
     "internal": "Internal",
     "editFinance": "Edit Finance",
+    "editDriverNote": "Edit Driver Cost & Note",
+    "lineManaged": "Total User, Ops Cost, RTR and Margin are calculated automatically from this order's Schedule lines. To change them, edit the order's days in the Schedule.",
+    "costsReadOnlyHint": "Rolled up from Schedule · read-only",
     "vendor": "Vendor",
     "totalUser": "Total User",
     "sellPrice": "Sell Price",
@@ -1197,10 +1200,11 @@
     "totalOpsCost": "Total Ops Cost",
     "driverCostOptional": "Driver Cost (optional)",
     "noteOptional": "Note (optional)",
-    "marginPreview": "Margin preview",
+    "marginPreview": "Current margin",
+    "marginReadOnlyHint": "From Schedule lines",
     "saving": "Saving…",
-    "saveRecompute": "Save & Recompute Margin",
-    "savedToast": "Finance saved — margin recomputed"
+    "saveRecompute": "Save",
+    "savedToast": "Saved"
   },
   "markPaid": {
     "title": "Mark Paid — {invoice}",

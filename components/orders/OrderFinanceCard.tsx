@@ -31,20 +31,12 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
   const mutation = useUpdateOrderFinance();
 
   const [form, setForm] = useState({
-    total_user_amount: num(fin?.total_user_amount ?? order.final_price),
-    sell_price: num(fin?.sell_price),
-    rtr_amount: num(fin?.rtr_amount),
-    total_ops_cost: num(fin?.total_ops_cost),
     total_driver_amount: num(fin?.total_driver_amount),
     finance_note: fin?.finance_note ?? '',
   });
 
   function openEditor() {
     setForm({
-      total_user_amount: num(fin?.total_user_amount ?? order.final_price),
-      sell_price: num(fin?.sell_price),
-      rtr_amount: num(fin?.rtr_amount),
-      total_ops_cost: num(fin?.total_ops_cost),
       total_driver_amount: num(fin?.total_driver_amount),
       finance_note: fin?.finance_note ?? '',
     });
@@ -54,24 +46,16 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
   const toNum = (s: string) =>
     s.trim() === '' ? null : Number(s.replace(/[^\d.-]/g, ''));
 
-  // live margin preview
-  const u = Number(toNum(form.total_user_amount) ?? 0);
-  const sell = Number(toNum(form.sell_price) ?? 0);
-  const rtr = Number(toNum(form.rtr_amount) ?? 0);
-  const ops = Number(toNum(form.total_ops_cost) ?? 0);
-  const previewMargin = isExternal
-    ? (toNum(form.total_user_amount) != null ? u : sell) - rtr
-    : u - ops;
-
+  // Total User / Ops Cost / RTR / Margin are owned by the Schedule lines and
+  // recomputed by rollupOrderFinance — editing them here would be silently
+  // overwritten and would never reach the analytics dashboard. So this card
+  // only edits the two fields the rollup explicitly preserves: Driver Cost
+  // (a manual override) and the finance note.
   async function save() {
     try {
       await mutation.mutateAsync({
         id: order.id,
         data: {
-          total_user_amount: toNum(form.total_user_amount),
-          sell_price: toNum(form.sell_price),
-          rtr_amount: toNum(form.rtr_amount),
-          total_ops_cost: toNum(form.total_ops_cost),
           total_driver_amount: toNum(form.total_driver_amount),
           finance_note: form.finance_note.trim() || null,
         },
@@ -102,7 +86,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               {isExternal ? t('external') : t('internal')}
             </Badge>
             <Button size="sm" variant="outline" onClick={openEditor}>
-              <PencilLine className="h-4 w-4 mr-1" /> {t('editFinance')}
+              <PencilLine className="h-4 w-4 mr-1" /> {t('editDriverNote')}
             </Button>
           </div>
         </div>
@@ -170,44 +154,27 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {t('editFinance')} ({isExternal ? t('external') : t('internal')})
+              {t('editDriverNote')} ({isExternal ? t('external') : t('internal')})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
+              {t('lineManaged')}
+            </p>
+            {/* Cost figures are read-only here (owned by Schedule lines). */}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <ReadOnlyStat label={t('totalUser')} value={fin?.total_user_amount} hint={t('costsReadOnlyHint')} />
+              {isExternal ? (
+                <ReadOnlyStat label={t('rtr')} value={fin?.rtr_amount} hint={t('costsReadOnlyHint')} />
+              ) : (
+                <ReadOnlyStat label={t('opsCost')} value={fin?.total_ops_cost} hint={t('costsReadOnlyHint')} />
+              )}
+            </div>
             <Field
-              label={t('totalUserAmount')}
-              value={form.total_user_amount}
-              onChange={(v) => setForm({ ...form, total_user_amount: v })}
+              label={t('driverCostOptional')}
+              value={form.total_driver_amount}
+              onChange={(v) => setForm({ ...form, total_driver_amount: v })}
             />
-            {isExternal ? (
-              <>
-                <Field
-                  label={t('sellPriceField')}
-                  value={form.sell_price}
-                  onChange={(v) => setForm({ ...form, sell_price: v })}
-                />
-                <Field
-                  label={t('rtr')}
-                  value={form.rtr_amount}
-                  onChange={(v) => setForm({ ...form, rtr_amount: v })}
-                />
-              </>
-            ) : (
-              <>
-                <Field
-                  label={t('totalOpsCost')}
-                  value={form.total_ops_cost}
-                  onChange={(v) => setForm({ ...form, total_ops_cost: v })}
-                />
-                <Field
-                  label={t('driverCostOptional')}
-                  value={form.total_driver_amount}
-                  onChange={(v) =>
-                    setForm({ ...form, total_driver_amount: v })
-                  }
-                />
-              </>
-            )}
             <div className="space-y-1.5">
               <Label>{t('noteOptional')}</Label>
               <Textarea
@@ -221,12 +188,21 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
 
             <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
               <span className="text-xs text-gray-500">
-                {t('marginPreview')} ({isExternal ? t('userMinusRtr') : t('userMinusOps')})
+                {t('marginPreview')}{' '}
+                <span className="normal-case">({t('marginReadOnlyHint')})</span>
               </span>
               <span
-                className={`text-sm font-semibold ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
+                className={`text-sm font-semibold ${
+                  fin?.margin_amount == null
+                    ? 'text-gray-400'
+                    : Number(fin.margin_amount) >= 0
+                      ? 'text-emerald-600'
+                      : 'text-red-600'
+                }`}
               >
-                {formatCurrency(previewMargin)}
+                {fin?.margin_amount == null
+                  ? t('notSet')
+                  : formatCurrency(fin.margin_amount)}
               </span>
             </div>
 
@@ -257,6 +233,26 @@ function Stat({
       <p className="font-medium text-gray-900">
         {value == null || value === '' ? '-' : formatCurrency(value)}
       </p>
+    </div>
+  );
+}
+
+function ReadOnlyStat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value?: string | number | null;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="font-medium text-gray-900">
+        {value == null || value === '' ? '-' : formatCurrency(value)}
+      </p>
+      <p className="text-[10px] text-gray-400 mt-0.5">{hint}</p>
     </div>
   );
 }
