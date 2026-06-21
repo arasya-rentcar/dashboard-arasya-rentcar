@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Search, Eye, ArrowUpDown } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 const PAGE_SIZE = 20;
 
 export default function CustomersPage() {
+  const t = useTranslations('customersPage');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('total_orders');
   const [page, setPage] = useState(1);
@@ -54,13 +56,13 @@ export default function CustomersPage() {
   }
 
   return (
-    <DashboardShell title="Customers">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search name, phone, email…"
+              placeholder={t('searchPlaceholder')}
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -73,10 +75,10 @@ export default function CustomersPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="total_orders">Most Orders</SelectItem>
-                <SelectItem value="last_order_at">Most Recent</SelectItem>
-                <SelectItem value="name">Name (A–Z)</SelectItem>
-                <SelectItem value="created_at">Newest</SelectItem>
+                <SelectItem value="total_orders">{t('sortMostOrders')}</SelectItem>
+                <SelectItem value="last_order_at">{t('sortMostRecent')}</SelectItem>
+                <SelectItem value="name">{t('sortNameAz')}</SelectItem>
+                <SelectItem value="created_at">{t('sortNewest')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -86,14 +88,14 @@ export default function CustomersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <Th className="w-12">No</Th>
-                <Th>Name</Th>
-                <Th className="hidden sm:table-cell">Phone</Th>
-                <Th className="hidden lg:table-cell">Tags</Th>
-                <Th className="text-right">Orders</Th>
-                <Th className="hidden md:table-cell text-right">Total Spent</Th>
-                <Th className="hidden lg:table-cell">Last Order</Th>
-                <Th>Actions</Th>
+                <Th className="w-12">{t('colNo')}</Th>
+                <Th>{t('colName')}</Th>
+                <Th className="hidden sm:table-cell">{t('colPhone')}</Th>
+                <Th className="hidden lg:table-cell">{t('colTags')}</Th>
+                <Th className="text-right">{t('colOrders')}</Th>
+                <Th className="hidden md:table-cell text-right">{t('colTotalSpent')}</Th>
+                <Th className="hidden lg:table-cell">{t('colLastOrder')}</Th>
+                <Th>{t('colActions')}</Th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -113,8 +115,7 @@ export default function CustomersPage() {
                     colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No customers yet. They appear automatically as orders are
-                    created.
+                    {t('noCustomers')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -136,13 +137,13 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
-                        {c.tags?.slice(0, 3).map((t) => (
+                        {c.tags?.slice(0, 3).map((tag) => (
                           <Badge
-                            key={t}
+                            key={tag}
                             variant="outline"
                             className="text-[10px] bg-indigo-50 text-indigo-700 border-indigo-200"
                           >
-                            {t}
+                            {tag}
                           </Badge>
                         ))}
                         {c.tags?.length > 3 && (
@@ -175,7 +176,7 @@ export default function CustomersPage() {
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/customers/${c.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> View
+                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
                         </Link>
                       </Button>
                     </TableCell>
@@ -189,7 +190,7 @@ export default function CustomersPage() {
         {pagination && (
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">
-              {isFetching ? 'Updating…' : ' '}
+              {isFetching ? t('updating') : ' '}
             </span>
             <TablePagination
               page={pagination.page}
@@ -198,7 +199,7 @@ export default function CustomersPage() {
               start={start}
               pageSize={pagination.page_size}
               onPageChange={setPage}
-              label="customers"
+              label={t('paginationLabel')}
             />
           </div>
         )}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, X, Plus, Save, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -26,6 +27,8 @@ import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
 export default function CustomerDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const tx = useTranslations('customerDetail');
+  const tos = useTranslations('orderStatus');
   const [ordersPage, setOrdersPage] = useState(1);
   const { data: customer, isLoading } = useCustomer(id, ordersPage);
   const updateMutation = useUpdateCustomer();
@@ -44,26 +47,26 @@ export default function CustomerDetailPage() {
   }, [customer?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function addTag() {
-    const t = newTag.trim();
-    if (!t) return;
-    if (tags.includes(t)) {
+    const tag = newTag.trim();
+    if (!tag) return;
+    if (tags.includes(tag)) {
       setNewTag('');
       return;
     }
-    setTags([...tags, t]);
+    setTags([...tags, tag]);
     setNewTag('');
     setDirty(true);
   }
 
-  function removeTag(t: string) {
-    setTags(tags.filter((x) => x !== t));
+  function removeTag(tag: string) {
+    setTags(tags.filter((x) => x !== tag));
     setDirty(true);
   }
 
   async function save() {
     try {
       await updateMutation.mutateAsync({ id, data: { tags, notes } });
-      toast.success('Customer updated');
+      toast.success(tx('okUpdated'));
       setDirty(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -72,15 +75,15 @@ export default function CustomerDetailPage() {
 
   if (isLoading && !customer) {
     return (
-      <DashboardShell title="Customer">
+      <DashboardShell title={tx('title')}>
         <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
       </DashboardShell>
     );
   }
   if (!customer) {
     return (
-      <DashboardShell title="Customer">
-        <p className="text-sm text-gray-500">Customer not found.</p>
+      <DashboardShell title={tx('title')}>
+        <p className="text-sm text-gray-500">{tx('notFound')}</p>
       </DashboardShell>
     );
   }
@@ -95,19 +98,19 @@ export default function CustomerDetailPage() {
           href="/dashboard/customers"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-800"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Customers
+          <ArrowLeft className="h-4 w-4 mr-1" /> {tx('backToCustomers')}
         </Link>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Stat label="Total Orders" value={String(customer.total_orders)} />
-          <Stat label="Total Spent" value={formatCurrency(customer.total_spent)} />
+          <Stat label={tx('totalOrders')} value={String(customer.total_orders)} />
+          <Stat label={tx('totalSpent')} value={formatCurrency(customer.total_spent)} />
           <Stat
-            label="First Order"
+            label={tx('firstOrder')}
             value={customer.first_order_at ? formatDate(customer.first_order_at) : '-'}
           />
           <Stat
-            label="Last Order"
+            label={tx('lastOrder')}
             value={customer.last_order_at ? formatDate(customer.last_order_at) : '-'}
           />
         </div>
@@ -117,7 +120,7 @@ export default function CustomerDetailPage() {
           <Card className="border border-gray-200 shadow-none lg:col-span-1">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                Profile
+                {tx('profile')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
@@ -132,19 +135,19 @@ export default function CustomerDetailPage() {
 
               {/* Loyalty: tags + notes */}
               <div>
-                <p className="text-xs font-medium text-gray-500 mb-1.5">Tags</p>
+                <p className="text-xs font-medium text-gray-500 mb-1.5">{tx('tags')}</p>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {tags.length === 0 && (
-                    <span className="text-xs text-gray-400">No tags</span>
+                    <span className="text-xs text-gray-400">{tx('noTags')}</span>
                   )}
-                  {tags.map((t) => (
+                  {tags.map((tag) => (
                     <span
-                      key={t}
+                      key={tag}
                       className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 pl-2.5 pr-1 py-0.5 text-xs"
                     >
-                      {t}
+                      {tag}
                       <button
-                        onClick={() => removeTag(t)}
+                        onClick={() => removeTag(tag)}
                         className="text-indigo-300 hover:text-red-500"
                       >
                         <X className="h-3 w-3" />
@@ -154,7 +157,7 @@ export default function CustomerDetailPage() {
                 </div>
                 <div className="flex gap-1.5">
                   <Input
-                    placeholder="Add tag (VIP, Corporate…)"
+                    placeholder={tx('addTagPlaceholder')}
                     className="h-8 text-xs"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
@@ -173,10 +176,10 @@ export default function CustomerDetailPage() {
 
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-1.5">
-                  Loyalty / Notes
+                  {tx('loyaltyNotes')}
                 </p>
                 <Textarea
-                  placeholder="e.g. gave free wash on 10th order…"
+                  placeholder={tx('notesPlaceholder')}
                   className="text-sm min-h-20"
                   value={notes}
                   onChange={(e) => {
@@ -192,7 +195,7 @@ export default function CustomerDetailPage() {
                 disabled={!dirty || updateMutation.isPending}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {updateMutation.isPending ? 'Saving…' : 'Save Changes'}
+                {updateMutation.isPending ? tx('saving') : tx('saveChanges')}
               </Button>
             </CardContent>
           </Card>
@@ -201,18 +204,18 @@ export default function CustomerDetailPage() {
           <Card className="border border-gray-200 shadow-none lg:col-span-2">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
-                Order History ({op.total})
+                {tx('orderHistory', { count: op.total })}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <Th className="w-10">No</Th>
-                    <Th>Date</Th>
-                    <Th className="hidden sm:table-cell">Route</Th>
-                    <Th>Status</Th>
-                    <Th className="text-right">Price</Th>
+                    <Th className="w-10">{tx('colNo')}</Th>
+                    <Th>{tx('colDate')}</Th>
+                    <Th className="hidden sm:table-cell">{tx('colRoute')}</Th>
+                    <Th>{tx('colStatus')}</Th>
+                    <Th className="text-right">{tx('colPrice')}</Th>
                     <Th></Th>
                   </TableRow>
                 </TableHeader>
@@ -223,7 +226,7 @@ export default function CustomerDetailPage() {
                         colSpan={6}
                         className="text-center py-8 text-gray-400 text-sm"
                       >
-                        No orders.
+                        {tx('noOrders')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -240,14 +243,14 @@ export default function CustomerDetailPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
-                            {o.order_status}
+                            {tos(o.order_status)}
                           </Badge>
                           {o.is_external && (
                             <Badge
                               variant="outline"
                               className="text-[10px] ml-1 bg-purple-50 text-purple-700 border-purple-200"
                             >
-                              Ext
+                              {tx('ext')}
                             </Badge>
                           )}
                         </TableCell>
@@ -259,7 +262,7 @@ export default function CustomerDetailPage() {
                             href={`/dashboard/orders/${o.id}`}
                             className="text-xs text-blue-600 hover:underline"
                           >
-                            Open
+                            {tx('open')}
                           </Link>
                         </TableCell>
                       </TableRow>
@@ -274,7 +277,7 @@ export default function CustomerDetailPage() {
                 start={start}
                 pageSize={op.page_size}
                 onPageChange={setOrdersPage}
-                label="orders"
+                label={tx('paginationLabel')}
               />
             </CardContent>
           </Card>
