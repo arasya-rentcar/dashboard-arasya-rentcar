@@ -402,6 +402,7 @@
     "badgeSheet": "Sheet",
     "okOrderCreated": "Order created successfully",
     "errAddAdditional": "Failed to add additional: {desc}",
+    "warnOrderPartialCharges": "Order created, but {failed} of {total} charges failed to save — open the order to retry.",
     "okPreview": "Preview: {rows} rows, {warnings} warnings",
     "okImported": "Imported {imported}, updated {updated}, warnings {warnings}",
     "errNothingExportPage": "Nothing to export on this page.",

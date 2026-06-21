@@ -402,6 +402,7 @@
     "badgeSheet": "Sheet",
     "okOrderCreated": "Order berhasil dibuat",
     "errAddAdditional": "Gagal menambah biaya tambahan: {desc}",
+    "warnOrderPartialCharges": "Order dibuat, tetapi {failed} dari {total} biaya gagal disimpan — buka order untuk mencoba lagi.",
     "okPreview": "Preview: {rows} baris, {warnings} peringatan",
     "okImported": "Diimpor {imported}, diperbarui {updated}, peringatan {warnings}",
     "errNothingExportPage": "Tidak ada yang bisa diekspor di halaman ini.",

@@ -142,16 +142,32 @@ function OrdersPageInner() {
       const { additionals, ...orderPayload } = payload;
       const created = await createMutation.mutateAsync(orderPayload);
       const orderId = created?.id;
+      let failedAdjustments = 0;
+      let totalAdjustments = 0;
       if (orderId && additionals && additionals.length) {
+        totalAdjustments = additionals.length;
         for (const adj of additionals) {
           try {
             await ordersApi.addAdjustment(orderId, adj);
           } catch {
+            failedAdjustments += 1;
             toast.error(t('errAddAdditional', { desc: adj.description }));
           }
         }
       }
-      toast.success(t('okOrderCreated'));
+      // Don't claim full success if some charges silently failed — the order
+      // exists but is financially incomplete. Surface a blocking warning so the
+      // admin knows to open the order and retry the missing charges.
+      if (failedAdjustments > 0) {
+        toast.warning(
+          t('warnOrderPartialCharges', {
+            failed: failedAdjustments,
+            total: totalAdjustments,
+          }),
+        );
+      } else {
+        toast.success(t('okOrderCreated'));
+      }
       setCreateOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));

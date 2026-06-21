@@ -123,6 +123,12 @@ export default function InvoicesPage() {
   const [noteByInvoice, setNoteByInvoice] = useState<Record<string, string>>(
     {},
   );
+  // PERF DEBT (P2-3): useOrders() pulls the ENTIRE /orders list client-side,
+  // then flatMaps every invoice and filters/paginates in the browser. The orders
+  // list page already uses server-side /orders/search pagination — invoices
+  // should move to a dedicated server-paginated /invoices endpoint (or an
+  // /orders/search invoice projection) before order volume grows. Left as-is
+  // for now to avoid an API change; tracked for the next backend pass.
   const { data: orders, isLoading, isError, refetch } = useOrders();
   const sendMutation = useSendInvoiceWhatsapp();
 
