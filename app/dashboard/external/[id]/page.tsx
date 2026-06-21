@@ -374,7 +374,7 @@ export default function VendorDetailPage() {
                 onChange={(e) =>
                   setCarForm({ ...carForm, plate_number: e.target.value })
                 }
-                placeholder="B 1234 XYZ"
+                placeholder={tx('platePlaceholder')}
               />
             </div>
             <div>

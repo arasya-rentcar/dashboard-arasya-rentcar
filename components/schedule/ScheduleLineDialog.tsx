@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -43,6 +44,7 @@ export default function ScheduleLineDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations('scheduleLine');
   const mutation = useAssignScheduleLine();
   const createVendor = useCreateVendor();
   const addVendorCar = useAddVendorCar();
@@ -109,7 +111,7 @@ export default function ScheduleLineDialog({
           external_car_id: isExternal ? vendorCarId || null : null,
         },
       });
-      toast.success('Schedule line updated — margin recomputed');
+      toast.success(t('savedToast'));
       onClose();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -119,7 +121,7 @@ export default function ScheduleLineDialog({
   async function handleCreateVendor() {
     const name = newVendorName.trim();
     if (!name) {
-      toast.error('Vendor name is required');
+      toast.error(t('errVendorNameRequired'));
       return;
     }
     try {
@@ -132,7 +134,7 @@ export default function ScheduleLineDialog({
         setVendorId(created.id);
         setVendorCarId('');
       }
-      toast.success('Vendor created');
+      toast.success(t('vendorCreated'));
       setNewVendorOpen(false);
       setNewVendorName('');
       setNewVendorPhone('');
@@ -143,12 +145,12 @@ export default function ScheduleLineDialog({
 
   async function handleCreateVendorCar() {
     if (!vendorId) {
-      toast.error('Select a vendor first');
+      toast.error(t('errSelectVendorFirst'));
       return;
     }
     const model = newCarModel.trim();
     if (!model) {
-      toast.error('Car type / model is required');
+      toast.error(t('errCarModelRequired'));
       return;
     }
     try {
@@ -161,7 +163,7 @@ export default function ScheduleLineDialog({
       });
       const created = res?.data?.data;
       if (created?.id) setVendorCarId(created.id);
-      toast.success('Vendor car added');
+      toast.success(t('vendorCarAdded'));
       setNewCarOpen(false);
       setNewCarModel('');
       setNewCarPlate('');
@@ -177,7 +179,7 @@ export default function ScheduleLineDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Edit Day · {line.service_date?.slice(0, 10) || '—'}
+            {t('editDay')} · {line.service_date?.slice(0, 10) || '—'}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
@@ -201,7 +203,7 @@ export default function ScheduleLineDialog({
                   : 'bg-white text-gray-600 border-gray-200'
               }`}
             >
-              Internal
+              {t('internal')}
             </button>
             <button
               type="button"
@@ -212,17 +214,17 @@ export default function ScheduleLineDialog({
                   : 'bg-white text-gray-600 border-gray-200'
               }`}
             >
-              External
+              {t('external')}
             </button>
           </div>
 
           {!isExternal ? (
             <>
               <div className="space-y-1.5">
-                <Label>Driver</Label>
+                <Label>{t('driver')}</Label>
                 <Select value={driverId} onValueChange={setDriverId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select driver" />
+                    <SelectValue placeholder={t('selectDriver')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(drivers ?? [])
@@ -236,10 +238,10 @@ export default function ScheduleLineDialog({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Car</Label>
+                <Label>{t('car')}</Label>
                 <Select value={carId} onValueChange={setCarId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select car" />
+                    <SelectValue placeholder={t('selectCar')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(cars ?? []).map((c) => (
@@ -251,7 +253,7 @@ export default function ScheduleLineDialog({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Ops Cost (this day)</Label>
+                <Label>{t('opsCostDay')}</Label>
                 <Input
                   inputMode="numeric"
                   value={ops}
@@ -264,25 +266,25 @@ export default function ScheduleLineDialog({
             <>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label>Vendor</Label>
+                  <Label>{t('vendor')}</Label>
                   <button
                     type="button"
                     onClick={() => setNewVendorOpen((o) => !o)}
                     className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
                   >
                     <Plus className="h-3 w-3" />
-                    {newVendorOpen ? 'Cancel' : 'New vendor'}
+                    {newVendorOpen ? t('cancel') : t('newVendor')}
                   </button>
                 </div>
                 {newVendorOpen ? (
                   <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-2.5 space-y-2">
                     <Input
-                      placeholder="Vendor name"
+                      placeholder={t('vendorNamePlaceholder')}
                       value={newVendorName}
                       onChange={(e) => setNewVendorName(e.target.value)}
                     />
                     <Input
-                      placeholder="Phone (optional)"
+                      placeholder={t('phoneOptional')}
                       value={newVendorPhone}
                       onChange={(e) => setNewVendorPhone(e.target.value)}
                     />
@@ -296,7 +298,7 @@ export default function ScheduleLineDialog({
                       {createVendor.isPending && (
                         <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                       )}
-                      Create vendor
+                      {t('createVendor')}
                     </Button>
                   </div>
                 ) : (
@@ -309,7 +311,7 @@ export default function ScheduleLineDialog({
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select vendor" />
+                      <SelectValue placeholder={t('selectVendor')} />
                     </SelectTrigger>
                     <SelectContent>
                       {(vendorList?.data ?? []).map((v) => (
@@ -324,25 +326,25 @@ export default function ScheduleLineDialog({
               {vendorId && !newVendorOpen && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label>Vendor Car</Label>
+                    <Label>{t('vendorCar')}</Label>
                     <button
                       type="button"
                       onClick={() => setNewCarOpen((o) => !o)}
                       className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
                     >
                       <Plus className="h-3 w-3" />
-                      {newCarOpen ? 'Cancel' : 'New car'}
+                      {newCarOpen ? t('cancel') : t('newCar')}
                     </button>
                   </div>
                   {newCarOpen ? (
                     <div className="rounded-lg border border-purple-100 bg-purple-50/50 p-2.5 space-y-2">
                       <Input
-                        placeholder="Car type / model (e.g. Innova Reborn)"
+                        placeholder={t('carModelPlaceholder')}
                         value={newCarModel}
                         onChange={(e) => setNewCarModel(e.target.value)}
                       />
                       <Input
-                        placeholder="Plate number (e.g. F 1728 ABJ)"
+                        placeholder={t('platePlaceholder')}
                         value={newCarPlate}
                         onChange={(e) => setNewCarPlate(e.target.value)}
                       />
@@ -356,13 +358,13 @@ export default function ScheduleLineDialog({
                         {addVendorCar.isPending && (
                           <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                         )}
-                        Add car
+                        {t('addCar')}
                       </Button>
                     </div>
                   ) : (
                     <Select value={vendorCarId} onValueChange={setVendorCarId}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select car" />
+                        <SelectValue placeholder={t('selectCar')} />
                       </SelectTrigger>
                       <SelectContent>
                         {vendorCars.map((c) => (
@@ -377,7 +379,7 @@ export default function ScheduleLineDialog({
                 </div>
               )}
               <div className="space-y-1.5">
-                <Label>RTR (vendor cost, this day)</Label>
+                <Label>{t('rtrDay')}</Label>
                 <Input
                   inputMode="numeric"
                   value={rtr}
@@ -389,23 +391,23 @@ export default function ScheduleLineDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>{t('status')}</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                <SelectItem value="IN_PROGRESS">In progress</SelectItem>
-                <SelectItem value="DONE">Done</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="SCHEDULED">{t('statusScheduled')}</SelectItem>
+                <SelectItem value="IN_PROGRESS">{t('statusInProgress')}</SelectItem>
+                <SelectItem value="DONE">{t('statusDone')}</SelectItem>
+                <SelectItem value="CANCELLED">{t('statusCancelled')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
             <span className="text-xs text-gray-500">
-              Margin preview ({isExternal ? 'Revenue − RTR' : 'Revenue − Ops'})
+              {t('marginPreview')} ({isExternal ? t('revenueMinusRtr') : t('revenueMinusOps')})
             </span>
             <span
               className={`text-sm font-semibold ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
@@ -419,7 +421,7 @@ export default function ScheduleLineDialog({
             onClick={save}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Saving…' : 'Save & Recompute'}
+            {mutation.isPending ? t('saving') : t('saveRecompute')}
           </Button>
         </div>
       </DialogContent>

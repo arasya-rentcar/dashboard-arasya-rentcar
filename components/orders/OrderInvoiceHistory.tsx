@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { FileText, ReceiptText, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { OrderListItem, InvoiceType, InvoiceStatus } from '@/types';
@@ -35,6 +36,7 @@ function isActive(status: InvoiceStatus) {
 }
 
 export default function OrderInvoiceHistory({ order }: { order: OrderListItem }) {
+  const t = useTranslations('invoiceHistoryTable');
   const invoices = [...(order.invoices ?? [])].sort((a, b) => {
     const ta = new Date(a.issue_date ?? a.created_at ?? 0).getTime();
     const tb = new Date(b.issue_date ?? b.created_at ?? 0).getTime();
@@ -53,11 +55,11 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
     <div className="bg-gray-50/60 px-4 py-4 sm:px-8">
       {/* Payment summary strip */}
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCell label="Order Total" value={formatCurrency(finalPrice)} />
-        <SummaryCell label="Invoiced" value={formatCurrency(totalInvoiced)} />
-        <SummaryCell label="Paid" value={formatCurrency(totalPaid)} tone="emerald" />
+        <SummaryCell label={t('orderTotal')} value={formatCurrency(finalPrice)} />
+        <SummaryCell label={t('invoiced')} value={formatCurrency(totalInvoiced)} />
+        <SummaryCell label={t('paid')} value={formatCurrency(totalPaid)} tone="emerald" />
         <SummaryCell
-          label="Remaining"
+          label={t('remaining')}
           value={formatCurrency(Math.max(remaining, 0))}
           tone={remaining <= 0 ? 'emerald' : 'amber'}
         />
@@ -66,19 +68,19 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
       {invoices.length === 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white px-3 py-4 text-sm text-gray-400">
           <FileText className="h-4 w-4" />
-          No invoices generated yet.
+          {t('noInvoices')}
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/70 text-xs text-gray-500">
-                <th className="px-3 py-2 text-left font-medium">Invoice</th>
-                <th className="px-3 py-2 text-left font-medium">Type</th>
-                <th className="px-3 py-2 text-left font-medium">Status</th>
-                <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Date</th>
-                <th className="px-3 py-2 text-right font-medium">Amount</th>
-                <th className="px-3 py-2 text-right font-medium">Docs</th>
+                <th className="px-3 py-2 text-left font-medium">{t('colInvoice')}</th>
+                <th className="px-3 py-2 text-left font-medium">{t('colType')}</th>
+                <th className="px-3 py-2 text-left font-medium">{t('colStatus')}</th>
+                <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">{t('colDate')}</th>
+                <th className="px-3 py-2 text-right font-medium">{t('colAmount')}</th>
+                <th className="px-3 py-2 text-right font-medium">{t('colDocs')}</th>
               </tr>
             </thead>
             <tbody>
@@ -107,7 +109,7 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-500 hidden sm:table-cell">
                       {inv.status === 'PAID' && inv.paid_at
-                        ? `Paid ${formatDate(inv.paid_at)}`
+                        ? `${t('paidPrefix')} ${formatDate(inv.paid_at)}`
                         : inv.issue_date
                           ? formatDate(inv.issue_date)
                           : '-'}
@@ -125,7 +127,7 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
                             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
                           >
                             <FileText className="h-3.5 w-3.5" />
-                            Invoice
+                            {t('docInvoice')}
                           </a>
                         )}
                         {inv.receipt_url && (
@@ -157,7 +159,7 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
           href={`/dashboard/orders/${order.id}`}
           className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
         >
-          Open full order <ExternalLink className="h-3.5 w-3.5" />
+          {t('openFullOrder')} <ExternalLink className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>

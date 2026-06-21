@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,6 +79,7 @@ export default function EditOrderForm({
   onSubmit,
   isLoading,
 }: Props) {
+  const tEdit = useTranslations("editOrderForm");
   const originalPrice = Number(order.final_price);
   const initialCustomers = order.customers?.length
     ? order.customers.map((c, index) => ({
@@ -248,11 +250,11 @@ export default function EditOrderForm({
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label>Name</Label>
+                    <Label>{tEdit("name")}</Label>
                     <Input {...register(`customers.${index}.name`)} />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Phone</Label>
+                    <Label>{tEdit("phone")}</Label>
                     <Input {...register(`customers.${index}.phone`)} />
                   </div>
                 </div>
@@ -262,9 +264,7 @@ export default function EditOrderForm({
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs leading-5 text-gray-600 shadow-sm">
-          Order Date / Booking Time is kept from the original order creation.
-          Day 1 is the first Service Detail row below. For a 1-day rental,
-          update the first row only.
+          {tEdit("orderDateNote")}
         </section>
 
         <OrderServiceItemsEditor
@@ -280,26 +280,25 @@ export default function EditOrderForm({
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.4fr] lg:items-end">
               <div className="text-xs text-amber-800 space-y-1">
                 <p className="font-semibold">
-                  Price change: {formatCurrency(originalPrice)} →{" "}
+                  {tEdit("priceChange")}: {formatCurrency(originalPrice)} →{" "}
                   {formatCurrency(newPrice || 0)}
                 </p>
                 <p>
-                  Active invoice total: {formatCurrency(activeInvoiceTotal)}
+                  {tEdit("activeInvoiceTotal")}: {formatCurrency(activeInvoiceTotal)}
                 </p>
                 <p>
-                  Existing invoices will not change automatically. Sync/revise
-                  invoice after saving if needed.
+                  {tEdit("invoicesWontChange")}
                 </p>
                 {belowInvoiceTotal && (
                   <p className="font-medium text-red-600">
-                    New final price cannot be below active invoice total.
+                    {tEdit("belowInvoiceTotal")}
                   </p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Reason for Price Change</Label>
+                <Label>{tEdit("reasonForChange")}</Label>
                 <Input
-                  placeholder="customer added route / overtime / discount correction"
+                  placeholder={tEdit("reasonPlaceholder")}
                   {...register("change_reason")}
                 />
                 {errors.change_reason && (
@@ -314,14 +313,13 @@ export default function EditOrderForm({
       </div>
       <div className="sticky bottom-0 -mx-1 flex items-center justify-between border-t border-gray-100 bg-white/95 px-1 py-3 backdrop-blur">
         <div className="text-xs text-gray-500">
-          Final price:{" "}
+          {tEdit("finalPrice")}:{" "}
           <span className="font-semibold text-gray-900">
             {formatCurrency(newPrice || 0)}
           </span>
         </div>
         <Button type="submit" disabled={isLoading || belowInvoiceTotal}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-          Changes
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{tEdit("saveChanges")}
         </Button>
       </div>
     </form>
