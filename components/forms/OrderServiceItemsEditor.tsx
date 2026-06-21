@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Control,
   FieldErrors,
@@ -69,6 +70,7 @@ function newItem(): ServiceItemFormValue {
 export default function OrderServiceItemsEditor<
   T extends { service_items: ServiceItemFormValue[] },
 >({ control, register, setValue, watch, errors }: Props<T>) {
+  const t = useTranslations("serviceItems");
   const { fields, append, remove } = useFieldArray({
     control,
     name: "service_items" as never,
@@ -87,17 +89,16 @@ export default function OrderServiceItemsEditor<
       <div className="flex flex-col gap-3 border-b border-gray-100 bg-gray-50/70 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <Label className="text-sm font-semibold text-gray-900">
-            Service Detail / Invoice Lines
+            {t("title")}
           </Label>
           <p className="mt-0.5 text-xs text-gray-500">
-            Use one row per day, route, extra stop, overtime, or separate priced
-            service.
+            {t("desc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-emerald-50 px-3 py-1.5 text-right">
             <p className="text-[10px] uppercase tracking-wide text-emerald-700">
-              Final Price
+              {t("finalPrice")}
             </p>
             <p className="text-sm font-bold text-emerald-800">
               {formatCurrency(total)}
@@ -109,7 +110,7 @@ export default function OrderServiceItemsEditor<
             size="sm"
             onClick={() => append(newItem() as never)}
           >
-            <Plus className="mr-1 h-3.5 w-3.5" /> Add Row
+            <Plus className="mr-1 h-3.5 w-3.5" /> {t("addRow")}
           </Button>
         </div>
       </div>
@@ -127,13 +128,13 @@ export default function OrderServiceItemsEditor<
                     {index + 1}
                   </span>
                   <p className="text-sm font-semibold text-gray-900">
-                    Service Row
+                    {t("serviceRow")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="rounded-md bg-gray-50 px-3 py-1 text-right">
                     <p className="text-[10px] uppercase tracking-wide text-gray-400">
-                      Line Total
+                      {t("lineTotal")}
                     </p>
                     <p className="text-sm font-semibold text-gray-900">
                       {formatCurrency(lineTotal)}
@@ -155,7 +156,7 @@ export default function OrderServiceItemsEditor<
 
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Service Date</Label>
+                  <Label>{t("serviceDate")}</Label>
                   <Input
                     type="date"
                     {...register(
@@ -164,7 +165,7 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Durasi</Label>
+                  <Label>{t("durasi")}</Label>
                   <select
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...register(
@@ -179,7 +180,7 @@ export default function OrderServiceItemsEditor<
                   </select>
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Paket</Label>
+                  <Label>{t("paket")}</Label>
                   <select
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...register(
@@ -194,25 +195,25 @@ export default function OrderServiceItemsEditor<
                   </select>
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Description</Label>
+                  <Label>{t("description")}</Label>
                   <Input
-                    placeholder="Day 1 Bali"
+                    placeholder={t("descriptionPlaceholder")}
                     {...register(`service_items.${index}.description` as never)}
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>Pickup</Label>
+                  <Label>{t("pickup")}</Label>
                   <Input
-                    placeholder="Hotel / TBA"
+                    placeholder={t("pickupPlaceholder")}
                     {...register(
                       `service_items.${index}.pickup_location` as never,
                     )}
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>Dropoff</Label>
+                  <Label>{t("dropoff")}</Label>
                   <Input
-                    placeholder="Airport / TBC"
+                    placeholder={t("dropoffPlaceholder")}
                     {...register(
                       `service_items.${index}.dropoff_location` as never,
                     )}
@@ -220,7 +221,7 @@ export default function OrderServiceItemsEditor<
                 </div>
 
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>Pickup Time</Label>
+                  <Label>{t("pickupTime")}</Label>
                   <Input
                     type="datetime-local"
                     step={60}
@@ -228,7 +229,7 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>Dropoff Time</Label>
+                  <Label>{t("dropoffTime")}</Label>
                   <Input
                     type="datetime-local"
                     step={60}
@@ -236,7 +237,7 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Qty / Days</Label>
+                  <Label>{t("qtyDays")}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -244,7 +245,7 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Unit Price</Label>
+                  <Label>{t("unitPrice")}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -252,9 +253,9 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>Notes</Label>
+                  <Label>{t("notes")}</Label>
                   <Input
-                    placeholder="optional"
+                    placeholder={t("notesPlaceholder")}
                     {...register(`service_items.${index}.notes` as never)}
                   />
                 </div>

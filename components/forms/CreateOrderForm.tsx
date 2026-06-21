@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -71,14 +72,15 @@ const defaultItem: ServiceItemFormValue = {
   notes: "",
 };
 
-const ADDITIONAL_TYPES: { label: string; value: string }[] = [
-  { label: "Overtime", value: "OVERTIME" },
-  { label: "Parkir", value: "PARKING" },
-  { label: "Toll", value: "TOLL" },
-  { label: "Additional", value: "OTHER" },
+const ADDITIONAL_TYPE_KEYS: { key: string; value: string }[] = [
+  { key: "typeOvertime", value: "OVERTIME" },
+  { key: "typeParking", value: "PARKING" },
+  { key: "typeToll", value: "TOLL" },
+  { key: "typeAdditional", value: "OTHER" },
 ];
 
 export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
+  const t = useTranslations("createOrder");
   const {
     register,
     handleSubmit,
@@ -157,8 +159,9 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
         type: a.type,
         description:
           a.description?.trim() ||
-          ADDITIONAL_TYPES.find((t) => t.value === a.type)?.label ||
-          "Additional",
+          (ADDITIONAL_TYPE_KEYS.find((x) => x.value === a.type)
+            ? t(ADDITIONAL_TYPE_KEYS.find((x) => x.value === a.type)!.key)
+            : t("typeAdditional")),
         amount: Number(a.amount || 0),
         quantity: 1,
         is_billable: true,
@@ -213,10 +216,10 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-950">
-                    Customer / PIC
+                    {t("customerPicTitle")}
                   </h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    Add all customer contacts. Mark one as primary.
+                    {t("customerPicDesc")}
                   </p>
                 </div>
                 <Button
@@ -227,12 +230,12 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                     append({ name: "", phone: "", is_primary: false })
                   }
                 >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Add PIC
+                  <Plus className="mr-1 h-3.5 w-3.5" /> {t("addPic")}
                 </Button>
               </div>
               <div className="mb-4">
                 <Label className="mb-1.5 block text-xs text-gray-500">
-                  Customer lama (opsional)
+                  {t("existingCustomer")}
                 </Label>
                 <CustomerPicker
                   selected={masterCustomer}
@@ -241,8 +244,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                 />
                 {masterCustomer && (
                   <p className="mt-1.5 text-[11px] text-emerald-600">
-                    PIC utama dikunci ke customer ini. Order akan tercatat ke
-                    profil yang sama.
+                    {t("masterLocked")}
                   </p>
                 )}
               </div>
@@ -263,8 +265,8 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                         onClick={() => setPrimary(index)}
                       >
                         {customers?.[index]?.is_primary
-                          ? "Primary PIC"
-                          : "Set primary"}
+                          ? t("primaryPic")
+                          : t("setPrimary")}
                       </button>
                       {fields.length > 1 && (
                         <Button
@@ -280,9 +282,9 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label>Name</Label>
+                        <Label>{t("name")}</Label>
                         <Input
-                          placeholder="Customer / PIC name"
+                          placeholder={t("namePlaceholder")}
                           {...register(`customers.${index}.name`)}
                         />
                         {errors.customers?.[index]?.name && (
@@ -292,9 +294,9 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                         )}
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Phone</Label>
+                        <Label>{t("phone")}</Label>
                         <Input
-                          placeholder="WhatsApp number"
+                          placeholder={t("phonePlaceholder")}
                           {...register(`customers.${index}.phone`)}
                         />
                       </div>
@@ -305,10 +307,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
             </section>
 
             <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs leading-5 text-gray-600 shadow-sm">
-              Order Date / Booking Time is saved automatically when the order is
-              created. Fill <b>Day 1</b> in the first Service Detail row below.
-              For a 1-day rental, the admin only needs to complete that first
-              row once.
+              {t("bookingNote")}
             </section>
 
             <VendorUnitPicker value={vendorUnit} onChange={setVendorUnit} />
@@ -325,12 +324,10 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-950">
-                    Additional Charges
+                    {t("additionalTitle")}
                   </h3>
                   <p className="mt-1 text-xs text-gray-500">
-                    Optional. Add if known upfront (overtime, parkir, etc.).
-                    Otherwise add later from the order detail page. Amount in
-                    Rupiah.
+                    {t("additionalDesc")}
                   </p>
                 </div>
                 <Button
@@ -345,12 +342,12 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                     })
                   }
                 >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Add Additional
+                  <Plus className="mr-1 h-3.5 w-3.5" /> {t("addAdditional")}
                 </Button>
               </div>
               {additionalFields.length === 0 ? (
                 <p className="text-xs text-gray-400">
-                  No additional charges added.
+                  {t("noAdditional")}
                 </p>
               ) : (
                 <div className="space-y-3">
@@ -360,27 +357,27 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                       className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 md:grid-cols-[160px_minmax(0,1fr)_160px_40px] md:items-end"
                     >
                       <div className="space-y-1.5">
-                        <Label>Type</Label>
+                        <Label>{t("type")}</Label>
                         <select
                           className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                           {...register(`additionals.${index}.type`)}
                         >
-                          {ADDITIONAL_TYPES.map((t) => (
-                            <option key={t.value} value={t.value}>
-                              {t.label}
+                          {ADDITIONAL_TYPE_KEYS.map((at) => (
+                            <option key={at.value} value={at.value}>
+                              {t(at.key)}
                             </option>
                           ))}
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Label / Note</Label>
+                        <Label>{t("labelNote")}</Label>
                         <Input
-                          placeholder="e.g. Overtime 2 jam"
+                          placeholder={t("labelNotePlaceholder")}
                           {...register(`additionals.${index}.description`)}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Amount (Rp)</Label>
+                        <Label>{t("amountRp")}</Label>
                         <Input
                           type="number"
                           min="0"
@@ -405,10 +402,10 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
 
             <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
               <div className="space-y-1.5">
-                <Label>Notes (Keterangan)</Label>
+                <Label>{t("notesLabel")}</Label>
                 <Textarea
                   rows={2}
-                  placeholder="Extra notes for this order"
+                  placeholder={t("notesPlaceholder")}
                   {...register("notes")}
                 />
               </div>
@@ -419,28 +416,28 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
             <div className="sticky top-0 space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Order Summary
+                  {t("orderSummary")}
                 </p>
                 <p className="mt-2 text-2xl font-bold text-gray-950">
                   {formatCurrency(total || 0)}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  Service lines + additional charges.
+                  {t("summaryDesc")}
                 </p>
               </div>
               <div className="space-y-3 border-t border-gray-200 pt-4 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500">Primary PIC</p>
+                  <p className="text-xs text-gray-500">{t("primaryPic")}</p>
                   <p className="font-medium text-gray-900">
-                    {primary?.name || "Not filled yet"}
+                    {primary?.name || t("notFilledYet")}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {primary?.phone || "No phone yet"}
+                    {primary?.phone || t("noPhoneYet")}
                   </p>
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-gray-500">
-                    Service Rows ({items?.length || 0})
+                    {t("serviceRows", { count: items?.length || 0 })}
                   </p>
                   <p className="font-medium text-gray-900">
                     {formatCurrency(lineTotal || 0)}
@@ -449,7 +446,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                 {additionalTotal > 0 && (
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-gray-500">
-                      Additional ({additionalFields.length})
+                      {t("additionalCount", { count: additionalFields.length })}
                     </p>
                     <p className="font-medium text-gray-900">
                       {formatCurrency(additionalTotal)}
@@ -457,8 +454,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
                   </div>
                 )}
                 <div className="rounded-xl bg-white p-3 text-xs text-gray-600 ring-1 ring-gray-200">
-                  Tip: use one row per day, route, extra stop, overtime, or
-                  different price.
+                  {t("tip")}
                 </div>
               </div>
             </div>
@@ -468,14 +464,13 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
 
       <div className="mt-4 flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div>
-          <p className="text-xs text-gray-500">Calculated final price</p>
+          <p className="text-xs text-gray-500">{t("calculatedFinal")}</p>
           <p className="text-lg font-bold text-gray-950">
             {formatCurrency(total || 0)}
           </p>
         </div>
         <Button type="submit" size="lg" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create
-          Order
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t("createOrder")}
         </Button>
       </div>
     </form>
