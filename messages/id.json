@@ -34,7 +34,8 @@
     "apply": "Terapkan",
     "export": "Ekspor",
     "refresh": "Muat ulang",
-    "loggedInAs": "Masuk sebagai"
+    "loggedInAs": "Masuk sebagai",
+    "items": "item"
   },
   "terms": {
     "order": "Order",
@@ -108,6 +109,12 @@
     "label": "Bahasa",
     "en": "English",
     "id": "Bahasa Indonesia"
+  },
+  "pagination": {
+    "showing": "Menampilkan {from}–{to} dari {total} {label}",
+    "prev": "Sebelumnya",
+    "next": "Berikutnya",
+    "pageOf": "Halaman {page} / {pageCount}"
   },
   "externalPage": {
     "title": "Vendor External",

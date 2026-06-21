@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
@@ -44,18 +45,19 @@ export default function TablePagination({
   start,
   pageSize,
   onPageChange,
-  label = 'items',
+  label,
 }: Props) {
+  const t = useTranslations('pagination');
+  const tc = useTranslations('common');
   if (total === 0) return null;
   const from = start + 1;
   const to = Math.min(start + pageSize, total);
+  const resolvedLabel = label ?? tc('items');
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 pt-1">
       <p className="text-xs text-gray-400">
-        Showing <span className="font-medium text-gray-600">{from}</span>–
-        <span className="font-medium text-gray-600">{to}</span> of{' '}
-        <span className="font-medium text-gray-600">{total}</span> {label}
+        {t('showing', { from, to, total, label: resolvedLabel })}
       </p>
       {pageCount > 1 && (
         <div className="flex items-center gap-2">
@@ -65,10 +67,10 @@ export default function TablePagination({
             disabled={page <= 1}
             className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50"
           >
-            <ChevronLeft className="h-3.5 w-3.5" /> Prev
+            <ChevronLeft className="h-3.5 w-3.5" /> {t('prev')}
           </button>
           <span className="text-xs text-gray-500">
-            Page {page} / {pageCount}
+            {t('pageOf', { page, pageCount })}
           </span>
           <button
             type="button"
@@ -76,7 +78,7 @@ export default function TablePagination({
             disabled={page >= pageCount}
             className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50"
           >
-            Next <ChevronRight className="h-3.5 w-3.5" />
+            {t('next')} <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       )}

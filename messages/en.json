@@ -34,7 +34,8 @@
     "apply": "Apply",
     "export": "Export",
     "refresh": "Refresh",
-    "loggedInAs": "Logged in as"
+    "loggedInAs": "Logged in as",
+    "items": "items"
   },
   "terms": {
     "order": "Order",
@@ -108,6 +109,12 @@
     "label": "Language",
     "en": "English",
     "id": "Bahasa Indonesia"
+  },
+  "pagination": {
+    "showing": "Showing {from}–{to} of {total} {label}",
+    "prev": "Prev",
+    "next": "Next",
+    "pageOf": "Page {page} / {pageCount}"
   },
   "externalPage": {
     "title": "External Vendors",
