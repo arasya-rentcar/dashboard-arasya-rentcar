@@ -2,6 +2,7 @@
 
 import { Fragment, Suspense, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   Plus,
   Search,
@@ -80,7 +81,22 @@ const PAYMENT_STATUS_STYLES: Record<PaymentStatus, string> = {
 
 const PAGE_SIZE = 20;
 
+const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
+  CREATED: 'statusCreated',
+  ASSIGNED: 'statusAssigned',
+  IN_PROGRESS: 'statusInProgress',
+  DONE: 'statusDone',
+  CANCELLED: 'statusCancelled',
+};
+
+const PAYMENT_STATUS_KEYS: Record<string, string> = {
+  UNPAID: 'payUnpaid',
+  DP_PAID: 'payDpPaid',
+  PAID: 'payPaid',
+};
+
 function OrdersPageInner() {
+  const t = useTranslations('ordersPage');
   const { filters, setFilter, setFilters, clear, hasActive } =
     useOrderFilters();
   const { presets, savePreset, deletePreset } = useFilterPresets();
@@ -143,11 +159,11 @@ function OrdersPageInner() {
           try {
             await ordersApi.addAdjustment(orderId, adj);
           } catch {
-            toast.error(`Failed to add additional: ${adj.description}`);
+            toast.error(t('errAddAdditional', { desc: adj.description }));
           }
         }
       }
-      toast.success('Order created successfully');
+      toast.success(t('okOrderCreated'));
       setCreateOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -158,7 +174,7 @@ function OrdersPageInner() {
     try {
       const d = await previewMutation.mutateAsync({});
       toast.success(
-        `Preview: ${d.meaningful_rows} rows, ${d.warning_count} warnings`,
+        t('okPreview', { rows: d.meaningful_rows, warnings: d.warning_count }),
       );
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -169,7 +185,7 @@ function OrdersPageInner() {
     try {
       const d = await importMutation.mutateAsync({});
       toast.success(
-        `Imported ${d.imported}, updated ${d.updated}, warnings ${d.warning_count}`,
+        t('okImported', { imported: d.imported, updated: d.updated, warnings: d.warning_count }),
       );
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -202,12 +218,12 @@ function OrdersPageInner() {
 
   function handleExport() {
     if (!rows.length) {
-      toast.error('Nothing to export on this page.');
+      toast.error(t('errNothingExportPage'));
       return;
     }
     const csvRows = rows.map((o, i) => toCsvRow(o, start + i));
     exportToCsv(`arasya-orders-${new Date().toISOString().slice(0, 10)}`, csvRows);
-    toast.success(`Exported ${csvRows.length} rows (current page).`);
+    toast.success(t('okExportedPage', { count: csvRows.length }));
   }
 
   async function handleExportAll() {
@@ -230,7 +246,7 @@ function OrdersPageInner() {
       } while (p <= pageCount);
 
       if (!all.length) {
-        toast.error('No matching orders to export.');
+        toast.error(t('errNoMatchingExport'));
         return;
       }
       const csvRows = all.map((o, i) => toCsvRow(o, i));
@@ -238,7 +254,7 @@ function OrdersPageInner() {
         `arasya-orders-all-${new Date().toISOString().slice(0, 10)}`,
         csvRows,
       );
-      toast.success(`Exported ${csvRows.length} rows (all filtered).`);
+      toast.success(t('okExportedAll', { count: csvRows.length }));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -249,12 +265,12 @@ function OrdersPageInner() {
   function handleSavePreset() {
     const name = presetName.trim();
     if (!name) {
-      toast.error('Enter a preset name.');
+      toast.error(t('errPresetName'));
       return;
     }
     savePreset(name, filters);
     setPresetName('');
-    toast.success(`Preset "${name}" saved.`);
+    toast.success(t('okPresetSaved', { name }));
   }
 
   const num = (v?: string | number | null) => Number(v ?? 0);
@@ -262,30 +278,30 @@ function OrdersPageInner() {
   const summaryCards = useMemo(() => {
     if (!summary) return [];
     return [
-      { label: 'Orders', value: String(summary.count) },
-      { label: 'Turnover', value: formatCurrency(num(summary.final_price_total)) },
+      { label: t('sumOrders'), value: String(summary.count) },
+      { label: t('sumTurnover'), value: formatCurrency(num(summary.final_price_total)) },
       {
-        label: 'User Total',
+        label: t('sumUserTotal'),
         value: formatCurrency(num(summary.total_user_amount)),
       },
-      { label: 'Ops Cost', value: formatCurrency(num(summary.total_ops_cost)) },
+      { label: t('sumOpsCost'), value: formatCurrency(num(summary.total_ops_cost)) },
       {
-        label: 'Driver Cost',
+        label: t('sumDriverCost'),
         value: formatCurrency(num(summary.total_driver_amount)),
       },
-      { label: 'Margin', value: formatCurrency(num(summary.margin_amount)) },
+      { label: t('sumMargin'), value: formatCurrency(num(summary.margin_amount)) },
     ];
-  }, [summary]);
+  }, [summary, t]);
 
   return (
-    <DashboardShell title="Orders">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         {/* Actions bar */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search name, phone, route, driver, car, invoice, code…"
+              placeholder={t('searchPlaceholder')}
               className="pl-9"
               value={filters.search}
               onChange={(e) => setFilter('search', e.target.value)}
@@ -293,7 +309,7 @@ function OrdersPageInner() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" /> Export Page
+              <Download className="h-4 w-4 mr-2" /> {t('exportPage')}
             </Button>
             <Button
               variant="outline"
@@ -305,14 +321,14 @@ function OrdersPageInner() {
               ) : (
                 <Download className="h-4 w-4 mr-2" />
               )}
-              Export All
+              {t('exportAll')}
             </Button>
             <Button
               variant="outline"
               onClick={handlePreview}
               disabled={previewMutation.isPending}
             >
-              <Eye className="h-4 w-4 mr-2" /> Preview Sheet
+              <Eye className="h-4 w-4 mr-2" /> {t('previewSheet')}
             </Button>
             <Button onClick={handleImport} disabled={importMutation.isPending}>
               {importMutation.isPending ? (
@@ -320,10 +336,10 @@ function OrdersPageInner() {
               ) : (
                 <Upload className="h-4 w-4 mr-2" />
               )}
-              Import Sheet
+              {t('importSheet')}
             </Button>
             <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Create Order
+              <Plus className="h-4 w-4 mr-2" /> {t('createOrder')}
             </Button>
           </div>
         </div>
@@ -331,12 +347,12 @@ function OrdersPageInner() {
         {/* Bucket chips */}
         <div className="flex flex-wrap gap-2">
           {[
-            ['ALL', 'All'],
-            ['ACTIVE', 'Active'],
-            ['MISSING_INVOICE', 'Missing Invoice'],
-            ['NOT_FINAL', 'Not Final'],
-            ['CANCELLED', 'Cancelled'],
-            ['REFUNDED', 'Refunded'],
+            ['ALL', t('bucketAll')],
+            ['ACTIVE', t('bucketActive')],
+            ['MISSING_INVOICE', t('bucketMissingInvoice')],
+            ['NOT_FINAL', t('bucketNotFinal')],
+            ['CANCELLED', t('bucketCancelled')],
+            ['REFUNDED', t('bucketRefunded')],
           ].map(([val, label]) => (
             <button
               key={val}
@@ -355,62 +371,62 @@ function OrdersPageInner() {
         {/* Filters */}
         <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
           <FilterSelect
-            label="Status"
+            label={t('filterStatus')}
             value={filters.order_status}
             onChange={(v) => setFilter('order_status', v)}
             options={[
-              ['ALL', 'All Status'],
-              ['CREATED', 'Created'],
-              ['ASSIGNED', 'Assigned'],
-              ['IN_PROGRESS', 'In Progress'],
-              ['DONE', 'Done'],
-              ['CANCELLED', 'Cancelled'],
+              ['ALL', t('allStatus')],
+              ['CREATED', t('statusCreated')],
+              ['ASSIGNED', t('statusAssigned')],
+              ['IN_PROGRESS', t('statusInProgress')],
+              ['DONE', t('statusDone')],
+              ['CANCELLED', t('statusCancelled')],
             ]}
           />
           <FilterSelect
-            label="Payment"
+            label={t('filterPayment')}
             value={filters.payment_status}
             onChange={(v) => setFilter('payment_status', v)}
             options={[
-              ['ALL', 'All Payment'],
-              ['UNPAID', 'Unpaid'],
-              ['DP_PAID', 'DP Paid'],
-              ['PAID', 'Paid'],
+              ['ALL', t('allPayment')],
+              ['UNPAID', t('payUnpaid')],
+              ['DP_PAID', t('payDpPaid')],
+              ['PAID', t('payPaid')],
             ]}
           />
           <FilterSelect
-            label="Source"
+            label={t('filterSource')}
             value={filters.source}
             onChange={(v) => setFilter('source', v)}
             options={[
-              ['ALL', 'All Sources'],
-              ['WEB', 'Web'],
-              ['WHATSAPP', 'WhatsApp'],
-              ['IMPORT', 'Sheet Import'],
+              ['ALL', t('allSources')],
+              ['WEB', t('sourceWeb')],
+              ['WHATSAPP', t('sourceWhatsapp')],
+              ['IMPORT', t('sourceImport')],
             ]}
           />
           <FilterSelect
-            label="Finance"
+            label={t('filterFinance')}
             value={filters.has_finance}
             onChange={(v) => setFilter('has_finance', v)}
             options={[
-              ['ALL', 'All'],
-              ['true', 'Has Finance'],
-              ['false', 'No Finance'],
+              ['ALL', t('allFinance')],
+              ['true', t('hasFinance')],
+              ['false', t('noFinance')],
             ]}
           />
           <FilterSelect
-            label="Date field"
+            label={t('filterDateField')}
             value={filters.date_field}
             onChange={(v) => setFilter('date_field', v)}
             width="w-40"
             options={[
-              ['order_date', 'Order Date'],
-              ['service_start_at', 'Service Date'],
+              ['order_date', t('fieldOrderDate')],
+              ['service_start_at', t('fieldServiceDate')],
             ]}
           />
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">From</label>
+            <label className="text-xs font-medium text-gray-500">{t('from')}</label>
             <Input
               type="date"
               className="w-40"
@@ -419,7 +435,7 @@ function OrdersPageInner() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">To</label>
+            <label className="text-xs font-medium text-gray-500">{t('to')}</label>
             <Input
               type="date"
               className="w-40"
@@ -429,16 +445,16 @@ function OrdersPageInner() {
           </div>
           {hasActive && (
             <Button variant="outline" size="sm" onClick={clear}>
-              <X className="h-3.5 w-3.5 mr-1" /> Clear
+              <X className="h-3.5 w-3.5 mr-1" /> {t('clear')}
             </Button>
           )}
         </div>
 
         {/* Presets */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">Presets:</span>
+          <span className="text-xs font-medium text-gray-500">{t('presets')}</span>
           {presets.length === 0 && (
-            <span className="text-xs text-gray-400">none saved</span>
+            <span className="text-xs text-gray-400">{t('noneSaved')}</span>
           )}
           {presets.map((p) => (
             <span
@@ -463,13 +479,13 @@ function OrdersPageInner() {
           ))}
           <div className="ml-auto flex items-center gap-1">
             <Input
-              placeholder="Save current as…"
+              placeholder={t('saveCurrentAs')}
               className="h-7 w-44 text-xs"
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
             />
             <Button variant="outline" size="sm" onClick={handleSavePreset}>
-              <Star className="h-3.5 w-3.5 mr-1" /> Save
+              <Star className="h-3.5 w-3.5 mr-1" /> {t('save')}
             </Button>
           </div>
         </div>
@@ -496,16 +512,16 @@ function OrdersPageInner() {
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <Th className="w-8"></Th>
-                <Th className="w-12">No</Th>
-                <Th>Customer</Th>
-                <Th className="hidden lg:table-cell">Route</Th>
-                <Th className="hidden lg:table-cell">Date</Th>
-                <Th>Status</Th>
-                <Th className="hidden sm:table-cell">Payment</Th>
-                <Th className="hidden md:table-cell">Source</Th>
-                <Th className="hidden lg:table-cell text-right">Price</Th>
-                <Th className="hidden xl:table-cell text-right">Margin</Th>
-                <Th>Actions</Th>
+                <Th className="w-12">{t('colNo')}</Th>
+                <Th>{t('colCustomer')}</Th>
+                <Th className="hidden lg:table-cell">{t('colRoute')}</Th>
+                <Th className="hidden lg:table-cell">{t('colDate')}</Th>
+                <Th>{t('colStatus')}</Th>
+                <Th className="hidden sm:table-cell">{t('colPayment')}</Th>
+                <Th className="hidden md:table-cell">{t('colSource')}</Th>
+                <Th className="hidden lg:table-cell text-right">{t('colPrice')}</Th>
+                <Th className="hidden xl:table-cell text-right">{t('colMargin')}</Th>
+                <Th>{t('colActions')}</Th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -525,7 +541,7 @@ function OrdersPageInner() {
                     colSpan={11}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No orders found.
+                    {t('noOrders')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -559,23 +575,23 @@ function OrdersPageInner() {
                       <div className="flex flex-wrap items-center gap-1 mt-0.5">
                         {order.invoice_missing && (
                           <span className="inline-flex rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
-                            No Invoice
+                            {t('tagNoInvoice')}
                           </span>
                         )}
                         {order.is_refunded && (
                           <span className="inline-flex rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">
-                            Refund
+                            {t('tagRefund')}
                           </span>
                         )}
                         {order.order_status !== 'CANCELLED' &&
                           order.is_final === false && (
                             <span className="inline-flex rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                              Not Final
+                              {t('tagNotFinal')}
                             </span>
                           )}
                         {order.is_final && (
                           <span className="inline-flex rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                            Final
+                            {t('tagFinal')}
                           </span>
                         )}
                       </div>
@@ -594,7 +610,7 @@ function OrdersPageInner() {
                         variant="outline"
                         className={`text-xs ${ORDER_STATUS_STYLES[order.order_status]}`}
                       >
-                        {order.order_status}
+                        {t(ORDER_STATUS_KEYS[order.order_status])}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -602,7 +618,9 @@ function OrdersPageInner() {
                         variant="outline"
                         className={`text-xs ${PAYMENT_STATUS_STYLES[order.payment_status]}`}
                       >
-                        {order.payment_status.replace('_', ' ')}
+                        {PAYMENT_STATUS_KEYS[order.payment_status]
+                          ? t(PAYMENT_STATUS_KEYS[order.payment_status])
+                          : order.payment_status.replace('_', ' ')}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -629,7 +647,7 @@ function OrdersPageInner() {
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/orders/${order.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> View
+                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
                         </Link>
                       </Button>
                     </TableCell>
@@ -652,7 +670,7 @@ function OrdersPageInner() {
         {pagination && (
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">
-              {isFetching ? 'Updating…' : ' '}
+              {isFetching ? t('updating') : ' '}
             </span>
             <TablePagination
               page={pagination.page}
@@ -661,7 +679,7 @@ function OrdersPageInner() {
               start={start}
               pageSize={pagination.page_size}
               onPageChange={setPage}
-              label="orders"
+              label={t('paginationLabel')}
             />
           </div>
         )}
@@ -671,7 +689,7 @@ function OrdersPageInner() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="!w-[96vw] !max-w-[1500px] max-h-[96vh] overflow-hidden p-4 sm:p-5 lg:p-6">
           <DialogHeader>
-            <DialogTitle>Create New Order</DialogTitle>
+            <DialogTitle>{t('createNewOrder')}</DialogTitle>
           </DialogHeader>
           <CreateOrderForm
             onSubmit={handleCreate}
@@ -740,6 +758,7 @@ function FilterSelect({
 }
 
 function SourceBadge({ source }: { source?: string }) {
+  const t = useTranslations('ordersPage');
   const s = source ?? 'WEB';
   const map: Record<string, string> = {
     WEB: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -747,9 +766,9 @@ function SourceBadge({ source }: { source?: string }) {
     IMPORT: 'bg-purple-50 text-purple-700 border-purple-200',
   };
   const label: Record<string, string> = {
-    WEB: 'Web',
-    WHATSAPP: 'WA',
-    IMPORT: 'Sheet',
+    WEB: t('badgeWeb'),
+    WHATSAPP: t('badgeWa'),
+    IMPORT: t('badgeSheet'),
   };
   return (
     <Badge variant="outline" className={`text-xs ${map[s] ?? map.WEB}`}>
