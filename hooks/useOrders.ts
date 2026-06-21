@@ -5,6 +5,12 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api";
+import { parseResponse } from "@/lib/safeParse";
+import {
+  orderListSchema,
+  orderDetailSchema,
+  ordersSearchResultSchema,
+} from "@/lib/schemas";
 
 // Invalidate EVERY order-related view in one place. The list page uses
 // ["orders-search", params], the dashboard uses ["orders"], and detail uses
@@ -32,7 +38,7 @@ export function useOrders() {
     queryKey: ["orders"],
     queryFn: async () => {
       const res = await ordersApi.list();
-      return res.data.data;
+      return parseResponse<OrderListItem[]>(orderListSchema, res.data.data, "useOrders");
     },
   });
 }
@@ -44,11 +50,12 @@ export function useOrdersSearch(params: OrdersSearchParams) {
       const res = await ordersApi.search(
         params as Record<string, string | number | undefined>,
       );
-      return {
+      const result = {
         data: res.data.data,
         pagination: res.data.pagination,
         summary: res.data.summary,
       };
+      return parseResponse<OrdersSearchResult>(ordersSearchResultSchema, result, "useOrdersSearch");
     },
     placeholderData: (prev) => prev,
   });
@@ -59,7 +66,7 @@ export function useOrder(id: string) {
     queryKey: ["orders", id],
     queryFn: async () => {
       const res = await ordersApi.getById(id);
-      return res.data.data;
+      return parseResponse<Order>(orderDetailSchema, res.data.data, "useOrder");
     },
     enabled: !!id,
   });

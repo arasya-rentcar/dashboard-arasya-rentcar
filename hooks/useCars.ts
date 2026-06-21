@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { carsApi } from '@/lib/api';
 import { Car, CreateCarInput } from '@/types';
+import { parseResponse } from '@/lib/safeParse';
+import { carListSchema } from '@/lib/schemas';
 
 export function useCars() {
   return useQuery<Car[]>({
     queryKey: ['cars'],
     queryFn: async () => {
       const res = await carsApi.list();
-      return res.data.data;
+      return parseResponse<Car[]>(carListSchema, res.data.data, 'useCars');
     },
   });
 }
@@ -17,7 +19,8 @@ export function useAvailableCars() {
     queryKey: ['cars', 'available'],
     queryFn: async () => {
       const res = await carsApi.list();
-      return (res.data.data as Car[]).filter((c) => c.status === 'AVAILABLE');
+      const cars = parseResponse<Car[]>(carListSchema, res.data.data, 'useAvailableCars');
+      return cars.filter((c) => c.status === 'AVAILABLE');
     },
   });
 }

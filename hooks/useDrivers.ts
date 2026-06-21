@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driversApi } from '@/lib/api';
 import { Driver, CreateDriverInput, DriverDetail } from '@/types';
+import { parseResponse } from '@/lib/safeParse';
+import { driverListSchema } from '@/lib/schemas';
 
 export function useDrivers() {
   return useQuery<Driver[]>({
     queryKey: ['drivers'],
     queryFn: async () => {
       const res = await driversApi.list();
-      return res.data.data;
+      return parseResponse<Driver[]>(driverListSchema, res.data.data, 'useDrivers');
     },
   });
 }
@@ -17,7 +19,8 @@ export function useAvailableDrivers() {
     queryKey: ['drivers', 'available'],
     queryFn: async () => {
       const res = await driversApi.list();
-      return (res.data.data as Driver[]).filter((d) => d.status === 'AVAILABLE');
+      const drivers = parseResponse<Driver[]>(driverListSchema, res.data.data, 'useAvailableDrivers');
+      return drivers.filter((d) => d.status === 'AVAILABLE');
     },
   });
 }

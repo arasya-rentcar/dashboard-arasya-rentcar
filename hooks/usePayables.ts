@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { payablesApi } from "@/lib/api";
+import { parseResponse } from "@/lib/safeParse";
+import { payablesResultSchema } from "@/lib/schemas";
 import {
   Payable,
   PayableTotals,
@@ -44,6 +46,7 @@ export function usePayables(params: PayablesListParams) {
       const res = await payablesApi.list(
         params as Record<string, string | number | undefined>,
       );
+      parseResponse(payablesResultSchema, res.data, "usePayables");
       const p = res.data.pagination;
       return {
         items: res.data.items,
