@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Search, Eye, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -32,6 +33,7 @@ import { getErrorMessage } from '@/lib/utils';
 const PAGE_SIZE = 20;
 
 export default function ExternalVendorsPage() {
+  const t = useTranslations('externalPage');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
@@ -58,7 +60,7 @@ export default function ExternalVendorsPage() {
 
   async function handleCreate() {
     if (!form.name.trim()) {
-      toast.error('Vendor name is required.');
+      toast.error(t('errNameRequired'));
       return;
     }
     try {
@@ -67,7 +69,7 @@ export default function ExternalVendorsPage() {
         phone: form.phone.trim() || undefined,
         notes: form.notes.trim() || undefined,
       });
-      toast.success('Vendor created');
+      toast.success(t('okCreated'));
       setForm({ name: '', phone: '', notes: '' });
       setCreateOpen(false);
     } catch (err) {
@@ -76,20 +78,20 @@ export default function ExternalVendorsPage() {
   }
 
   return (
-    <DashboardShell title="External Vendors">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search vendor name or phone…"
+              placeholder={t('searchPlaceholder')}
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add Vendor
+            <Plus className="h-4 w-4 mr-2" /> {t('addVendor')}
           </Button>
         </div>
 
@@ -97,12 +99,12 @@ export default function ExternalVendorsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <Th className="w-12">No</Th>
-                <Th>Vendor / Driver</Th>
-                <Th className="hidden sm:table-cell">Phone</Th>
-                <Th className="text-right">Cars</Th>
-                <Th className="text-right">Orders</Th>
-                <Th>Actions</Th>
+                <Th className="w-12">{t('colNo')}</Th>
+                <Th>{t('colVendorDriver')}</Th>
+                <Th className="hidden sm:table-cell">{t('colPhone')}</Th>
+                <Th className="text-right">{t('colCars')}</Th>
+                <Th className="text-right">{t('colOrders')}</Th>
+                <Th>{t('colActions')}</Th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,7 +124,7 @@ export default function ExternalVendorsPage() {
                     colSpan={6}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No external vendors yet. Add one with “Add Vendor”.
+                    {t('noVendors')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -163,7 +165,7 @@ export default function ExternalVendorsPage() {
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/external/${v.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> View
+                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
                         </Link>
                       </Button>
                     </TableCell>
@@ -177,7 +179,7 @@ export default function ExternalVendorsPage() {
         {pagination && (
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">
-              {isFetching ? 'Updating…' : ' '}
+              {isFetching ? t('updating') : ' '}
             </span>
             <TablePagination
               page={pagination.page}
@@ -186,7 +188,7 @@ export default function ExternalVendorsPage() {
               start={start}
               pageSize={pagination.page_size}
               onPageChange={setPage}
-              label="vendors"
+              label={t('paginationLabel')}
             />
           </div>
         )}
@@ -195,21 +197,21 @@ export default function ExternalVendorsPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add External Vendor</DialogTitle>
+            <DialogTitle>{t('addExternalVendor')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-gray-500">
-                Name *
+                {t('nameRequired')}
               </label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Vendor / driver name"
+                placeholder={t('namePlaceholder')}
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Phone</label>
+              <label className="text-xs font-medium text-gray-500">{t('phone')}</label>
               <Input
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
@@ -217,11 +219,11 @@ export default function ExternalVendorsPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Notes</label>
+              <label className="text-xs font-medium text-gray-500">{t('notes')}</label>
               <Input
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Optional"
+                placeholder={t('optional')}
               />
             </div>
             <Button
@@ -229,7 +231,7 @@ export default function ExternalVendorsPage() {
               onClick={handleCreate}
               disabled={createMutation.isPending}
             >
-              {createMutation.isPending ? 'Creating…' : 'Create Vendor'}
+              {createMutation.isPending ? t('creating') : t('createVendor')}
             </Button>
           </div>
         </DialogContent>

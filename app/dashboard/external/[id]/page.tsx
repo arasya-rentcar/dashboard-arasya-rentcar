@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, Plus, Trash2, Phone, Car, ClipboardList, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -40,6 +41,8 @@ type Tab = 'cars' | 'orders' | 'finance';
 export default function VendorDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const tx = useTranslations('vendorDetail');
+  const tos = useTranslations('orderStatus');
   const [tab, setTab] = useState<Tab>('cars');
   const [carsPage, setCarsPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
@@ -56,7 +59,7 @@ export default function VendorDetailPage() {
 
   async function handleAddCar() {
     if (!carForm.model.trim()) {
-      toast.error('Car model is required.');
+      toast.error(tx('errModelRequired'));
       return;
     }
     try {
@@ -68,7 +71,7 @@ export default function VendorDetailPage() {
           notes: carForm.notes.trim() || undefined,
         },
       });
-      toast.success('Car added');
+      toast.success(tx('okCarAdded'));
       setCarForm({ model: '', plate_number: '', notes: '' });
       setAddCarOpen(false);
     } catch (err) {
@@ -79,7 +82,7 @@ export default function VendorDetailPage() {
   async function handleDeleteCar(carId: string) {
     try {
       await deleteCarMutation.mutateAsync(carId);
-      toast.success('Car removed');
+      toast.success(tx('okCarRemoved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -87,15 +90,15 @@ export default function VendorDetailPage() {
 
   if (isLoading && !vendor) {
     return (
-      <DashboardShell title="Vendor">
+      <DashboardShell title={tx('title')}>
         <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
       </DashboardShell>
     );
   }
   if (!vendor) {
     return (
-      <DashboardShell title="Vendor">
-        <p className="text-sm text-gray-500">Vendor not found.</p>
+      <DashboardShell title={tx('title')}>
+        <p className="text-sm text-gray-500">{tx('notFound')}</p>
       </DashboardShell>
     );
   }
@@ -112,7 +115,7 @@ export default function VendorDetailPage() {
           href="/dashboard/external"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-800"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to External Vendors
+          <ArrowLeft className="h-4 w-4 mr-1" /> {tx('back')}
         </Link>
 
         {/* Header */}
@@ -133,13 +136,13 @@ export default function VendorDetailPage() {
                 <p className="text-xl font-semibold text-gray-900">
                   {cp.total}
                 </p>
-                <p className="text-xs text-gray-400">Cars</p>
+                <p className="text-xs text-gray-400">{tx('cars')}</p>
               </div>
               <div className="text-center">
                 <p className="text-xl font-semibold text-purple-700">
                   {op.total}
                 </p>
-                <p className="text-xs text-gray-400">Orders</p>
+                <p className="text-xs text-gray-400">{tx('orders')}</p>
               </div>
             </div>
           </CardContent>
@@ -158,19 +161,19 @@ export default function VendorDetailPage() {
             active={tab === 'cars'}
             onClick={() => setTab('cars')}
             icon={<Car className="h-4 w-4" />}
-            label={`Cars (${cp.total})`}
+            label={tx('tabCars', { count: cp.total })}
           />
           <TabButton
             active={tab === 'orders'}
             onClick={() => setTab('orders')}
             icon={<ClipboardList className="h-4 w-4" />}
-            label={`Orders (${op.total})`}
+            label={tx('tabOrders', { count: op.total })}
           />
           <TabButton
             active={tab === 'finance'}
             onClick={() => setTab('finance')}
             icon={<Wallet className="h-4 w-4" />}
-            label="Tagihan & Trip"
+            label={tx('tabFinance')}
           />
         </div>
 
@@ -184,7 +187,7 @@ export default function VendorDetailPage() {
               payments={detail.payments}
             />
           ) : (
-            <p className="text-sm text-gray-400">Loading...</p>
+            <p className="text-sm text-gray-400">{tx('loading')}</p>
           )
         )}
 
@@ -193,17 +196,17 @@ export default function VendorDetailPage() {
           <div className="space-y-3">
             <div className="flex justify-end">
               <Button size="sm" onClick={() => setAddCarOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Add Car
+                <Plus className="h-4 w-4 mr-1" /> {tx('addCar')}
               </Button>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <Th className="w-10">No</Th>
-                    <Th>Model</Th>
-                    <Th>Plate</Th>
-                    <Th className="text-right">Orders</Th>
+                    <Th className="w-10">{tx('colNo')}</Th>
+                    <Th>{tx('colModel')}</Th>
+                    <Th>{tx('colPlate')}</Th>
+                    <Th className="text-right">{tx('colOrders')}</Th>
                     <Th></Th>
                   </TableRow>
                 </TableHeader>
@@ -214,7 +217,7 @@ export default function VendorDetailPage() {
                         colSpan={5}
                         className="text-center py-8 text-gray-400 text-sm"
                       >
-                        No cars recorded for this vendor.
+                        {tx('noCars')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -242,8 +245,8 @@ export default function VendorDetailPage() {
                             disabled={(c._count?.orders ?? 0) > 0}
                             title={
                               (c._count?.orders ?? 0) > 0
-                                ? 'Has orders — cannot delete'
-                                : 'Delete car'
+                                ? tx('hasOrdersCannotDelete')
+                                : tx('deleteCar')
                             }
                           >
                             <Trash2 className="h-4 w-4 text-gray-400 hover:text-red-500" />
@@ -262,7 +265,7 @@ export default function VendorDetailPage() {
               start={carStart}
               pageSize={cp.page_size}
               onPageChange={setCarsPage}
-              label="cars"
+              label={tx('carsPaginationLabel')}
             />
           </div>
         )}
@@ -274,12 +277,12 @@ export default function VendorDetailPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <Th className="w-10">No</Th>
-                    <Th>Date</Th>
-                    <Th>Customer</Th>
-                    <Th className="hidden sm:table-cell">Car</Th>
-                    <Th>Status</Th>
-                    <Th className="text-right">Price</Th>
+                    <Th className="w-10">{tx('colNo')}</Th>
+                    <Th>{tx('colDate')}</Th>
+                    <Th>{tx('colCustomer')}</Th>
+                    <Th className="hidden sm:table-cell">{tx('colCar')}</Th>
+                    <Th>{tx('colStatus')}</Th>
+                    <Th className="text-right">{tx('colPrice')}</Th>
                     <Th></Th>
                   </TableRow>
                 </TableHeader>
@@ -290,7 +293,7 @@ export default function VendorDetailPage() {
                         colSpan={7}
                         className="text-center py-8 text-gray-400 text-sm"
                       >
-                        No orders through this vendor yet.
+                        {tx('noOrders')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -312,7 +315,7 @@ export default function VendorDetailPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
-                            {o.order_status}
+                            {tos(o.order_status)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-gray-900 text-right tabular-nums">
@@ -323,7 +326,7 @@ export default function VendorDetailPage() {
                             href={`/dashboard/orders/${o.id}`}
                             className="text-xs text-blue-600 hover:underline"
                           >
-                            Open
+                            {tx('open')}
                           </Link>
                         </TableCell>
                       </TableRow>
@@ -339,7 +342,7 @@ export default function VendorDetailPage() {
               start={orderStart}
               pageSize={op.page_size}
               onPageChange={setOrdersPage}
-              label="orders"
+              label={tx('ordersPaginationLabel')}
             />
           </div>
         )}
@@ -349,23 +352,23 @@ export default function VendorDetailPage() {
       <Dialog open={addCarOpen} onOpenChange={setAddCarOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Car for {vendor.name}</DialogTitle>
+            <DialogTitle>{tx('addCarFor', { name: vendor.name })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-gray-500">
-                Model *
+                {tx('modelRequired')}
               </label>
               <Input
                 value={carForm.model}
                 onChange={(e) =>
                   setCarForm({ ...carForm, model: e.target.value })
                 }
-                placeholder="e.g. Toyota Innova"
+                placeholder={tx('modelPlaceholder')}
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Plate</label>
+              <label className="text-xs font-medium text-gray-500">{tx('plate')}</label>
               <Input
                 value={carForm.plate_number}
                 onChange={(e) =>
@@ -375,13 +378,13 @@ export default function VendorDetailPage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-500">Notes</label>
+              <label className="text-xs font-medium text-gray-500">{tx('notes')}</label>
               <Input
                 value={carForm.notes}
                 onChange={(e) =>
                   setCarForm({ ...carForm, notes: e.target.value })
                 }
-                placeholder="Optional"
+                placeholder={tx('optional')}
               />
             </div>
             <Button
@@ -389,7 +392,7 @@ export default function VendorDetailPage() {
               onClick={handleAddCar}
               disabled={addCarMutation.isPending}
             >
-              {addCarMutation.isPending ? 'Adding…' : 'Add Car'}
+              {addCarMutation.isPending ? tx('adding') : tx('addCar')}
             </Button>
           </div>
         </DialogContent>
