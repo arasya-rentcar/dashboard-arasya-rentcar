@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
+import QueryError from '@/components/dashboard/QueryError';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -114,7 +115,7 @@ function OrdersPageInner() {
     setPage(1);
   }
 
-  const { data, isLoading, isFetching } = useOrdersSearch({
+  const { data, isLoading, isError, isFetching, refetch } = useOrdersSearch({
     ...filters,
     page,
     page_size: PAGE_SIZE,
@@ -522,6 +523,12 @@ function OrdersPageInner() {
                     ))}
                   </TableRow>
                 ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={11} className="p-4">
+                    <QueryError onRetry={() => refetch()} compact />
+                  </TableCell>
+                </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell

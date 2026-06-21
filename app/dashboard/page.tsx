@@ -16,6 +16,7 @@ import {
   Receipt,
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
+import QueryError from '@/components/dashboard/QueryError';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import PeriodToggle from '@/components/revenue/PeriodToggle';
@@ -43,7 +44,7 @@ export default function DashboardPage() {
   const t = useTranslations('dashboard');
   const { period } = useRevenuePeriod('dashboard');
   const range = useMemo(() => resolvePeriod(period), [period]);
-  const { data, isLoading, isFetching } = useDashboardV2({
+  const { data, isLoading, isError, isFetching, refetch } = useDashboardV2({
     date_from: range.date_from,
     date_to: range.date_to,
   });
@@ -65,7 +66,9 @@ export default function DashboardPage() {
           <PeriodToggle surface="dashboard" />
         </div>
 
-        {isLoading || !data ? (
+        {isError ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : isLoading || !data ? (
           <SkeletonHealthRow />
         ) : (
           <>

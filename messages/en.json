@@ -29,6 +29,8 @@
     "saving": "Saving…",
     "deleting": "Deleting…",
     "retry": "Retry",
+    "loadFailed": "Failed to load data",
+    "loadFailedHint": "Something went wrong while fetching. Check your connection and try again.",
     "filter": "Filter",
     "reset": "Reset",
     "apply": "Apply",

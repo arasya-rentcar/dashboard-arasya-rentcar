@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
+import QueryError from "@/components/dashboard/QueryError";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +123,7 @@ export default function InvoicesPage() {
   const [noteByInvoice, setNoteByInvoice] = useState<Record<string, string>>(
     {},
   );
-  const { data: orders, isLoading } = useOrders();
+  const { data: orders, isLoading, isError, refetch } = useOrders();
   const sendMutation = useSendInvoiceWhatsapp();
 
   const invoices = useMemo(
@@ -291,6 +292,12 @@ export default function InvoicesPage() {
                     ))}
                   </TableRow>
                 ))
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="p-4">
+                    <QueryError onRetry={() => refetch()} compact />
+                  </TableCell>
+                </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell

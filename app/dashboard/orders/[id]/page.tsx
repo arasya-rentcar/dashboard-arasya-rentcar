@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
+import QueryError from "@/components/dashboard/QueryError";
 import MarkPaidDialog from "@/components/invoices/MarkPaidDialog";
 import RefundDialog, {
   type RefundPayload,
@@ -106,7 +107,7 @@ export default function OrderDetailPage({
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
 
-  const { data: order, isLoading } = useOrder(id);
+  const { data: order, isLoading, isError, refetch } = useOrder(id);
   const assignMutation = useAssignOrder();
   const updateOrderMutation = useUpdateOrder();
   const generateInvoiceMutation = useGenerateInvoice();
@@ -404,6 +405,14 @@ export default function OrderDetailPage({
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
+  }
+
+  if (isError) {
+    return (
+      <DashboardShell title={t('title')}>
+        <QueryError onRetry={() => refetch()} />
+      </DashboardShell>
+    );
   }
 
   if (isLoading) {

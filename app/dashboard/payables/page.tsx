@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Search, Users, Handshake, CheckCheck } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
+import QueryError from "@/components/dashboard/QueryError";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +41,7 @@ export default function PayablesPage() {
     [tab, status, search, page],
   );
 
-  const { data, isLoading } = usePayables(params);
+  const { data, isLoading, isError, refetch } = usePayables(params);
   const bulk = useBulkMarkPaid();
 
   const items = data?.items ?? [];
@@ -174,14 +175,18 @@ export default function PayablesPage() {
         )}
 
         {/* Table */}
-        <PayablesTable
-          items={items}
-          kind={tab}
-          loading={isLoading}
-          selected={selected}
-          onToggle={toggle}
-          onToggleAll={toggleAll}
-        />
+        {isError ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : (
+          <PayablesTable
+            items={items}
+            kind={tab}
+            loading={isLoading}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+          />
+        )}
 
         {data?.pagination && data.pagination.page_count > 1 && (
           <TablePagination

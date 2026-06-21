@@ -29,6 +29,8 @@
     "saving": "Menyimpan…",
     "deleting": "Menghapus…",
     "retry": "Coba lagi",
+    "loadFailed": "Gagal memuat data",
+    "loadFailedHint": "Terjadi kesalahan saat mengambil data. Periksa koneksi Anda dan coba lagi.",
     "filter": "Filter",
     "reset": "Atur ulang",
     "apply": "Terapkan",

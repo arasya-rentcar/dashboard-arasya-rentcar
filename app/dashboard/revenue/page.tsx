@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, TrendingUp, Loader2 } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
+import QueryError from "@/components/dashboard/QueryError";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,7 +37,7 @@ export default function RevenuePage() {
   const tc = useTranslations("common");
   const [month, setMonth] = useState(currentMonth());
   const { from, to } = useMemo(() => monthBounds(month), [month]);
-  const { data, isLoading, isFetching } = useRevenueReport({
+  const { data, isLoading, isError, isFetching, refetch } = useRevenueReport({
     date_from: from,
     date_to: to,
   });
@@ -67,7 +68,9 @@ export default function RevenuePage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isError ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : isLoading ? (
           <div className="flex items-center gap-2 py-16 text-sm text-gray-400">
             <Loader2 className="h-4 w-4 animate-spin" /> {tc("loading")}
           </div>
