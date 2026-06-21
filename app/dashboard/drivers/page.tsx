@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Edit, Plus, Search, Eye } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -70,6 +71,10 @@ const editDriverSchema = z.object({
 type EditDriverForm = z.infer<typeof editDriverSchema>;
 
 export default function DriversPage() {
+  const t = useTranslations("driversPage");
+  const tt = useTranslations("terms");
+  const ts = useTranslations("driverStatus");
+  const tc = useTranslations("common");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
@@ -124,7 +129,7 @@ export default function DriversPage() {
   async function onSubmit(data: CreateDriverForm) {
     try {
       await createMutation.mutateAsync(data);
-      toast.success("Driver created successfully");
+      toast.success(t("okCreated"));
       setCreateOpen(false);
       reset();
     } catch (err) {
@@ -147,7 +152,7 @@ export default function DriversPage() {
     if (!editingDriver) return;
     try {
       await updateMutation.mutateAsync({ id: editingDriver.id, data });
-      toast.success("Driver updated successfully");
+      toast.success(t("okUpdated"));
       setEditingDriver(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -155,14 +160,14 @@ export default function DriversPage() {
   }
 
   return (
-    <DashboardShell title="Drivers">
+    <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="flex gap-2 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search drivers…"
+                placeholder={t('searchPlaceholder')}
                 className="pl-9"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -173,16 +178,16 @@ export default function DriversPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Status</SelectItem>
-                <SelectItem value="AVAILABLE">Available</SelectItem>
-                <SelectItem value="ON_DUTY">On Duty</SelectItem>
-                <SelectItem value="OFF">Off</SelectItem>
+                <SelectItem value="ALL">{t('allStatus')}</SelectItem>
+                <SelectItem value="AVAILABLE">{ts('AVAILABLE')}</SelectItem>
+                <SelectItem value="ON_DUTY">{ts('ON_DUTY')}</SelectItem>
+                <SelectItem value="OFF">{ts('OFF')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Driver
+            {t('addDriver')}
           </Button>
         </div>
 
@@ -191,28 +196,28 @@ export default function DriversPage() {
             <TableHeader>
               <TableRow className="bg-gray-50">
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
-                  No
+                  {t('colNo')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Name
+                  {t('colName')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Phone
+                  {t('colPhone')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">
-                  Email
+                  {t('colEmail')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Type
+                  {t('colType')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">
-                  Asal / Base
+                  {t('colBase')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Status
+                  {t('colStatus')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide text-right">
-                  Action
+                  {t('colAction')}
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -233,7 +238,7 @@ export default function DriversPage() {
                     colSpan={8}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
-                    No drivers found.
+                    {t('noDrivers')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -260,7 +265,7 @@ export default function DriversPage() {
                             : "text-xs bg-purple-50 text-purple-700 border-purple-200"
                         }
                       >
-                        {driver.type}
+                        {driver.type === "INTERNAL" ? tt('internal') : tt('external')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-gray-500 hidden lg:table-cell">
@@ -271,14 +276,14 @@ export default function DriversPage() {
                         variant="outline"
                         className={`text-xs ${DRIVER_STATUS_STYLES[driver.status]}`}
                       >
-                        {driver.status.replace("_", " ")}
+                        {ts(driver.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/drivers/${driver.id}`}>
                           <Eye className="h-4 w-4 mr-1" />
-                          Detail
+                          {t('detail')}
                         </Link>
                       </Button>
                       <Button
@@ -287,7 +292,7 @@ export default function DriversPage() {
                         onClick={() => openEdit(driver)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Edit
+                        {t('edit')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -304,7 +309,7 @@ export default function DriversPage() {
           start={start}
           pageSize={PAGE_SIZE}
           onPageChange={setPage}
-          label="drivers"
+          label={t('paginationLabel')}
         />
       </div>
 
@@ -312,23 +317,23 @@ export default function DriversPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add New Driver</DialogTitle>
+            <DialogTitle>{t('addNewDriver')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>User Account</Label>
+              <Label>{t('userAccount')}</Label>
               <Controller
                 control={control}
                 name="user_id"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select user (DRIVER role)" />
+                      <SelectValue placeholder={t('selectUser')} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableUsers?.length === 0 && (
                         <SelectItem value="none" disabled>
-                          No available driver accounts
+                          {t('noAvailableUsers')}
                         </SelectItem>
                       )}
                       {availableUsers?.map((u) => (
@@ -346,7 +351,7 @@ export default function DriversPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="d_name">Name</Label>
+              <Label htmlFor="d_name">{t('name')}</Label>
               <Input id="d_name" {...register("name")} />
               {errors.name && (
                 <p className="text-xs text-red-500">{errors.name.message}</p>
@@ -355,28 +360,28 @@ export default function DriversPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="d_phone">Phone</Label>
+                <Label htmlFor="d_phone">{t('phone')}</Label>
                 <Input id="d_phone" {...register("phone")} />
                 {errors.phone && (
                   <p className="text-xs text-red-500">{errors.phone.message}</p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label>{t('type')}</Label>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Internal / External" />
+                        <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INTERNAL">
-                          Internal Arasya
+                          {t('internalArasya')}
                         </SelectItem>
                         <SelectItem value="EXTERNAL">
-                          External / Freelance
+                          {t('externalFreelance')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -386,10 +391,10 @@ export default function DriversPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="d_location">Asal / Base Location</Label>
+              <Label htmlFor="d_location">{t('baseLocation')}</Label>
               <Input
                 id="d_location"
-                placeholder="e.g. Arasya pool, Depok, Bandung"
+                placeholder={t('basePlaceholder')}
                 {...register("location")}
               />
             </div>
@@ -399,7 +404,7 @@ export default function DriversPage() {
                 {createMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Add Driver
+                {t('addDriver')}
               </Button>
             </div>
           </form>
@@ -413,11 +418,11 @@ export default function DriversPage() {
       >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit Driver</DialogTitle>
+            <DialogTitle>{t('editDriver')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit(onEditSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="edit_d_name">Name</Label>
+              <Label htmlFor="edit_d_name">{t('name')}</Label>
               <Input id="edit_d_name" {...registerEdit("name")} />
               {editErrors.name && (
                 <p className="text-xs text-red-500">
@@ -428,7 +433,7 @@ export default function DriversPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="edit_d_phone">Phone</Label>
+                <Label htmlFor="edit_d_phone">{t('phone')}</Label>
                 <Input id="edit_d_phone" {...registerEdit("phone")} />
                 {editErrors.phone && (
                   <p className="text-xs text-red-500">
@@ -437,21 +442,21 @@ export default function DriversPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <Label>{t('type')}</Label>
                 <Controller
                   control={editControl}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Internal / External" />
+                        <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="INTERNAL">
-                          Internal Arasya
+                          {t('internalArasya')}
                         </SelectItem>
                         <SelectItem value="EXTERNAL">
-                          External / Freelance
+                          {t('externalFreelance')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -462,29 +467,29 @@ export default function DriversPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>{t('status')}</Label>
                 <Controller
                   control={editControl}
                   name="status"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Status" />
+                        <SelectValue placeholder={t('status')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="AVAILABLE">Available</SelectItem>
-                        <SelectItem value="ON_DUTY">On Duty</SelectItem>
-                        <SelectItem value="OFF">Off</SelectItem>
+                        <SelectItem value="AVAILABLE">{ts('AVAILABLE')}</SelectItem>
+                        <SelectItem value="ON_DUTY">{ts('ON_DUTY')}</SelectItem>
+                        <SelectItem value="OFF">{ts('OFF')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="edit_d_location">Asal / Base Location</Label>
+                <Label htmlFor="edit_d_location">{t('baseLocation')}</Label>
                 <Input
                   id="edit_d_location"
-                  placeholder="e.g. Arasya pool, Depok, Bandung"
+                  placeholder={t('basePlaceholder')}
                   {...registerEdit("location")}
                 />
               </div>
@@ -496,13 +501,13 @@ export default function DriversPage() {
                 variant="outline"
                 onClick={() => setEditingDriver(null)}
               >
-                Cancel
+                {tc('cancel')}
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Save Changes
+                {t('saveChanges')}
               </Button>
             </div>
           </form>

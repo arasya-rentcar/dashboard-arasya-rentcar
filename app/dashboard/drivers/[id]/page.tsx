@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Phone, Mail, MapPin } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,19 +13,21 @@ import { useDriverDetail } from "@/hooks/useDrivers";
 export default function DriverDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const t = useTranslations("driverDetail");
+  const tt = useTranslations("terms");
   const { data, isLoading } = useDriverDetail(id);
 
   if (isLoading) {
     return (
-      <DashboardShell title="Driver">
-        <p className="text-sm text-gray-400">Loading...</p>
+      <DashboardShell title={t('title')}>
+        <p className="text-sm text-gray-400">{t('loading')}</p>
       </DashboardShell>
     );
   }
   if (!data) {
     return (
-      <DashboardShell title="Driver">
-        <p className="text-sm text-gray-400">Driver not found.</p>
+      <DashboardShell title={t('title')}>
+        <p className="text-sm text-gray-400">{t('notFound')}</p>
       </DashboardShell>
     );
   }
@@ -38,7 +41,7 @@ export default function DriverDetailPage() {
           href="/dashboard/drivers"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-800"
         >
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to Drivers
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t('backToDrivers')}
         </Link>
 
         {/* Header */}
@@ -55,7 +58,7 @@ export default function DriverDetailPage() {
                       : "text-xs bg-purple-50 text-purple-700 border-purple-200"
                   }
                 >
-                  {d.type}
+                  {d.type === "INTERNAL" ? tt('internal') : tt('external')}
                 </Badge>
               </div>
               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
