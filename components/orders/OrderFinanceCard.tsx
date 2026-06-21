@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Wallet, PencilLine } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ const num = (v?: string | number | null) =>
   v == null || v === '' ? '' : String(v);
 
 export default function OrderFinanceCard({ order }: { order: Order }) {
+  const t = useTranslations('financeCard');
   const fin = order.final_finance;
   const isExternal = !!order.is_external;
   const [open, setOpen] = useState(false);
@@ -74,7 +76,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
           finance_note: form.finance_note.trim() || null,
         },
       });
-      toast.success('Finance saved — margin recomputed');
+      toast.success(t('savedToast'));
       setOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -86,7 +88,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-gray-400" /> Finance & Margin
+            <Wallet className="h-4 w-4 text-gray-400" /> {t('title')}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge
@@ -97,10 +99,10 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
                   : 'bg-blue-50 text-blue-700 border-blue-200'
               }`}
             >
-              {isExternal ? 'External' : 'Internal'}
+              {isExternal ? t('external') : t('internal')}
             </Badge>
             <Button size="sm" variant="outline" onClick={openEditor}>
-              <PencilLine className="h-4 w-4 mr-1" /> Edit Finance
+              <PencilLine className="h-4 w-4 mr-1" /> {t('editFinance')}
             </Button>
           </div>
         </div>
@@ -108,7 +110,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
       <CardContent>
         {order.external_vendor && (
           <p className="text-xs text-gray-500 mb-3">
-            Vendor:{' '}
+            {t('vendor')}:{' '}
             <span className="font-medium text-gray-700">
               {order.external_vendor.name}
             </span>
@@ -118,17 +120,17 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
           </p>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-          <Stat label="Total User" value={fin?.total_user_amount} />
+          <Stat label={t('totalUser')} value={fin?.total_user_amount} />
           {isExternal ? (
             <>
-              <Stat label="Sell Price" value={fin?.sell_price} />
-              <Stat label="RTR" value={fin?.rtr_amount} />
+              <Stat label={t('sellPrice')} value={fin?.sell_price} />
+              <Stat label={t('rtr')} value={fin?.rtr_amount} />
             </>
           ) : (
             <>
-              <Stat label="Ops Cost" value={fin?.total_ops_cost} />
+              <Stat label={t('opsCost')} value={fin?.total_ops_cost} />
               <Stat
-                label="Driver Cost"
+                label={t('driverCost')}
                 value={fin?.total_driver_amount ?? fin?.total_ops_cost}
               />
             </>
@@ -137,9 +139,9 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
         <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
           <div>
             <p className="text-xs text-gray-400">
-              Margin
+              {t('margin')}
               <span className="ml-1 normal-case">
-                ({isExternal ? 'User − RTR' : 'User − Ops'})
+                ({isExternal ? t('userMinusRtr') : t('userMinusOps')})
               </span>
             </p>
             <p
@@ -152,7 +154,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               }`}
             >
               {fin?.margin_amount == null
-                ? 'Not set'
+                ? t('notSet')
                 : formatCurrency(fin.margin_amount)}
             </p>
           </div>
@@ -168,24 +170,24 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Edit Finance ({isExternal ? 'External' : 'Internal'})
+              {t('editFinance')} ({isExternal ? t('external') : t('internal')})
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Field
-              label="Total User Amount"
+              label={t('totalUserAmount')}
               value={form.total_user_amount}
               onChange={(v) => setForm({ ...form, total_user_amount: v })}
             />
             {isExternal ? (
               <>
                 <Field
-                  label="Sell Price (Harga Jual) — fallback if no Total User"
+                  label={t('sellPriceField')}
                   value={form.sell_price}
                   onChange={(v) => setForm({ ...form, sell_price: v })}
                 />
                 <Field
-                  label="RTR"
+                  label={t('rtr')}
                   value={form.rtr_amount}
                   onChange={(v) => setForm({ ...form, rtr_amount: v })}
                 />
@@ -193,12 +195,12 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             ) : (
               <>
                 <Field
-                  label="Total Ops Cost"
+                  label={t('totalOpsCost')}
                   value={form.total_ops_cost}
                   onChange={(v) => setForm({ ...form, total_ops_cost: v })}
                 />
                 <Field
-                  label="Driver Cost (optional)"
+                  label={t('driverCostOptional')}
                   value={form.total_driver_amount}
                   onChange={(v) =>
                     setForm({ ...form, total_driver_amount: v })
@@ -207,7 +209,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               </>
             )}
             <div className="space-y-1.5">
-              <Label>Note (optional)</Label>
+              <Label>{t('noteOptional')}</Label>
               <Textarea
                 rows={2}
                 value={form.finance_note}
@@ -219,7 +221,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
 
             <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
               <span className="text-xs text-gray-500">
-                Margin preview ({isExternal ? 'User − RTR' : 'User − Ops'})
+                {t('marginPreview')} ({isExternal ? t('userMinusRtr') : t('userMinusOps')})
               </span>
               <span
                 className={`text-sm font-semibold ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
@@ -233,7 +235,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               onClick={save}
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? 'Saving…' : 'Save & Recompute Margin'}
+              {mutation.isPending ? t('saving') : t('saveRecompute')}
             </Button>
           </div>
         </DialogContent>

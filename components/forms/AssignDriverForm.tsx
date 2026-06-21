@@ -3,6 +3,7 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,8 +18,8 @@ import { useAvailableDrivers } from '@/hooks/useDrivers';
 import { useAvailableCars } from '@/hooks/useCars';
 
 const schema = z.object({
-  driver_id: z.string().uuid('Select a driver'),
-  car_id: z.string().uuid('Select a car'),
+  driver_id: z.string().uuid('errSelectDriver'),
+  car_id: z.string().uuid('errSelectCar'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -29,6 +30,8 @@ interface Props {
 }
 
 export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
+  const t = useTranslations('assignDriver');
+  const tc = useTranslations('common');
   const { data: drivers, isLoading: driversLoading } = useAvailableDrivers();
   const { data: cars, isLoading: carsLoading } = useAvailableCars();
 
@@ -41,19 +44,19 @@ export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Driver</Label>
+        <Label>{t('driver')}</Label>
         <Controller
           control={control}
           name="driver_id"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger>
-                <SelectValue placeholder={driversLoading ? 'Loading...' : 'Select driver'} />
+                <SelectValue placeholder={driversLoading ? tc('loading') : t('selectDriver')} />
               </SelectTrigger>
               <SelectContent>
                 {drivers?.length === 0 && (
                   <SelectItem value="none" disabled>
-                    No available drivers
+                    {t('noDrivers')}
                   </SelectItem>
                 )}
                 {drivers?.map((d) => (
@@ -66,24 +69,24 @@ export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
           )}
         />
         {errors.driver_id && (
-          <p className="text-xs text-red-500">{errors.driver_id.message}</p>
+          <p className="text-xs text-red-500">{t(errors.driver_id.message ?? 'errSelectDriver')}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <Label>Car</Label>
+        <Label>{t('car')}</Label>
         <Controller
           control={control}
           name="car_id"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger>
-                <SelectValue placeholder={carsLoading ? 'Loading...' : 'Select car'} />
+                <SelectValue placeholder={carsLoading ? tc('loading') : t('selectCar')} />
               </SelectTrigger>
               <SelectContent>
                 {cars?.length === 0 && (
                   <SelectItem value="none" disabled>
-                    No available cars
+                    {t('noCars')}
                   </SelectItem>
                 )}
                 {cars?.map((c) => (
@@ -96,14 +99,14 @@ export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
           )}
         />
         {errors.car_id && (
-          <p className="text-xs text-red-500">{errors.car_id.message}</p>
+          <p className="text-xs text-red-500">{t(errors.car_id.message ?? 'errSelectCar')}</p>
         )}
       </div>
 
       <div className="flex justify-end pt-2">
         <Button type="submit" disabled={isLoading || driversLoading || carsLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Assign Driver
+          {t('assignBtn')}
         </Button>
       </div>
     </form>

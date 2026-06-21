@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,11 +16,11 @@ import {
 import { InvoiceType, PaymentMethod, OrderAdjustment } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
-const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Cash' },
-  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-  { value: 'QRIS', label: 'QRIS' },
-  { value: 'OTHER', label: 'Other' },
+const METHOD_OPTIONS: { value: PaymentMethod; labelKey: string }[] = [
+  { value: 'CASH', labelKey: 'methodCash' },
+  { value: 'BANK_TRANSFER', labelKey: 'methodBankTransfer' },
+  { value: 'QRIS', labelKey: 'methodQris' },
+  { value: 'OTHER', labelKey: 'methodOther' },
 ];
 
 interface Props {
@@ -42,6 +43,7 @@ export default function AdditionalInvoiceForm({
   onSubmit,
   isLoading,
 }: Props) {
+  const t = useTranslations('additionalInvoice');
   const remaining = Math.max(finalPrice - alreadyPaid, 0);
   const billableAdjustments = adjustments.filter((a) => a.is_billable);
 
@@ -69,20 +71,18 @@ export default function AdditionalInvoiceForm({
     const amt = Number(amount || 0);
     setError('');
     if (!amt || amt <= 0) {
-      setError('Enter an amount greater than 0');
+      setError(t('errAmountPositive'));
       return;
     }
     if (amt > remaining) {
-      setError(
-        `Amount exceeds remaining balance (${formatCurrency(remaining)}). Add the charge to the order first.`,
-      );
+      setError(t('errExceedsBalance', { amount: formatCurrency(remaining) }));
       return;
     }
     await onSubmit({
       invoice_type: 'ADDITIONAL',
       payment_method: method,
       amount: amt,
-      note: note.trim() || 'Additional charge',
+      note: note.trim() || t('defaultNote'),
     });
   }
 
@@ -91,31 +91,31 @@ export default function AdditionalInvoiceForm({
       {/* Summary */}
       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-500">Order Total</span>
+          <span className="text-gray-500">{t('orderTotal')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500">Already Invoiced</span>
+          <span className="text-gray-500">{t('alreadyInvoiced')}</span>
           <span className="font-medium text-gray-700">{formatCurrency(alreadyPaid)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-500">Available to bill</span>
+          <span className="text-gray-500">{t('availableToBill')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(remaining)}</span>
         </div>
       </div>
 
       {remaining <= 0 && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-md p-2">
-          Nothing left to bill. Add an Additional Charge to the order first (it raises the order total), then come back here to invoice it.
+          {t('nothingToBill')}
         </p>
       )}
 
       {/* Pick a logged charge */}
       <div className="space-y-1.5">
-        <Label>Charge</Label>
+        <Label>{t('charge')}</Label>
         <Select value={selectedId} onValueChange={handleSelectCharge}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a charge" />
+            <SelectValue placeholder={t('selectCharge')} />
           </SelectTrigger>
           <SelectContent>
             {billableAdjustments.map((a) => (
@@ -123,27 +123,27 @@ export default function AdditionalInvoiceForm({
                 {a.description || a.type} — {formatCurrency(Number(a.amount) * (a.quantity || 1))}
               </SelectItem>
             ))}
-            <SelectItem value="custom">Custom amount…</SelectItem>
+            <SelectItem value="custom">{t('customAmount')}</SelectItem>
           </SelectContent>
         </Select>
         {billableAdjustments.length === 0 && (
           <p className="text-xs text-gray-400">
-            No logged charges. Use “Add Additional” on the order first, or enter a custom amount.
+            {t('noLoggedCharges')}
           </p>
         )}
       </div>
 
       {/* Payment method */}
       <div className="space-y-1.5">
-        <Label>Payment Method</Label>
+        <Label>{t('paymentMethod')}</Label>
         <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select method" />
+            <SelectValue placeholder={t('selectMethod')} />
           </SelectTrigger>
           <SelectContent>
             {METHOD_OPTIONS.map((m) => (
               <SelectItem key={m.value} value={m.value}>
-                {m.label}
+                {t(m.labelKey)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -152,7 +152,7 @@ export default function AdditionalInvoiceForm({
 
       {/* Amount */}
       <div className="space-y-1.5">
-        <Label htmlFor="additional_amount">Amount (IDR)</Label>
+        <Label htmlFor="additional_amount">{t('amountIDR')}</Label>
         <Input
           id="additional_amount"
           type="number"
@@ -165,10 +165,10 @@ export default function AdditionalInvoiceForm({
 
       {/* Note / label */}
       <div className="space-y-1.5">
-        <Label htmlFor="additional_note">Label / Note</Label>
+        <Label htmlFor="additional_note">{t('labelNote')}</Label>
         <Input
           id="additional_note"
-          placeholder="e.g. Overtime 2 jam"
+          placeholder={t('notePlaceholder')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -179,7 +179,7 @@ export default function AdditionalInvoiceForm({
       <div className="flex justify-end pt-2">
         <Button type="button" onClick={handleSubmit} disabled={isLoading || remaining <= 0}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Generate Additional Invoice
+          {t('generateBtn')}
         </Button>
       </div>
     </div>
