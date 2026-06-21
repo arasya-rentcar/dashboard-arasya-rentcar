@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import {
   AlertCircle,
   Bot,
@@ -17,128 +20,7 @@ import {
 } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
 
-const steps = [
-  "Terima order dari customer atau owner.",
-  "Input order lewat WhatsApp group Internal Arasya atau tombol Create Order di website.",
-  "Cek order di menu Orders: PIC, service detail, rute, mobil, driver, dan harga.",
-  "Assign driver/mobil per hari di menu Schedule. Order multi-hari bisa ganti driver tiap hari.",
-  "Cek ketersediaan driver (FREE/BUSY) di Schedule sebelum assign agar tidak bentrok.",
-  "Generate invoice dari Order Detail.",
-  "Kirim invoice PDF ke WhatsApp customer dari menu Invoices.",
-  "Driver kirim laporan/foto perjalanan ke bot.",
-  "Set status tiap hari di Schedule (SCHEDULED -> IN_PROGRESS -> DONE).",
-  "Order selesai setelah semua hari DONE dan data sudah lengkap.",
-];
-
-const keywords = [
-  [
-    "PIC / Nama / HP",
-    "Data customer atau penanggung jawab yang bisa dihubungi.",
-  ],
-  [
-    "Booking",
-    "Waktu order dibuat. Di website otomatis memakai waktu order dibuat; di WhatsApp boleh ditulis jika order lama/perlu tanggal khusus.",
-  ],
-  [
-    "DETAIL / Rincian / Itinerary",
-    "Awal daftar layanan/rute. Setiap nomor jadi satu baris invoice sekaligus satu hari di Schedule. Driver bisa diisi berbeda di tiap nomor.",
-  ],
-  ["Pickup / Jemput", "Lokasi penjemputan."],
-  ["Dropoff / Tujuan / Antar", "Lokasi tujuan/dropoff."],
-  ["Mobil / Unit", "Kode unit atau tipe mobil, contoh ARA, FCB, VLZ1, Innova."],
-  [
-    "Driver",
-    "Internal cukup nama pendek/tag. External wajib nama + HP + asal.",
-  ],
-  ["HP Driver / WA Driver", "Nomor WhatsApp driver external."],
-  ["Asal Driver", "Base driver external, contoh Bandung, Bogor, Jakarta."],
-  ["Harga", "Harga per baris layanan. Total order dihitung dari semua baris."],
-  ["Catatan", "Info tambahan untuk admin/driver."],
-  [
-    "TBA / TBC / TBD / menyusul",
-    "Boleh untuk lokasi/jam yang belum pasti, terutama hari berikutnya.",
-  ],
-];
-
-const websiteCases = [
-  [
-    "Create Order",
-    "Isi PIC, Booking, pickup/dropoff utama, lalu tambah Service Detail. Jika ada beberapa hari/rute, buat beberapa baris.",
-  ],
-  [
-    "Edit Order",
-    "Gunakan saat ada perubahan harga/rute. Jika harga berubah dan invoice sudah ada, tulis alasan perubahan agar tercatat.",
-  ],
-  [
-    "Assign Driver/Car",
-    "Pilih driver dan mobil dari daftar. Unit code seperti ARA/FCB/VLZ membantu mencari mobil cepat.",
-  ],
-  [
-    "Generate Invoice",
-    "Buat invoice setelah total order sudah benar. PDF otomatis dibuat dan bisa dipreview.",
-  ],
-  [
-    "Revise Invoice",
-    "Jika order berubah setelah invoice dibuat, gunakan revisi/sync invoice. Invoice lama tetap menjadi history.",
-  ],
-  [
-    "Send Invoice WA",
-    "Di menu Invoices, expand row, pilih penerima, lalu Send PDF via WhatsApp. History akan tersimpan.",
-  ],
-  [
-    "Cars/Drivers",
-    "Tambah/edit data master. Untuk internal, simpan phone asli agar tag WhatsApp bisa match ke database.",
-  ],
-];
-
-const scheduleCases = [
-  [
-    "Agenda (daftar harian)",
-    "Tab Agenda menampilkan satu baris per hari per order. Filter berdasarkan tanggal, driver, tipe (Internal/External), dan status.",
-  ],
-  [
-    "Assign / ganti per hari",
-    "Klik Edit pada baris untuk pilih driver+mobil (internal) atau vendor+mobil (external) khusus hari itu. Order multi-hari boleh beda driver tiap hari.",
-  ],
-  [
-    "Status per hari",
-    "Setiap hari punya status sendiri: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Ubah saat perjalanan jalan.",
-  ],
-  [
-    "Ketersediaan driver",
-    "Tab Driver Availability menampilkan FREE/BUSY tiap driver untuk tanggal terpilih, dihitung dari jadwal (bukan status order). Pakai ini sebelum assign agar tidak bentrok.",
-  ],
-];
-
-const customerCases = [
-  [
-    "Otomatis dari order",
-    "Customer tersimpan otomatis saat order dibuat (dari WhatsApp atau website), dicocokkan berdasarkan nomor HP.",
-  ],
-  [
-    "Riwayat order",
-    "Buka detail customer untuk lihat total order dan daftar order sebelumnya. Berguna untuk customer langganan.",
-  ],
-  [
-    "Tags & catatan",
-    "Tambahkan tag (mis. VIP, Corporate) dan catatan untuk info penting customer.",
-  ],
-];
-
-const externalCases = [
-  [
-    "Vendor & mobil",
-    "Menu External menyimpan vendor/driver luar beserta mobil-mobil mereka (satu vendor bisa punya banyak mobil).",
-  ],
-  [
-    "Otomatis dari order",
-    "Saat order external dibuat dari WhatsApp (driver pakai nama + HP + asal), vendor dan mobilnya dibuat otomatis lalu bisa dirapikan di menu ini.",
-  ],
-  [
-    "Pakai di Schedule",
-    "Saat assign hari external di Schedule, pilih vendor dan mobilnya dari daftar yang sudah tersimpan di sini.",
-  ],
-];
+type Pair = { t: string; d: string };
 
 const layananCities = [
   {
@@ -232,14 +114,6 @@ const layananCities = [
       "Probolinggo +500.000",
     ],
   },
-];
-
-const mistakes = [
-  "External driver tidak boleh hanya tag. Tulis nama + nomor WA + asal/base.",
-  "Jangan lupa Harga di setiap baris detail, karena invoice dihitung dari baris layanan.",
-  "Invoice REVISED, CANCELLED, atau DRAFT tidak bisa dikirim ke WhatsApp customer.",
-  "Jika invoice belum punya PDF, generate/sync invoice dulu sebelum kirim.",
-  "Jika tag driver internal gagal match, pastikan nomor WhatsApp driver di database benar.",
 ];
 
 const botTemplates = [
@@ -408,13 +282,6 @@ const driverReportExamples = [
   ],
 ];
 
-const botWakeKeywords = [
-  ["#order", "Admin membuat order baru dari grup Internal Arasya."],
-  ["#start", "Driver mulai jalan / sampai pickup / mulai pekerjaan. Bisa teks, foto, atau dokumen dengan caption."],
-  ["#drop", "Driver laporan drop-off/customer turun. Tidak menutup order. Untuk multi-drop/multi-day, tetap pakai #drop lalu tulis nomor drop di isi pesan: #drop 1, #drop 2, dst."],
-  ["#finish", "Driver menyelesaikan pekerjaan dan menutup order/trip."],
-];
-
 function Card({
   title,
   icon: Icon,
@@ -446,21 +313,30 @@ function CodeBlock({ children }: { children: React.ReactNode }) {
 }
 
 export default function GuidePage() {
+  const t = useTranslations("guide");
+  const steps = t.raw("steps") as string[];
+  const keywords = t.raw("keywords") as { k: string; d: string }[];
+  const websiteCases = t.raw("websiteCases") as Pair[];
+  const scheduleCases = t.raw("scheduleCases") as Pair[];
+  const customerCases = t.raw("customerCases") as Pair[];
+  const externalCases = t.raw("externalCases") as Pair[];
+  const websiteMenuParas = t.raw("websiteMenuParas") as string[];
+  const botWakeKeywords = t.raw("botWakeKeywords") as { k: string; d: string }[];
+  const mistakes = t.raw("mistakes") as string[];
   return (
-    <DashboardShell title="Guide">
+    <DashboardShell title={t("title")}>
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="rounded-2xl bg-gray-900 p-6 text-white">
-          <p className="text-sm text-gray-300">Panduan singkat admin Arasya</p>
+          <p className="text-sm text-gray-300">{t("heroKicker")}</p>
           <h1 className="mt-1 text-2xl font-semibold">
-            Cara pakai Website + WhatsApp Bot
+            {t("heroTitle")}
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-300">
-            Panduan ini dibuat untuk admin operasional: ikuti alurnya, pakai
-            contoh template, lalu cek hasilnya di dashboard.
+            {t("heroSubtitle")}
           </p>
         </div>
 
-        <Card title="Alur kerja harian" icon={CheckCircle2}>
+        <Card title={t("dailyFlowTitle")} icon={CheckCircle2}>
           <ol className="grid gap-2 text-sm text-gray-700 md:grid-cols-2">
             {steps.map((step, i) => (
               <li key={step} className="flex gap-2">
@@ -472,60 +348,34 @@ export default function GuidePage() {
         </Card>
 
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Website: menu dan komponen" icon={MousePointerClick}>
+          <Card title={t("websiteMenuTitle")} icon={MousePointerClick}>
             <div className="space-y-3 text-sm text-gray-700">
-              <p>
-                <b>Orders</b> adalah pusat operasional. Klik order untuk detail,
-                edit order, dan generate invoice.
-              </p>
-              <p>
-                <b>Schedule</b> mengatur assign driver/mobil <b>per hari</b> dan
-                cek ketersediaan driver. <b>Customers</b> menyimpan data
-                customer otomatis, <b>External</b> menyimpan vendor/driver luar.
-              </p>
-              <p>
-                <b>Form</b> dipakai untuk input/edit data. Jika field wajib
-                kosong, sistem menampilkan error.
-              </p>
-              <p>
-                <b>Service Detail Rows</b> adalah baris layanan/rute. Setiap
-                baris menjadi line item invoice dan dihitung ke total.
-              </p>
-              <p>
-                <b>Table</b> adalah daftar data. Gunakan search, tombol action,
-                atau klik row/chevron untuk membuka detail.
-              </p>
-              <p>
-                <b>Badge warna</b> menunjukkan status seperti AVAILABLE,
-                ASSIGNED, ISSUED, PAID, SENT, atau FAILED.
-              </p>
+              {websiteMenuParas.map((para) => (
+                <p key={para}>{para}</p>
+              ))}
             </div>
           </Card>
 
-          <Card title="Contoh kasus website" icon={Table2}>
+          <Card title={t("websiteCasesTitle")} icon={Table2}>
             <div className="space-y-2 text-sm text-gray-700">
-              {websiteCases.map(([title, desc]) => (
-                <div key={title} className="rounded-lg border p-3">
-                  <b>{title}</b>
-                  <p className="mt-1">{desc}</p>
+              {websiteCases.map((c) => (
+                <div key={c.t} className="rounded-lg border p-3">
+                  <b>{c.t}</b>
+                  <p className="mt-1">{c.d}</p>
                 </div>
               ))}
             </div>
           </Card>
         </div>
 
-        <Card title="Schedule: jadwal & ketersediaan driver" icon={CalendarDays}>
+        <Card title={t("scheduleTitle")} icon={CalendarDays}>
           <div className="space-y-3 text-sm text-gray-700">
-            <p>
-              Menu <b>Schedule</b> mengatur penugasan <b>per hari</b>, bukan per
-              order. Inilah cara order yang berlangsung beberapa hari bisa
-              memakai driver berbeda di tiap harinya.
-            </p>
+            <p>{t("scheduleIntro")}</p>
             <div className="grid gap-2 md:grid-cols-2">
-              {scheduleCases.map(([title, desc]) => (
-                <div key={title} className="rounded-lg border p-3">
-                  <b>{title}</b>
-                  <p className="mt-1">{desc}</p>
+              {scheduleCases.map((c) => (
+                <div key={c.t} className="rounded-lg border p-3">
+                  <b>{c.t}</b>
+                  <p className="mt-1">{c.d}</p>
                 </div>
               ))}
             </div>
@@ -533,63 +383,49 @@ export default function GuidePage() {
         </Card>
 
         <div className="grid gap-5 lg:grid-cols-2">
-          <Card title="Customers: data customer" icon={UserRound}>
+          <Card title={t("customersTitle")} icon={UserRound}>
             <div className="space-y-2 text-sm text-gray-700">
-              {customerCases.map(([title, desc]) => (
-                <div key={title} className="rounded-lg border p-3">
-                  <b>{title}</b>
-                  <p className="mt-1">{desc}</p>
+              {customerCases.map((c) => (
+                <div key={c.t} className="rounded-lg border p-3">
+                  <b>{c.t}</b>
+                  <p className="mt-1">{c.d}</p>
                 </div>
               ))}
             </div>
           </Card>
 
-          <Card title="External: vendor & driver luar" icon={Handshake}>
+          <Card title={t("externalTitle")} icon={Handshake}>
             <div className="space-y-2 text-sm text-gray-700">
-              {externalCases.map(([title, desc]) => (
-                <div key={title} className="rounded-lg border p-3">
-                  <b>{title}</b>
-                  <p className="mt-1">{desc}</p>
+              {externalCases.map((c) => (
+                <div key={c.t} className="rounded-lg border p-3">
+                  <b>{c.t}</b>
+                  <p className="mt-1">{c.d}</p>
                 </div>
               ))}
             </div>
           </Card>
         </div>
 
-        <Card title="Invoice dan kirim WhatsApp" icon={FileText}>
+        <Card title={t("invoiceTitle")} icon={FileText}>
           <div className="grid gap-4 text-sm text-gray-700 lg:grid-cols-3">
             <div className="rounded-lg border p-4">
-              <b>Generate</b>
-              <p className="mt-1">
-                Buat invoice setelah total order benar. PDF akan tersedia untuk
-                preview dan kirim.
-              </p>
+              <b>{t("invoiceGenerate")}</b>
+              <p className="mt-1">{t("invoiceGenerateDesc")}</p>
             </div>
             <div className="rounded-lg border p-4">
-              <b>Send PDF</b>
-              <p className="mt-1">
-                Di menu Invoices, expand row, pilih customer/PIC, isi catatan
-                opsional, lalu kirim PDF via WhatsApp.
-              </p>
+              <b>{t("invoiceSendPdf")}</b>
+              <p className="mt-1">{t("invoiceSendPdfDesc")}</p>
             </div>
             <div className="rounded-lg border p-4">
-              <b>History</b>
-              <p className="mt-1">
-                Setiap pengiriman tersimpan: penerima, nomor, status
-                SENT/FAILED, error, dan View PDF.
-              </p>
+              <b>{t("invoiceHistory")}</b>
+              <p className="mt-1">{t("invoiceHistoryDesc")}</p>
             </div>
           </div>
         </Card>
 
-        <Card title="Jenis layanan / referensi harga Arasya" icon={Car}>
+        <Card title={t("serviceTypesTitle")} icon={Car}>
           <div className="space-y-4 text-sm text-gray-700">
-            <p>
-              Pilihan <b>Layanan</b> mengikuti paket operasional Arasya saat
-              ini: <b>ALL INCLUDED</b>, <b>12 JAM</b>, dan <b>FULL DAY</b>.
-              Gunakan referensi harga di bawah untuk menentukan nominal per
-              service row.
-            </p>
+            <p>{t("serviceTypesIntro")}</p>
             <div className="grid gap-4 lg:grid-cols-3">
               {layananCities.map((city) => (
                 <div
@@ -604,7 +440,7 @@ export default function GuidePage() {
                   </p>
                   <div className="mt-3 rounded-lg bg-white p-3 text-xs leading-5 text-gray-700">
                     <p>
-                      <b>PAKET ALL-INCLUDED kecuali parkir</b>
+                      <b>{t("allInclusiveLabel")}</b>
                     </p>
                     <p>• {city.included}</p>
                     <p>• {city.excluded}</p>
@@ -612,7 +448,7 @@ export default function GuidePage() {
 
                   <div className="mt-3 overflow-hidden rounded-lg border bg-white">
                     <div className="bg-gray-100 px-3 py-2 text-xs font-semibold uppercase text-gray-600">
-                      Paket 12 Jam
+                      {t("package12h")}
                     </div>
                     {city.twelveHour.map(([car, price]) => (
                       <div
@@ -627,7 +463,7 @@ export default function GuidePage() {
 
                   <div className="mt-3 overflow-hidden rounded-lg border bg-white">
                     <div className="bg-gray-100 px-3 py-2 text-xs font-semibold uppercase text-gray-600">
-                      Paket 06.00-23.00 Full Day
+                      {t("packageFullDay")}
                     </div>
                     {city.fullDay.map(([car, price]) => (
                       <div
@@ -642,10 +478,10 @@ export default function GuidePage() {
 
                   <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
                     <p>
-                      <b>Overtime:</b> {city.overtime}
+                      <b>{t("overtimeLabel")}</b> {city.overtime}
                     </p>
                     <p className="mt-2">
-                      <b>Tambahan area:</b>
+                      <b>{t("extraAreaLabel")}</b>
                     </p>
                     <ul className="list-disc pl-4">
                       {city.extra.map((item) => (
@@ -659,25 +495,20 @@ export default function GuidePage() {
           </div>
         </Card>
 
-        <Card title="WhatsApp Bot: aturan trigger" icon={Bot}>
+        <Card title={t("botTriggerTitle")} icon={Bot}>
           <div className="space-y-4 text-sm text-gray-700">
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
-              <b>Wajib pakai keyword di awal pesan.</b>
-              <p className="mt-1">
-                Bot akan mengabaikan semua chat biasa. Untuk text, foto, PDF,
-                dan dokumen, caption/pesan harus diawali keyword. Huruf besar
-                kecil bebas: <b>#START</b>, <b>#Start</b>, dan <b>#start</b>
-                dianggap sama.
-              </p>
+              <b>{t("botTriggerWarnTitle")}</b>
+              <p className="mt-1">{t("botTriggerWarnBody")}</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              {botWakeKeywords.map(([keyword, desc]) => (
-                <div key={keyword} className="rounded-lg border p-4">
+              {botWakeKeywords.map((kw) => (
+                <div key={kw.k} className="rounded-lg border p-4">
                   <div className="font-mono text-base font-semibold text-gray-900">
-                    {keyword}
+                    {kw.k}
                   </div>
                   <p className="mt-2 text-xs leading-5 text-gray-600">
-                    {desc}
+                    {kw.d}
                   </p>
                 </div>
               ))}
@@ -711,46 +542,36 @@ Customer kedua turun di Bandara Soetta T3
 Selesai semua, unit kembali standby`}</CodeBlock>
             </div>
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-xs leading-5 text-blue-900">
-              <b>Multi-drop / multi-day:</b> jangan buat keyword baru seperti <b>#drop1</b> atau <b>#drop2</b>. Tetap pakai <b>#drop</b>, lalu tulis nomor drop setelah keyword atau di isi pesan. Contoh: <b>#drop 1</b>, <b>#drop 2</b>, <b>#drop ke-3</b>. Semua drop hanya menyimpan laporan; order baru ditutup dengan <b>#finish</b>.
+              {t("multiDropNote")}
             </div>
             <p className="text-xs text-gray-500">
-              Foto/dokumen tanpa caption keyword tidak diproses. Contoh benar:
-              kirim foto dengan caption <b>#start</b>, <b>#drop</b>, <b>#drop 1</b>, atau <b>#finish</b>.
+              {t("captionNote")}
             </p>
           </div>
         </Card>
 
-        <Card title="WhatsApp Bot: aturan order" icon={MessageCircle}>
+        <Card title={t("botOrderRulesTitle")} icon={MessageCircle}>
           <div className="grid gap-4 text-sm text-gray-700 lg:grid-cols-3">
             <div className="rounded-lg border p-4">
               <Users className="mb-2 h-5 w-5 text-gray-900" />
-              <b>Driver internal</b>
-              <p className="mt-1">
-                Pakai nama pendek atau tag. Bot match ke database untuk
-                mengambil nama lengkap, phone, type, dan base.
-              </p>
+              <b>{t("internalDriverTitle")}</b>
+              <p className="mt-1">{t("internalDriverDesc")}</p>
             </div>
             <div className="rounded-lg border p-4">
               <Car className="mb-2 h-5 w-5 text-gray-900" />
-              <b>Driver external</b>
-              <p className="mt-1">
-                Wajib tulis nama, nomor WA, dan asal/base. Jangan pakai tag
-                untuk external.
-              </p>
+              <b>{t("externalDriverTitle")}</b>
+              <p className="mt-1">{t("externalDriverDesc")}</p>
             </div>
             <div className="rounded-lg border p-4">
               <AlertCircle className="mb-2 h-5 w-5 text-gray-900" />
-              <b>TBA/TBC</b>
-              <p className="mt-1">
-                Boleh untuk lokasi/jam yang belum pasti. Hari pertama sebaiknya
-                lengkap.
-              </p>
+              <b>{t("tbaTitle")}</b>
+              <p className="mt-1">{t("tbaDesc")}</p>
             </div>
           </div>
         </Card>
 
         <Card
-          title="Contoh chat order WhatsApp untuk berbagai kasus"
+          title={t("botChatExamplesTitle")}
           icon={MessageCircle}
         >
           <div className="grid gap-4 lg:grid-cols-2">
@@ -766,7 +587,7 @@ Selesai semua, unit kembali standby`}</CodeBlock>
           </div>
         </Card>
 
-        <Card title="Contoh laporan driver ke bot" icon={Send}>
+        <Card title={t("driverReportTitle")} icon={Send}>
           <div className="grid gap-3 text-sm text-gray-700 md:grid-cols-2">
             {driverReportExamples.map(([title, text]) => (
               <div key={title} className="space-y-2 rounded-lg border p-3">
@@ -777,20 +598,20 @@ Selesai semua, unit kembali standby`}</CodeBlock>
           </div>
         </Card>
 
-        <Card title="Keyword yang dipahami bot" icon={ClipboardList}>
+        <Card title={t("keywordsTitle")} icon={ClipboardList}>
           <div className="overflow-hidden rounded-lg border">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="p-3">Keyword</th>
-                  <th className="p-3">Artinya</th>
+                  <th className="p-3">{t("colKeyword")}</th>
+                  <th className="p-3">{t("colMeaning")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {keywords.map(([k, v]) => (
-                  <tr key={k}>
-                    <td className="p-3 font-medium text-gray-900">{k}</td>
-                    <td className="p-3 text-gray-700">{v}</td>
+                {keywords.map((kw) => (
+                  <tr key={kw.k}>
+                    <td className="p-3 font-medium text-gray-900">{kw.k}</td>
+                    <td className="p-3 text-gray-700">{kw.d}</td>
                   </tr>
                 ))}
               </tbody>
@@ -798,18 +619,18 @@ Selesai semua, unit kembali standby`}</CodeBlock>
           </div>
         </Card>
 
-        <Card title="Contoh tampilan komponen" icon={Table2}>
+        <Card title={t("componentExampleTitle")} icon={Table2}>
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-lg border bg-gray-50 p-4">
               <div className="mb-2 text-sm font-semibold">
-                Contoh table invoice
+                {t("exampleInvoiceTable")}
               </div>
               <div className="rounded-md bg-white p-3 text-sm shadow-sm">
                 <div className="grid grid-cols-4 gap-2 border-b pb-2 text-xs font-medium text-gray-500">
-                  <span>Invoice</span>
-                  <span>Customer</span>
-                  <span>Status</span>
-                  <span>Action</span>
+                  <span>{t("colInvoice")}</span>
+                  <span>{t("colCustomer")}</span>
+                  <span>{t("colStatus")}</span>
+                  <span>{t("colAction")}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2 py-2">
                   <span>INV-001</span>
@@ -821,7 +642,7 @@ Selesai semua, unit kembali standby`}</CodeBlock>
             </div>
             <div className="rounded-lg border bg-gray-50 p-4">
               <div className="mb-2 text-sm font-semibold">
-                Contoh service row
+                {t("exampleServiceRow")}
               </div>
               <div className="space-y-2 rounded-md bg-white p-3 text-sm shadow-sm">
                 <div>
@@ -838,7 +659,7 @@ Selesai semua, unit kembali standby`}</CodeBlock>
           </div>
         </Card>
 
-        <Card title="Kesalahan yang sering terjadi" icon={HelpCircle}>
+        <Card title={t("mistakesTitle")} icon={HelpCircle}>
           <ul className="space-y-2 text-sm text-gray-700">
             {mistakes.map((m) => (
               <li key={m} className="flex gap-2">
