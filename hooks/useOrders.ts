@@ -216,6 +216,27 @@ export function useSendInvoiceWhatsapp() {
   });
 }
 
+export function useSendReceiptWhatsapp() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      invoiceId,
+      data,
+    }: {
+      id: string;
+      invoiceId: string;
+      data: SendInvoiceWhatsappInput;
+    }) => {
+      const res = await ordersApi.sendReceiptWhatsapp(id, invoiceId, data);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateOrderViews(queryClient, variables.id);
+    },
+  });
+}
+
 export function useMarkInvoicePaid() {
   const queryClient = useQueryClient();
   return useMutation({

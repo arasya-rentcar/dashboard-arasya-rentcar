@@ -57,6 +57,10 @@ export const ordersApi = {
     api.post(`/orders/${id}/invoice/${invoiceId}/revise`, data),
   sendInvoiceWhatsapp: (id: string, invoiceId: string, data: object) =>
     api.post(`/orders/${id}/invoice/${invoiceId}/send-whatsapp`, data),
+  // Send the kwitansi (receipt) PDF to the customer over WhatsApp. Only valid
+  // once the invoice is PAID and a receipt PDF exists.
+  sendReceiptWhatsapp: (id: string, invoiceId: string, data: object) =>
+    api.post(`/orders/${id}/invoice/${invoiceId}/send-receipt-whatsapp`, data),
   // Sprint 3: mark-paid is multipart — a payment proof file is REQUIRED.
   markInvoicePaid: (
     id: string,

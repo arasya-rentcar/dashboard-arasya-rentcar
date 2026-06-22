@@ -69,8 +69,10 @@ interface Props {
   onOpenCombined?: () => void;
   onOpenRevise: (invoice: Invoice) => void;
   onSend?: (invoice: Invoice) => void;
+  onSendReceipt?: (invoice: Invoice) => void;
   onMarkPaid?: (invoice: Invoice) => void;
   sendingInvoiceId?: string | null;
+  sendingReceiptId?: string | null;
   payingInvoiceId?: string | null;
 }
 
@@ -97,8 +99,10 @@ export default function InvoiceSection({
   onOpenCombined,
   onOpenRevise,
   onSend,
+  onSendReceipt,
   onMarkPaid,
   sendingInvoiceId,
+  sendingReceiptId,
   payingInvoiceId,
 }: Props) {
   const t = useTranslations('invoiceSection');
@@ -375,6 +379,18 @@ export default function InvoiceSection({
                           </Button>
                         )}
                       </div>
+                    )}
+                    {onSendReceipt && inv.status === 'PAID' && (inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-7 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                        disabled={sendingReceiptId === inv.id}
+                        onClick={() => onSendReceipt(inv)}
+                      >
+                        <Send className="h-3 w-3 mr-1" />
+                        {sendingReceiptId === inv.id ? t('sendingReceipt') : t('sendReceipt')}
+                      </Button>
                     )}
                   </div>
                 ) : null}

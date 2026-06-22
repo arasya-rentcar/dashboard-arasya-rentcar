@@ -52,6 +52,7 @@ import {
   useReviseInvoice,
   useAddAdjustment,
   useSendInvoiceWhatsapp,
+  useSendReceiptWhatsapp,
   useMarkInvoicePaid,
   useMarkRefunded,
 } from "@/hooks/useOrders";
@@ -113,6 +114,7 @@ export default function OrderDetailPage({
   const reviseInvoiceMutation = useReviseInvoice();
   const addAdjustmentMutation = useAddAdjustment(id);
   const sendInvoiceMutation = useSendInvoiceWhatsapp();
+  const sendReceiptMutation = useSendReceiptWhatsapp();
   const markInvoicePaidMutation = useMarkInvoicePaid();
   const markRefundedMutation = useMarkRefunded();
 
@@ -136,6 +138,31 @@ export default function OrderDetailPage({
         data: { target_phone: phone, target_name: name },
       });
       toast.success(t("okInvoiceSent", { number: invoice.invoice_number }));
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleSendReceipt(invoice: Invoice) {
+    const phone =
+      order?.customers?.find((c) => c.phone)?.phone ||
+      order?.customer_phone ||
+      "";
+    const name =
+      order?.customers?.find((c) => c.phone)?.name ||
+      order?.customer_name ||
+      "";
+    if (!phone) {
+      toast.error(t("okNoPhone"));
+      return;
+    }
+    try {
+      await sendReceiptMutation.mutateAsync({
+        id,
+        invoiceId: invoice.id,
+        data: { target_phone: phone, target_name: name },
+      });
+      toast.success(t("okReceiptSent", { number: invoice.invoice_number }));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -956,10 +983,16 @@ export default function OrderDetailPage({
                   onOpenCombined={() => setCombinedInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}
                   onSend={handleSendInvoice}
+                  onSendReceipt={handleSendReceipt}
                   onMarkPaid={handleMarkInvoicePaid}
                   sendingInvoiceId={
                     sendInvoiceMutation.isPending
                       ? sendInvoiceMutation.variables?.invoiceId
+                      : null
+                  }
+                  sendingReceiptId={
+                    sendReceiptMutation.isPending
+                      ? sendReceiptMutation.variables?.invoiceId
                       : null
                   }
                   payingInvoiceId={

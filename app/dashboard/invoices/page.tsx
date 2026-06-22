@@ -43,7 +43,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useOrders, useSendInvoiceWhatsapp } from "@/hooks/useOrders";
+import {
+  useOrders,
+  useSendInvoiceWhatsapp,
+  useSendReceiptWhatsapp,
+} from "@/hooks/useOrders";
 import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import {
@@ -132,6 +136,7 @@ export default function InvoicesPage() {
   // for now to avoid an API change; tracked for the next backend pass.
   const { data: orders, isLoading, isError, refetch } = useOrders();
   const sendMutation = useSendInvoiceWhatsapp();
+  const sendReceiptMutation = useSendReceiptWhatsapp();
 
   const invoices = useMemo(
     () =>
@@ -214,6 +219,28 @@ export default function InvoicesPage() {
         },
       });
       toast.success(t("okSent"));
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  }
+
+  async function sendReceipt(inv: InvoiceWithOrder) {
+    const recipient = selectedRecipient(inv);
+    if (!recipient.phone) {
+      toast.error(t("errPhoneRequired"));
+      return;
+    }
+    try {
+      await sendReceiptMutation.mutateAsync({
+        id: inv.order.id,
+        invoiceId: inv.id,
+        data: {
+          target_name: recipient.name || inv.order.customer_name,
+          target_phone: recipient.phone,
+          message_note: noteByInvoice[inv.id] || undefined,
+        },
+      });
+      toast.success(t("okReceiptSent"));
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -332,6 +359,10 @@ export default function InvoicesPage() {
                       manualPhone={manualPhoneByInvoice[inv.id] || ""}
                       note={noteByInvoice[inv.id] || ""}
                       sending={sendMutation.isPending}
+                      sendingReceipt={
+                        sendReceiptMutation.isPending &&
+                        sendReceiptMutation.variables?.invoiceId === inv.id
+                      }
                       recipients={recipientsFor(inv)}
                       onToggle={() => setExpandedId(expanded ? null : inv.id)}
                       onPreview={(url) => setPreviewUrl(url)}
@@ -360,6 +391,7 @@ export default function InvoicesPage() {
                         }))
                       }
                       onSend={() => sendInvoice(inv)}
+                      onSendReceipt={() => sendReceipt(inv)}
                     />
                   );
                 })
@@ -411,6 +443,7 @@ function FragmentInvoiceRow({
   manualPhone,
   note,
   sending,
+  sendingReceipt,
   recipients,
   onToggle,
   onPreview,
@@ -419,6 +452,7 @@ function FragmentInvoiceRow({
   onManualPhoneChange,
   onNoteChange,
   onSend,
+  onSendReceipt,
 }: {
   no: number;
   inv: InvoiceWithOrder;
@@ -430,6 +464,7 @@ function FragmentInvoiceRow({
   manualPhone: string;
   note: string;
   sending: boolean;
+  sendingReceipt: boolean;
   recipients: { name: string; phone?: string | null; is_primary?: boolean }[];
   onToggle: () => void;
   onPreview: (url: string) => void;
@@ -438,6 +473,7 @@ function FragmentInvoiceRow({
   onManualPhoneChange: (value: string) => void;
   onNoteChange: (value: string) => void;
   onSend: () => void;
+  onSendReceipt: () => void;
 }) {
   const t = useTranslations("invoicesPage");
   return (
@@ -582,6 +618,21 @@ function FragmentInvoiceRow({
                         className="h-[360px] w-full rounded-lg border bg-white"
                         title={`${inv.invoice_number} Receipt PDF`}
                       />
+                    )}
+                    {inv.status === "PAID" && (inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                      <Button
+                        size="sm"
+                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                        disabled={sendingReceipt}
+                        onClick={onSendReceipt}
+                      >
+                        {sendingReceipt ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-4 w-4" />
+                        )}
+                        {t("sendReceiptWhatsapp")}
+                      </Button>
                     )}
                   </div>
                 ) : null}
