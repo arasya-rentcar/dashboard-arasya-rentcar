@@ -806,7 +806,21 @@
     "progressCompleted": "Selesai",
     "liveTag": "LIVE",
     "plannedPickup": "Rencana jemput",
-    "plannedDropoff": "Rencana antar"
+    "plannedDropoff": "Rencana antar",
+    "cancelOrder": "Batalkan Pesanan",
+    "cancelConfirm": "Batalkan Pesanan",
+    "cancelWarning": "Ini membatalkan seluruh pesanan: semua hari mendatang dibatalkan, driver/mobil dilepas, invoice aktif dibatalkan, dan biaya pembatalan diterbitkan sesuai kebijakan Arasya. Tindakan ini tidak dapat dibatalkan.",
+    "cancelReasonLabel": "Alasan pembatalan",
+    "cancelReasonPlaceholder": "mis. Pelanggan membatalkan pesanan",
+    "cancelReasonRequired": "Mohon isi alasan pembatalan",
+    "okOrderCancelled": "Pesanan dibatalkan dan biaya pembatalan diterbitkan",
+    "cancelTier": "Tier kebijakan",
+    "cancelTierValue": "Tier {tier}",
+    "cancelPenalty": "Biaya pembatalan",
+    "cancelPaid": "Sudah dibayar",
+    "cancelRefundDue": "Refund ke pelanggan",
+    "cancelStillOwed": "Pelanggan masih berhutang",
+    "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund."
   },
   "invoicesPage": {
     "title": "Invoice",

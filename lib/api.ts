@@ -55,6 +55,9 @@ export const ordersApi = {
   // already-assigned order (e.g. swap driver on a multi-day order).
   reassign: (id: string, data: { driver_id: string; car_id: string }) =>
     api.post(`/orders/${id}/reassign`, data),
+  // Full-order cancellation. Server computes the cancellation-fee tier/penalty.
+  cancel: (id: string, data: { reason: string }) =>
+    api.post(`/orders/${id}/cancel`, data),
   generateInvoice: (id: string, data: object) =>
     api.post(`/orders/${id}/generate-invoice`, data),
   reviseInvoice: (id: string, invoiceId: string, data: object) =>

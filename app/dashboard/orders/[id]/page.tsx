@@ -15,6 +15,7 @@ import {
   PlayCircle,
   CheckCircle2,
   Clock,
+  Ban,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -35,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
@@ -57,6 +59,8 @@ import {
   useSendReceiptWhatsapp,
   useMarkInvoicePaid,
   useMarkRefunded,
+  useCancelOrder,
+  type CancelOrderResult,
 } from "@/hooks/useOrders";
 import {
   formatCurrency,
@@ -106,6 +110,11 @@ export default function OrderDetailPage({
   const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelResult, setCancelResult] = useState<CancelOrderResult | null>(
+    null,
+  );
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -113,6 +122,7 @@ export default function OrderDetailPage({
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const assignMutation = useAssignOrder();
   const reassignMutation = useReassignOrder();
+  const cancelMutation = useCancelOrder();
   const updateOrderMutation = useUpdateOrder();
   const generateInvoiceMutation = useGenerateInvoice();
   const reviseInvoiceMutation = useReviseInvoice();
@@ -422,6 +432,24 @@ export default function OrderDetailPage({
     }
   }
 
+  async function handleCancelOrder() {
+    if (!cancelReason.trim()) {
+      toast.error(t("cancelReasonRequired"));
+      return;
+    }
+    try {
+      const result = await cancelMutation.mutateAsync({
+        id,
+        reason: cancelReason.trim(),
+      });
+      setCancelResult(result);
+      setCancelReason("");
+      toast.success(t("okOrderCancelled"));
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
   // Adapt an order service line into the ScheduleLine shape the per-day
   // assignment dialog expects (same underlying record / API route).
   function openDayAssign(item: OrderServiceItem) {
@@ -619,6 +647,22 @@ export default function OrderDetailPage({
                 {t('markRefund')}
               </Button>
             )}
+            {order.order_status !== "DONE" &&
+              order.order_status !== "CANCELLED" && (
+                <Button
+                  onClick={() => {
+                    setCancelResult(null);
+                    setCancelReason("");
+                    setCancelOpen(true);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  {t('cancelOrder')}
+                </Button>
+              )}
           </div>
         </div>
 
@@ -1341,6 +1385,115 @@ export default function OrderDetailPage({
         onConfirm={handleMarkRefunded}
         isSubmitting={markRefundedMutation.isPending}
       />
+
+      {/* Cancel Order Dialog (applies the Arasya cancellation-fee policy) */}
+      <Dialog
+        open={cancelOpen}
+        onOpenChange={(open) => {
+          setCancelOpen(open);
+          if (!open) {
+            setCancelReason("");
+            setCancelResult(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('cancelOrder')}</DialogTitle>
+          </DialogHeader>
+
+          {cancelResult ? (
+            // ── Result summary after a successful cancellation ──────────────
+            <div className="space-y-3 text-sm">
+              <div className="rounded-lg border border-gray-200 p-3 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">{t('cancelTier')}</span>
+                  <span className="font-medium">
+                    {t('cancelTierValue', { tier: cancelResult.tier })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">{t('cancelPenalty')}</span>
+                  <span className="font-semibold text-red-700">
+                    {formatCurrency(cancelResult.penalty)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">{t('cancelPaid')}</span>
+                  <span className="font-medium">
+                    {formatCurrency(cancelResult.paidToDate)}
+                  </span>
+                </div>
+                {cancelResult.refundDue > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('cancelRefundDue')}</span>
+                    <span className="font-semibold text-amber-700">
+                      {formatCurrency(cancelResult.refundDue)}
+                    </span>
+                  </div>
+                )}
+                {cancelResult.stillOwed > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('cancelStillOwed')}</span>
+                    <span className="font-semibold text-emerald-700">
+                      {formatCurrency(cancelResult.stillOwed)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {cancelResult.refundDue > 0 && (
+                <p className="text-xs text-amber-700">
+                  {t('cancelRefundHint')}
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={() => setCancelOpen(false)} size="sm">
+                  {tc('close')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            // ── Confirmation form ───────────────────────────────────────────
+            <div className="space-y-3">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-2 text-sm text-red-700">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <p>{t('cancelWarning')}</p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">
+                  {t('cancelReasonLabel')}
+                </label>
+                <Textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder={t('cancelReasonPlaceholder')}
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelOpen(false)}
+                >
+                  {tc('cancel')}
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={handleCancelOrder}
+                  disabled={cancelMutation.isPending || !cancelReason.trim()}
+                >
+                  {cancelMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {t('cancelConfirm')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 }

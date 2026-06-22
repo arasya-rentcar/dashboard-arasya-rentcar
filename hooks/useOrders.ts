@@ -174,6 +174,35 @@ export function useReassignOrder() {
   });
 }
 
+export interface CancelOrderResult {
+  tier: 1 | 2 | 3;
+  penalty: number;
+  originalFinalPrice: number;
+  paidToDate: number;
+  refundDue: number;
+  stillOwed: number;
+  cancellationInvoiceNumber: string | null;
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      reason,
+    }: {
+      id: string;
+      reason: string;
+    }): Promise<CancelOrderResult> => {
+      const res = await ordersApi.cancel(id, { reason });
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateOrderViews(queryClient, variables.id);
+    },
+  });
+}
+
 export function useGenerateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
