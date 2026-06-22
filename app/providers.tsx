@@ -11,7 +11,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30 * 1000,
+            // Treat data as fresh for 60s so revisiting a page / remounting a
+            // query within the window serves cache instead of refetching.
+            staleTime: 60 * 1000,
+            // Don't refetch every mounted query just because the tab regained
+            // focus — that was the silent "so many API calls" multiplier.
+            refetchOnWindowFocus: false,
             retry: 1,
           },
         },

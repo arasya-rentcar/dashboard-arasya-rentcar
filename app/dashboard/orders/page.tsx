@@ -48,6 +48,7 @@ import CreateOrderForm from '@/components/forms/CreateOrderForm';
 import OrderInvoiceHistory from '@/components/orders/OrderInvoiceHistory';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useOrdersSearch, useCreateOrder } from '@/hooks/useOrders';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { ordersApi } from '@/lib/api';
 import {
   usePreviewSheetImport,
@@ -107,8 +108,14 @@ function OrdersPageInner() {
   const importMutation = useRunSheetImport();
   const [exportingAll, setExportingAll] = useState(false);
 
-  // Reset to page 1 whenever filters change.
-  const filterKey = JSON.stringify(filters);
+  // Debounce the free-text search so we don't hit the API on every keystroke.
+  // The Input stays bound to filters.search (instant + URL-synced); only the
+  // value that drives the query/page-reset is debounced.
+  const debouncedSearch = useDebouncedValue(filters.search ?? '');
+  const queryFilters = { ...filters, search: debouncedSearch };
+
+  // Reset to page 1 whenever the effective (debounced) filters change.
+  const filterKey = JSON.stringify(queryFilters);
   const [lastFilterKey, setLastFilterKey] = useState(filterKey);
   if (filterKey !== lastFilterKey) {
     setLastFilterKey(filterKey);
@@ -116,7 +123,7 @@ function OrdersPageInner() {
   }
 
   const { data, isLoading, isError, isFetching, refetch } = useOrdersSearch({
-    ...filters,
+    ...queryFilters,
     page,
     page_size: PAGE_SIZE,
   });

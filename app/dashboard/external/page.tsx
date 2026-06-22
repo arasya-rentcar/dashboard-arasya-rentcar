@@ -28,6 +28,7 @@ import {
   useExternalVendors,
   useCreateVendor,
 } from '@/hooks/useExternalVendors';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { getErrorMessage } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
@@ -39,8 +40,9 @@ export default function ExternalVendorsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', notes: '' });
 
+  const debouncedSearch = useDebouncedValue(search.trim());
   const { data, isLoading, isFetching } = useExternalVendors({
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     sort: 'order_count',
     order: 'desc',
     page,
@@ -52,9 +54,9 @@ export default function ExternalVendorsPage() {
   const pagination = data?.pagination;
   const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
-  const [lastSearch, setLastSearch] = useState(search);
-  if (search !== lastSearch) {
-    setLastSearch(search);
+  const [lastSearch, setLastSearch] = useState(debouncedSearch);
+  if (debouncedSearch !== lastSearch) {
+    setLastSearch(debouncedSearch);
     setPage(1);
   }
 

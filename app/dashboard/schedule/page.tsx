@@ -28,6 +28,7 @@ import {
   useSchedule,
   useDriverAvailability,
 } from '@/hooks/useSchedule';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
@@ -128,8 +129,9 @@ function AgendaTab() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ScheduleLine | null>(null);
 
+  const debouncedSearch = useDebouncedValue(search.trim());
   const { data, isLoading, isFetching } = useSchedule({
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     type: type === 'ALL' ? undefined : type,
     status: status === 'ALL' ? undefined : status,
     date_from: dateFrom || undefined,
@@ -144,7 +146,7 @@ function AgendaTab() {
   const totals = data?.totals;
   const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
-  const key = `${search}|${type}|${status}|${dateFrom}|${dateTo}`;
+  const key = `${debouncedSearch}|${type}|${status}|${dateFrom}|${dateTo}`;
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);

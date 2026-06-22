@@ -17,6 +17,7 @@ import {
 import TablePagination from "@/components/dashboard/TablePagination";
 import PayablesTable from "@/components/payables/PayablesTable";
 import { usePayables, useBulkMarkPaid } from "@/hooks/usePayables";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { formatCurrency } from "@/lib/utils";
 import { PayableKind } from "@/types";
 
@@ -30,16 +31,24 @@ export default function PayablesPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const debouncedSearch = useDebouncedValue(search.trim());
   const params = useMemo(
     () => ({
       kind: tab,
       status: status || undefined,
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       page,
       page_size: PAGE_SIZE,
     }),
-    [tab, status, search, page],
+    [tab, status, debouncedSearch, page],
   );
+
+  // Reset to page 1 once the debounced search actually changes (not per key).
+  const [lastSearch, setLastSearch] = useState(debouncedSearch);
+  if (debouncedSearch !== lastSearch) {
+    setLastSearch(debouncedSearch);
+    setPage(1);
+  }
 
   const { data, isLoading, isError, refetch } = usePayables(params);
   const bulk = useBulkMarkPaid();
@@ -131,10 +140,7 @@ export default function PayablesPage() {
             <Input
               placeholder={t('searchPlaceholder')}
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>

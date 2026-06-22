@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/table';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
@@ -35,8 +36,9 @@ export default function CustomersPage() {
   const [sort, setSort] = useState('total_orders');
   const [page, setPage] = useState(1);
 
+  const debouncedSearch = useDebouncedValue(search.trim());
   const { data, isLoading, isFetching } = useCustomers({
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     sort,
     order: sort === 'name' ? 'asc' : 'desc',
     page,
@@ -48,7 +50,7 @@ export default function CustomersPage() {
   const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
   // reset to page 1 on filter change
-  const key = `${search}|${sort}`;
+  const key = `${debouncedSearch}|${sort}`;
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);
