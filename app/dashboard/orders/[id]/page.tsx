@@ -14,6 +14,7 @@ import {
   RotateCcw,
   PlayCircle,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -338,6 +339,69 @@ export default function OrderDetailPage({
     };
   })();
 
+  // Per-day operational progress: "Day N of M". Status-first (uses line_status,
+  // the same signal driving the LIVE-day highlight) with a calendar tiebreak so
+  // a driver forgetting to hit START never makes it lie. Returns the 1-based
+  // index of the active day, or a terminal state.
+  const dayProgress = (() => {
+    const groups = serviceSummary?.groups ?? [];
+    const totalDays = serviceSummary?.dayCount ?? 0;
+    if (!groups.length || !totalDays) return null;
+
+    // Classify each day-group by its lines' statuses.
+    const dayState = groups.map((g) => {
+      const active = g.lines.filter((l) => l.line_status !== "CANCELLED");
+      const live = active.some((l) => l.line_status === "IN_PROGRESS");
+      const allDone = active.length > 0 && active.every((l) => l.line_status === "DONE");
+      const anyStarted = active.some(
+        (l) => l.line_status === "IN_PROGRESS" || l.line_status === "DONE",
+      );
+      return { date: g.date, live, allDone, anyStarted };
+    });
+
+    // 1) A day is live right now.
+    const liveIdx = dayState.findIndex((d) => d.live);
+    if (liveIdx >= 0) {
+      return { state: "active" as const, current: liveIdx + 1, total: totalDays };
+    }
+
+    const doneCount = dayState.filter((d) => d.allDone).length;
+    const anyStarted = dayState.some((d) => d.anyStarted);
+
+    // 2) All days finished.
+    if (doneCount >= totalDays) {
+      return { state: "completed" as const, current: totalDays, total: totalDays };
+    }
+
+    // 3) Between legs (some done, none live) -> next up.
+    if (anyStarted) {
+      return {
+        state: "active" as const,
+        current: Math.min(doneCount + 1, totalDays),
+        total: totalDays,
+      };
+    }
+
+    // 4) Nothing started by status. Calendar tiebreak: if today is on/after a
+    //    scheduled day, surface the calendar day so a forgotten START isn't a lie.
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const datedKeys = groups
+      .map((g) => (g.date ? new Date(g.date).toISOString().slice(0, 10) : null))
+      .filter((k): k is string => !!k)
+      .sort();
+    const elapsed = datedKeys.filter((k) => k <= todayKey).length;
+    if (elapsed > 0) {
+      return {
+        state: "active" as const,
+        current: Math.min(elapsed, totalDays),
+        total: totalDays,
+      };
+    }
+
+    // 5) Truly not started yet.
+    return { state: "notStarted" as const, current: 0, total: totalDays };
+  })();
+
   async function handleAssign(data: { driver_id: string; car_id: string }) {
     try {
       await assignMutation.mutateAsync({ id, data });
@@ -622,28 +686,29 @@ export default function OrderDetailPage({
                     label={t('primaryPhone')}
                     value={order.customer_phone || "-"}
                   />
-                  <InfoRow label={t('pickup')} value={order.pickup_location} />
-                  <InfoRow label={t('dropoff')} value={order.dropoff_location} />
                   <InfoRow
                     label={t('orderDate')}
                     value={formatDateTime(order.order_date)}
                   />
-                  <InfoRow
-                    label={t('pickupTime')}
-                    value={serviceStart ? formatDateTime(serviceStart) : "-"}
-                  />
-                  <InfoRow
-                    label={t('dropoffTime')}
-                    value={serviceEnd ? formatDateTime(serviceEnd) : "-"}
-                  />
                   <InfoRow label={t('serviceDuration')} value={serviceDuration} />
+                  <InfoRow
+                    label={t('progress')}
+                    value={
+                      dayProgress
+                        ? dayProgress.state === "notStarted"
+                          ? t('progressNotStarted')
+                          : dayProgress.state === "completed"
+                            ? t('progressCompleted')
+                            : t('progressDayOf', {
+                                current: dayProgress.current,
+                                total: dayProgress.total,
+                              })
+                        : "-"
+                    }
+                  />
                   <InfoRow
                     label={t('finalPrice')}
                     value={formatCurrency(order.final_price)}
-                  />
-                  <InfoRow
-                    label={t('createdAt')}
-                    value={formatDateTime(order.created_at)}
                   />
                 </div>
                 {order.customers && order.customers.length > 1 && (
@@ -769,10 +834,15 @@ export default function OrderDetailPage({
                               const carLabel = [carName, carPlate]
                                 .filter(Boolean)
                                 .join(" · ");
+                              const isLive = item.line_status === "IN_PROGRESS";
                               return (
                                 <div
                                   key={item.id || index}
-                                  className="rounded-lg border border-gray-100 bg-gray-50/70 p-3"
+                                  className={`rounded-lg border p-3 ${
+                                    isLive
+                                      ? "border-emerald-300 bg-emerald-50/60 ring-1 ring-emerald-200"
+                                      : "border-gray-100 bg-gray-50/70"
+                                  }`}
                                 >
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
@@ -782,6 +852,12 @@ export default function OrderDetailPage({
                                           : ""}
                                         {carName ||
                                           t('serviceDetailNum', { n: index + 1 })}
+                                        {isLive && (
+                                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 align-middle">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            {t('liveTag')}
+                                          </span>
+                                        )}
                                         {item.line_status === "CANCELLED" && (
                                           <span className="ml-2 text-[11px] text-red-600">
                                             {t('cancelledTag')}
@@ -807,6 +883,22 @@ export default function OrderDetailPage({
                                         {item.pickup_location} →{" "}
                                         {item.dropoff_location}
                                       </p>
+                                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
+                                        <span className="inline-flex items-center gap-1">
+                                          <Clock className="h-3 w-3 text-gray-400" />
+                                          {t('plannedPickup')}:{" "}
+                                          {item.start_at
+                                            ? formatDateTime(item.start_at)
+                                            : "—"}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1">
+                                          <Clock className="h-3 w-3 text-gray-400" />
+                                          {t('plannedDropoff')}:{" "}
+                                          {item.end_at
+                                            ? formatDateTime(item.end_at)
+                                            : "—"}
+                                        </span>
+                                      </div>
                                       <div className="mt-1.5">
                                         {driverLabel ? (
                                           <span

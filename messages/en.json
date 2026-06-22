@@ -799,7 +799,14 @@
     "assignForAll": "Assign for All",
     "assignForAllHint": "Applies this driver & car to every service line that has no driver yet. Use the per-day Change button to override a single day.",
     "actualStart": "Started",
-    "actualFinish": "Finished"
+    "actualFinish": "Finished",
+    "progress": "Progress",
+    "progressDayOf": "Day {current} of {total}",
+    "progressNotStarted": "Not started",
+    "progressCompleted": "Completed",
+    "liveTag": "LIVE",
+    "plannedPickup": "Planned pickup",
+    "plannedDropoff": "Planned dropoff"
   },
   "invoicesPage": {
     "title": "Invoices",

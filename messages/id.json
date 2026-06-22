@@ -799,7 +799,14 @@
     "assignForAll": "Tetapkan untuk Semua",
     "assignForAllHint": "Menetapkan driver & mobil ini ke semua baris layanan yang belum punya driver. Gunakan tombol Ubah per-hari untuk mengganti satu hari saja.",
     "actualStart": "Mulai",
-    "actualFinish": "Selesai"
+    "actualFinish": "Selesai",
+    "progress": "Progres",
+    "progressDayOf": "Hari {current} dari {total}",
+    "progressNotStarted": "Belum mulai",
+    "progressCompleted": "Selesai",
+    "liveTag": "LIVE",
+    "plannedPickup": "Rencana jemput",
+    "plannedDropoff": "Rencana antar"
   },
   "invoicesPage": {
     "title": "Invoice",
