@@ -12,6 +12,8 @@ import {
   Plus,
   Loader2,
   RotateCcw,
+  PlayCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -764,6 +766,36 @@ export default function OrderDetailPage({
                                           </span>
                                         )}
                                       </div>
+                                      {(item.trip_started_at ||
+                                        item.trip_finished_at) && (
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                                          {item.trip_started_at && (
+                                            <span className="inline-flex items-center gap-1 text-emerald-700">
+                                              <PlayCircle className="h-3 w-3" />
+                                              {t('actualStart')}:{" "}
+                                              {formatDateTime(item.trip_started_at)}
+                                            </span>
+                                          )}
+                                          {item.trip_finished_at && (
+                                            <span className="inline-flex items-center gap-1 text-gray-600">
+                                              <CheckCircle2 className="h-3 w-3" />
+                                              {t('actualFinish')}:{" "}
+                                              {formatDateTime(
+                                                item.trip_finished_at,
+                                              )}
+                                            </span>
+                                          )}
+                                          {item.trip_started_at &&
+                                            item.trip_finished_at && (
+                                              <span className="text-gray-400">
+                                                ({formatDuration(
+                                                  item.trip_started_at,
+                                                  item.trip_finished_at,
+                                                )})
+                                              </span>
+                                            )}
+                                        </div>
+                                      )}
                                       {item.notes && (
                                         <p className="text-xs text-gray-400 mt-1">
                                           {item.notes}

@@ -793,7 +793,9 @@
     "okRevisionCreated": "Invoice revision created successfully",
     "okTripAdvanced": "Trip advanced to: {status}",
     "assignForAll": "Assign for All",
-    "assignForAllHint": "Applies this driver & car to every service line that has no driver yet. Use the per-day Change button to override a single day."
+    "assignForAllHint": "Applies this driver & car to every service line that has no driver yet. Use the per-day Change button to override a single day.",
+    "actualStart": "Started",
+    "actualFinish": "Finished"
   },
   "invoicesPage": {
     "title": "Invoices",

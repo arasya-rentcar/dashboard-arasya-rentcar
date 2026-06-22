@@ -134,6 +134,10 @@ export interface OrderServiceItem {
   created_at?: string;
   is_external?: boolean;
   line_status?: string | null;
+  // Actual trip clock (set when the driver hits START/FINISH via WhatsApp),
+  // distinct from the planned start_at/end_at pickup/dropoff times.
+  trip_started_at?: string | null;
+  trip_finished_at?: string | null;
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;

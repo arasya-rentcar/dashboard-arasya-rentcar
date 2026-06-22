@@ -793,7 +793,9 @@
     "okRevisionCreated": "Revisi invoice berhasil dibuat",
     "okTripAdvanced": "Trip dilanjutkan ke: {status}",
     "assignForAll": "Tetapkan untuk Semua",
-    "assignForAllHint": "Menetapkan driver & mobil ini ke semua baris layanan yang belum punya driver. Gunakan tombol Ubah per-hari untuk mengganti satu hari saja."
+    "assignForAllHint": "Menetapkan driver & mobil ini ke semua baris layanan yang belum punya driver. Gunakan tombol Ubah per-hari untuk mengganti satu hari saja.",
+    "actualStart": "Mulai",
+    "actualFinish": "Selesai"
   },
   "invoicesPage": {
     "title": "Invoice",
