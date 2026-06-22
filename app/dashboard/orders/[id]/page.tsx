@@ -47,6 +47,7 @@ import EditOrderForm from "@/components/forms/EditOrderForm";
 import {
   useOrder,
   useAssignOrder,
+  useReassignOrder,
   useUpdateOrder,
   useGenerateInvoice,
   useReviseInvoice,
@@ -94,6 +95,7 @@ export default function OrderDetailPage({
   const tt = useTranslations("terms");
   const tc = useTranslations("common");
   const [assignOpen, setAssignOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [revisionInvoice, setRevisionInvoice] = useState<Invoice | null>(null);
@@ -109,6 +111,7 @@ export default function OrderDetailPage({
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const assignMutation = useAssignOrder();
+  const reassignMutation = useReassignOrder();
   const updateOrderMutation = useUpdateOrder();
   const generateInvoiceMutation = useGenerateInvoice();
   const reviseInvoiceMutation = useReviseInvoice();
@@ -255,6 +258,15 @@ export default function OrderDetailPage({
       item.line_status !== "CANCELLED" &&
       !item.driver?.id,
   );
+  // "Reassign All" swaps the driver/car on every internal line that is assigned
+  // but NOT yet started (line_status === ASSIGNED). Show it only when at least
+  // one such line exists, so you can change drivers without editing day-by-day.
+  const hasReassignableLine = (order?.service_items ?? []).some(
+    (item) =>
+      !item.is_external &&
+      item.line_status === "ASSIGNED" &&
+      !!item.driver?.id,
+  );
   // A line counts as started once it is IN_PROGRESS or DONE.
   const anyLineStarted = (order?.service_items ?? []).some(
     (item) =>
@@ -331,6 +343,16 @@ export default function OrderDetailPage({
       await assignMutation.mutateAsync({ id, data });
       toast.success(t("okDriverAssigned"));
       setAssignOpen(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function handleReassign(data: { driver_id: string; car_id: string }) {
+    try {
+      await reassignMutation.mutateAsync({ id, data });
+      toast.success(t("okDriverReassigned"));
+      setReassignOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -687,6 +709,17 @@ export default function OrderDetailPage({
                       >
                         <UserPlus className="h-3.5 w-3.5" />
                         {t('assignForAll')}
+                      </Button>
+                    )}
+                    {hasReassignableLine && (
+                      <Button
+                        onClick={() => setReassignOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1 text-xs"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        {t('reassignAll')}
                       </Button>
                     )}
                   </div>
@@ -1099,6 +1132,20 @@ export default function OrderDetailPage({
           <AssignDriverForm
             onSubmit={handleAssign}
             isLoading={assignMutation.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Reassign (overwrite) driver/car on all not-yet-started lines. */}
+      <Dialog open={reassignOpen} onOpenChange={setReassignOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('reassignAll')}</DialogTitle>
+            <p className="text-xs text-gray-500">{t('reassignAllHint')}</p>
+          </DialogHeader>
+          <AssignDriverForm
+            onSubmit={handleReassign}
+            isLoading={reassignMutation.isPending}
           />
         </DialogContent>
       </Dialog>

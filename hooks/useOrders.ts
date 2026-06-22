@@ -155,6 +155,25 @@ export function useAssignOrder() {
   });
 }
 
+export function useReassignOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: AssignOrderInput;
+    }) => {
+      const res = await ordersApi.reassign(id, data);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateOrderViews(queryClient, variables.id);
+    },
+  });
+}
+
 export function useGenerateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
