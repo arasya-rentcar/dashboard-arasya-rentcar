@@ -322,6 +322,63 @@ export default function InvoiceSection({
                   </div>
                 </div>
 
+                {/* Kwitansi / receipt(s) tied to THIS invoice. Makes the
+                    receipt -> invoice link explicit. */}
+                {(inv.receipts && inv.receipts.length > 0) || inv.receipt_url ? (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <ReceiptText className="h-3.5 w-3.5 text-emerald-700" />
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                        {t('receiptForInvoice', { number: shortInvoiceNumber(inv.invoice_number) })}
+                      </p>
+                    </div>
+                    {inv.receipts && inv.receipts.length > 0 ? (
+                      inv.receipts.map((rcpt) => (
+                        <div key={rcpt.id} className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs font-mono font-semibold text-emerald-900 truncate" title={rcpt.receipt_number}>
+                              {rcpt.receipt_number}
+                            </p>
+                            <p className="text-[11px] text-emerald-700/80">
+                              {formatCurrency(rcpt.amount)} · {formatDate(rcpt.payment_date)}
+                            </p>
+                          </div>
+                          {(rcpt.file_url || inv.receipt_url) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="shrink-0 h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                              asChild
+                            >
+                              <a href={(rcpt.file_url || inv.receipt_url)!} target="_blank" rel="noopener noreferrer">
+                                <Eye className="h-3 w-3 mr-1" />
+                                {t('view')}
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] text-emerald-700/80">{t('receiptAvailable')}</p>
+                        {inv.receipt_url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0 h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                            asChild
+                          >
+                            <a href={inv.receipt_url} target="_blank" rel="noopener noreferrer">
+                              <Eye className="h-3 w-3 mr-1" />
+                              {t('view')}
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
                 {!active && (
                   <p className="rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-500">
                     {t('historical')}

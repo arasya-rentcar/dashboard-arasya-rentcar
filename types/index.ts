@@ -95,6 +95,22 @@ export interface InvoiceDeliveryLog {
   updated_at: string;
 }
 
+export interface Receipt {
+  id: string;
+  receipt_number: string;
+  invoice_id: string;
+  customer_id: string;
+  customer_seq: number;
+  payment_date: string;
+  amount: string;
+  payment_method: PaymentMethod;
+  payment_proof_url?: string | null;
+  file_url?: string | null;
+  note?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Invoice {
   id: string;
   order_id: string;
@@ -113,6 +129,7 @@ export interface Invoice {
   parent_id?: string | null;
   created_at: string;
   delivery_logs?: InvoiceDeliveryLog[];
+  receipts?: Receipt[];
 }
 
 export interface OrderServiceItem {
