@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
@@ -44,16 +44,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  useOrders,
   useSendInvoiceWhatsapp,
   useSendReceiptWhatsapp,
 } from "@/hooks/useOrders";
-import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
+import {
+  useInvoicesSearch,
+  type InvoiceWithOrder,
+} from "@/hooks/useInvoices";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import TablePagination from "@/components/dashboard/TablePagination";
 import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import {
-  Invoice,
   InvoiceDeliveryLog,
-  OrderListItem,
 } from "@/types";
 import {
   INVOICE_STATUS_STYLES,
@@ -77,8 +79,6 @@ const DELIVERY_STATUS_STYLES = {
   SENT: "bg-emerald-50 text-emerald-700 border-emerald-200",
   FAILED: "bg-red-50 text-red-700 border-red-200",
 };
-
-type InvoiceWithOrder = Invoice & { order: OrderListItem };
 
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
@@ -128,40 +128,37 @@ export default function InvoicesPage() {
   const [noteByInvoice, setNoteByInvoice] = useState<Record<string, string>>(
     {},
   );
-  // PERF DEBT (P2-3): useOrders() pulls the ENTIRE /orders list client-side,
-  // then flatMaps every invoice and filters/paginates in the browser. The orders
-  // list page already uses server-side /orders/search pagination — invoices
-  // should move to a dedicated server-paginated /invoices endpoint (or an
-  // /orders/search invoice projection) before order volume grows. Left as-is
-  // for now to avoid an API change; tracked for the next backend pass.
-  const { data: orders, isLoading, isError, refetch } = useOrders();
+  // Server-paginated: the API filters + paginates invoices in the DB and
+  // returns each one already shaped with its order context. (Previously this
+  // pulled the ENTIRE /orders list and flatMapped/filtered in the browser.)
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search.trim());
+
+  // Reset to page 1 when any server filter changes.
+  const filterKey = `${debouncedSearch}|${statusFilter}|${payFilter}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+  }
+
+  const { data, isLoading, isError, refetch } = useInvoicesSearch({
+    search: debouncedSearch || undefined,
+    status: statusFilter === "ALL" ? undefined : statusFilter,
+    payment_status: payFilter === "ALL" ? undefined : payFilter,
+    page,
+    page_size: PAGE_SIZE,
+  });
+
   const sendMutation = useSendInvoiceWhatsapp();
   const sendReceiptMutation = useSendReceiptWhatsapp();
 
-  const invoices = useMemo(
-    () =>
-      orders?.flatMap((o) =>
-        o.invoices.map((inv) => ({ ...inv, order: o }) as InvoiceWithOrder),
-      ) || [],
-    [orders],
-  );
-
-  const filtered = invoices.filter((inv) => {
-    const matchSearch =
-      search === "" ||
-      inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-      inv.order.customer_name.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "ALL" || inv.status === statusFilter;
-    const matchPay =
-      payFilter === "ALL" || inv.order.payment_status === payFilter;
-    return matchSearch && matchStatus && matchPay;
-  });
-
-  const PAGE_SIZE = 10;
-  const { page, setPage, pageCount, total, start, pageItems } = usePagination(
-    filtered,
-    PAGE_SIZE,
-  );
+  const pageItems = data?.data ?? [];
+  const pagination = data?.pagination;
+  const total = pagination?.total ?? 0;
+  const pageCount = pagination?.page_count ?? 1;
+  const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
   function recipientsFor(inv: InvoiceWithOrder) {
     const raw = [
@@ -332,7 +329,7 @@ export default function InvoicesPage() {
                     <QueryError onRetry={() => refetch()} compact />
                   </TableCell>
                 </TableRow>
-              ) : filtered.length === 0 ? (
+              ) : pageItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={8}

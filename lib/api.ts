@@ -119,6 +119,11 @@ export const finalOrdersApi = {
   getById: (id: string) => api.get(`/final-orders/${id}`),
 };
 
+export const invoicesApi = {
+  search: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/invoices", { params }),
+};
+
 export const sheetImportsApi = {
   preview: (data: object = {}) => api.post("/sheet-imports/preview", data),
   import: (data: object = {}) => api.post("/sheet-imports/import", data),

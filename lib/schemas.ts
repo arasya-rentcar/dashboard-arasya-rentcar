@@ -51,6 +51,13 @@ export const invoiceSchema = z
   })
   .passthrough();
 
+export const invoicesSearchResultSchema = z
+  .object({
+    data: z.array(invoiceSchema),
+    pagination: z.object({}).passthrough().nullable().optional(),
+  })
+  .passthrough();
+
 export const dashboardV2Schema = z.object({}).passthrough();
 
 export const revenueReportSchema = z
