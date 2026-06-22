@@ -25,14 +25,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import TripTimeline from "@/components/orders/TripTimeline";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
@@ -54,7 +53,6 @@ import {
   useMarkInvoicePaid,
   useMarkRefunded,
 } from "@/hooks/useOrders";
-import { useAdvanceTripStatus } from "@/hooks/useTrips";
 import {
   formatCurrency,
   formatDate,
@@ -66,7 +64,6 @@ import {
   Invoice,
   ReviseInvoiceInput,
   OrderStatus,
-  TripStatus,
 } from "@/types";
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from "@/lib/statusStyles";
 
@@ -169,7 +166,6 @@ export default function OrderDetailPage({
       toast.error(getErrorMessage(err));
     }
   }
-  const advanceTripMutation = useAdvanceTripStatus(id);
 
   const ADDITIONAL_TYPES: { label: string; value: string }[] = [
     { label: t("typeOvertime"), value: "OVERTIME" },
@@ -222,12 +218,25 @@ export default function OrderDetailPage({
     (sum, item) => sum + Number(item.total_price || 0),
     0,
   );
+  // Merge: the line IS the trip. "Assign for All" applies one driver/car to
+  // every still-unassigned internal line; show it only when such a line exists.
+  const hasUnassignedInternalLine = (order?.service_items ?? []).some(
+    (item) =>
+      !item.is_external &&
+      item.line_status !== "CANCELLED" &&
+      !item.driver?.id,
+  );
+  // A line counts as started once it is IN_PROGRESS or DONE.
+  const anyLineStarted = (order?.service_items ?? []).some(
+    (item) =>
+      item.line_status === "IN_PROGRESS" || item.line_status === "DONE",
+  );
   const serviceStart = order?.service_start_at;
   const serviceEnd = order?.service_end_at;
   // Rule B: rental must be fully paid by day 1 of service. Warn if service has
   // started (or starts today/earlier) while the order is not fully PAID.
   const serviceStarted =
-    !!order?.trip?.started_at ||
+    anyLineStarted ||
     (!!serviceStart && new Date(serviceStart).getTime() <= Date.now());
   const unpaidAtServiceStart =
     !!order && serviceStarted && order.payment_status !== "PAID";
@@ -394,19 +403,6 @@ export default function OrderDetailPage({
     }
   }
 
-  async function handleAdvanceTrip(nextStatus: TripStatus) {
-    if (!order?.trip) return;
-    try {
-      await advanceTripMutation.mutateAsync({
-        tripId: order.trip.id,
-        nextStatus,
-      });
-      toast.success(t("okTripAdvanced", { status: nextStatus.replace(/_/g, " ") }));
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  }
-
   if (isError) {
     return (
       <DashboardShell title={t('title')}>
@@ -497,12 +493,6 @@ export default function OrderDetailPage({
               <PencilLine className="h-4 w-4 mr-2" />
               {t('editOrder')}
             </Button>
-            {order.order_status === "CREATED" && (
-              <Button onClick={() => setAssignOpen(true)} size="sm">
-                <UserPlus className="h-4 w-4 mr-2" />
-                {t('assignDriver')}
-              </Button>
-            )}
             {refundDue > 0 && !isRefunded && (
               <Button
                 onClick={() => setRefundOpen(true)}
@@ -645,20 +635,32 @@ export default function OrderDetailPage({
                   <CardTitle className="text-base">
                     {t('serviceDetails')}
                   </CardTitle>
-                  {serviceSummary && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        serviceSummary.dayCount > 1
-                          ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                          : "bg-gray-50 text-gray-600 border-gray-200"
-                      }
-                    >
-                      {serviceSummary.dayCount > 1
-                        ? t('dayOrder', { count: serviceSummary.dayCount })
-                        : t('singleDay')}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {serviceSummary && (
+                      <Badge
+                        variant="outline"
+                        className={
+                          serviceSummary.dayCount > 1
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                            : "bg-gray-50 text-gray-600 border-gray-200"
+                        }
+                      >
+                        {serviceSummary.dayCount > 1
+                          ? t('dayOrder', { count: serviceSummary.dayCount })
+                          : t('singleDay')}
+                      </Badge>
+                    )}
+                    {hasUnassignedInternalLine && (
+                      <Button
+                        onClick={() => setAssignOpen(true)}
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        {t('assignForAll')}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 {serviceSummary && serviceSummary.dayCount > 1 && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -886,53 +888,6 @@ export default function OrderDetailPage({
               </CardContent>
             </Card>
 
-            {/* Trip Information */}
-            {order.trip && (
-              <Card className="shadow-none border border-gray-200">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base">{t('tripInformation')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                    <InfoRow label={tt('driver')} value={order.trip.driver.name} />
-                    <InfoRow
-                      label={t('driverPhone')}
-                      value={order.trip.driver.phone}
-                    />
-                    <InfoRow label={t('car')} value={order.trip.car.model} />
-                    <InfoRow
-                      label={t('plate')}
-                      value={order.trip.car.plate_number}
-                    />
-                    {order.trip.started_at && (
-                      <InfoRow
-                        label={t('started')}
-                        value={formatDateTime(order.trip.started_at)}
-                      />
-                    )}
-                    {order.trip.finished_at && (
-                      <InfoRow
-                        label={t('finished')}
-                        value={formatDateTime(order.trip.finished_at)}
-                      />
-                    )}
-                  </div>
-
-                  <Separator className="mb-6" />
-
-                  <h4 className="text-sm font-medium text-gray-700 mb-4">
-                    {t('tripProgress')}
-                  </h4>
-                  <TripTimeline
-                    currentStatus={order.trip.current_status}
-                    logs={order.trip.logs}
-                    tripId={order.trip.id}
-                    onAdvance={handleAdvanceTrip}
-                    isAdvancing={advanceTripMutation.isPending}
-                  />
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Right column — Invoice & Payment */}
@@ -1067,11 +1022,14 @@ export default function OrderDetailPage({
         </DialogContent>
       </Dialog>
 
-      {/* Assign Driver Dialog */}
+      {/* Assign-for-All Dialog: applies one driver/car to every unassigned
+          internal service line (the line IS the trip). Per-day overrides are
+          done via the line-level dialog below. */}
       <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('assignDriverCar')}</DialogTitle>
+            <DialogTitle>{t('assignForAll')}</DialogTitle>
+            <p className="text-xs text-gray-500">{t('assignForAllHint')}</p>
           </DialogHeader>
           <AssignDriverForm
             onSubmit={handleAssign}

@@ -502,33 +502,84 @@
     ],
     "websiteCasesTitle": "Contoh kasus website",
     "websiteCases": [
-      { "t": "Create Order", "d": "Isi PIC, Booking, pickup/dropoff utama, lalu tambah Service Detail. Jika ada beberapa hari/rute, buat beberapa baris." },
-      { "t": "Edit Order", "d": "Gunakan saat ada perubahan harga/rute. Jika harga berubah dan invoice sudah ada, tulis alasan perubahan agar tercatat." },
-      { "t": "Assign Driver/Car", "d": "Pilih driver dan mobil dari daftar. Unit code seperti ARA/FCB/VLZ membantu mencari mobil cepat." },
-      { "t": "Generate Invoice", "d": "Buat invoice setelah total order sudah benar. PDF otomatis dibuat dan bisa dipreview." },
-      { "t": "Revise Invoice", "d": "Jika order berubah setelah invoice dibuat, gunakan revisi/sync invoice. Invoice lama tetap menjadi history." },
-      { "t": "Send Invoice WA", "d": "Di menu Invoices, expand row, pilih penerima, lalu Send PDF via WhatsApp. History akan tersimpan." },
-      { "t": "Cars/Drivers", "d": "Tambah/edit data master. Untuk internal, simpan phone asli agar tag WhatsApp bisa match ke database." }
+      {
+        "t": "Create Order",
+        "d": "Isi PIC, Booking, pickup/dropoff utama, lalu tambah Service Detail. Jika ada beberapa hari/rute, buat beberapa baris."
+      },
+      {
+        "t": "Edit Order",
+        "d": "Gunakan saat ada perubahan harga/rute. Jika harga berubah dan invoice sudah ada, tulis alasan perubahan agar tercatat."
+      },
+      {
+        "t": "Assign Driver/Car",
+        "d": "Pilih driver dan mobil dari daftar. Unit code seperti ARA/FCB/VLZ membantu mencari mobil cepat."
+      },
+      {
+        "t": "Generate Invoice",
+        "d": "Buat invoice setelah total order sudah benar. PDF otomatis dibuat dan bisa dipreview."
+      },
+      {
+        "t": "Revise Invoice",
+        "d": "Jika order berubah setelah invoice dibuat, gunakan revisi/sync invoice. Invoice lama tetap menjadi history."
+      },
+      {
+        "t": "Send Invoice WA",
+        "d": "Di menu Invoices, expand row, pilih penerima, lalu Send PDF via WhatsApp. History akan tersimpan."
+      },
+      {
+        "t": "Cars/Drivers",
+        "d": "Tambah/edit data master. Untuk internal, simpan phone asli agar tag WhatsApp bisa match ke database."
+      }
     ],
     "scheduleTitle": "Schedule: jadwal & ketersediaan driver",
     "scheduleIntro": "Menu Schedule mengatur penugasan per hari, bukan per order. Inilah cara order yang berlangsung beberapa hari bisa memakai driver berbeda di tiap harinya.",
     "scheduleCases": [
-      { "t": "Agenda (daftar harian)", "d": "Tab Agenda menampilkan satu baris per hari per order. Filter berdasarkan tanggal, driver, tipe (Internal/External), dan status." },
-      { "t": "Assign / ganti per hari", "d": "Klik Edit pada baris untuk pilih driver+mobil (internal) atau vendor+mobil (external) khusus hari itu. Order multi-hari boleh beda driver tiap hari." },
-      { "t": "Status per hari", "d": "Setiap hari punya status sendiri: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Ubah saat perjalanan jalan." },
-      { "t": "Ketersediaan driver", "d": "Tab Driver Availability menampilkan FREE/BUSY tiap driver untuk tanggal terpilih, dihitung dari jadwal (bukan status order). Pakai ini sebelum assign agar tidak bentrok." }
+      {
+        "t": "Agenda (daftar harian)",
+        "d": "Tab Agenda menampilkan satu baris per hari per order. Filter berdasarkan tanggal, driver, tipe (Internal/External), dan status."
+      },
+      {
+        "t": "Assign / ganti per hari",
+        "d": "Klik Edit pada baris untuk pilih driver+mobil (internal) atau vendor+mobil (external) khusus hari itu. Order multi-hari boleh beda driver tiap hari."
+      },
+      {
+        "t": "Status per hari",
+        "d": "Setiap hari punya status sendiri: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Ubah saat perjalanan jalan."
+      },
+      {
+        "t": "Ketersediaan driver",
+        "d": "Tab Driver Availability menampilkan FREE/BUSY tiap driver untuk tanggal terpilih, dihitung dari jadwal (bukan status order). Pakai ini sebelum assign agar tidak bentrok."
+      }
     ],
     "customersTitle": "Customers: data customer",
     "customerCases": [
-      { "t": "Otomatis dari order", "d": "Customer tersimpan otomatis saat order dibuat (dari WhatsApp atau website), dicocokkan berdasarkan nomor HP." },
-      { "t": "Riwayat order", "d": "Buka detail customer untuk lihat total order dan daftar order sebelumnya. Berguna untuk customer langganan." },
-      { "t": "Tags & catatan", "d": "Tambahkan tag (mis. VIP, Corporate) dan catatan untuk info penting customer." }
+      {
+        "t": "Otomatis dari order",
+        "d": "Customer tersimpan otomatis saat order dibuat (dari WhatsApp atau website), dicocokkan berdasarkan nomor HP."
+      },
+      {
+        "t": "Riwayat order",
+        "d": "Buka detail customer untuk lihat total order dan daftar order sebelumnya. Berguna untuk customer langganan."
+      },
+      {
+        "t": "Tags & catatan",
+        "d": "Tambahkan tag (mis. VIP, Corporate) dan catatan untuk info penting customer."
+      }
     ],
     "externalTitle": "External: vendor & driver luar",
     "externalCases": [
-      { "t": "Vendor & mobil", "d": "Menu External menyimpan vendor/driver luar beserta mobil-mobil mereka (satu vendor bisa punya banyak mobil)." },
-      { "t": "Otomatis dari order", "d": "Saat order external dibuat dari WhatsApp (driver pakai nama + HP + asal), vendor dan mobilnya dibuat otomatis lalu bisa dirapikan di menu ini." },
-      { "t": "Pakai di Schedule", "d": "Saat assign hari external di Schedule, pilih vendor dan mobilnya dari daftar yang sudah tersimpan di sini." }
+      {
+        "t": "Vendor & mobil",
+        "d": "Menu External menyimpan vendor/driver luar beserta mobil-mobil mereka (satu vendor bisa punya banyak mobil)."
+      },
+      {
+        "t": "Otomatis dari order",
+        "d": "Saat order external dibuat dari WhatsApp (driver pakai nama + HP + asal), vendor dan mobilnya dibuat otomatis lalu bisa dirapikan di menu ini."
+      },
+      {
+        "t": "Pakai di Schedule",
+        "d": "Saat assign hari external di Schedule, pilih vendor dan mobilnya dari daftar yang sudah tersimpan di sini."
+      }
     ],
     "invoiceTitle": "Invoice dan kirim WhatsApp",
     "invoiceGenerate": "Generate",
@@ -548,10 +599,22 @@
     "botTriggerWarnTitle": "Wajib pakai keyword di awal pesan.",
     "botTriggerWarnBody": "Bot akan mengabaikan semua chat biasa. Untuk text, foto, PDF, dan dokumen, caption/pesan harus diawali keyword. Huruf besar kecil bebas: #START, #Start, dan #start dianggap sama.",
     "botWakeKeywords": [
-      { "k": "#order", "d": "Admin membuat order baru dari grup Internal Arasya." },
-      { "k": "#start", "d": "Driver mulai jalan / sampai pickup / mulai pekerjaan. Bisa teks, foto, atau dokumen dengan caption." },
-      { "k": "#drop", "d": "Driver laporan drop-off/customer turun. Tidak menutup order. Untuk multi-drop/multi-day, tetap pakai #drop lalu tulis nomor drop di isi pesan: #drop 1, #drop 2, dst." },
-      { "k": "#finish", "d": "Driver menyelesaikan pekerjaan dan menutup order/trip." }
+      {
+        "k": "#order",
+        "d": "Admin membuat order baru dari grup Internal Arasya."
+      },
+      {
+        "k": "#start",
+        "d": "Driver mulai jalan / sampai pickup / mulai pekerjaan. Bisa teks, foto, atau dokumen dengan caption."
+      },
+      {
+        "k": "#drop",
+        "d": "Driver laporan drop-off/customer turun. Tidak menutup order. Untuk multi-drop/multi-day, tetap pakai #drop lalu tulis nomor drop di isi pesan: #drop 1, #drop 2, dst."
+      },
+      {
+        "k": "#finish",
+        "d": "Driver menyelesaikan pekerjaan dan menutup order/trip."
+      }
     ],
     "multiDropNote": "Multi-drop / multi-day: jangan buat keyword baru seperti #drop1 atau #drop2. Tetap pakai #drop, lalu tulis nomor drop setelah keyword atau di isi pesan. Contoh: #drop 1, #drop 2, #drop ke-3. Semua drop hanya menyimpan laporan; order baru ditutup dengan #finish.",
     "captionNote": "Foto/dokumen tanpa caption keyword tidak diproses. Contoh benar: kirim foto dengan caption #start, #drop, #drop 1, atau #finish.",
@@ -568,18 +631,54 @@
     "colKeyword": "Keyword",
     "colMeaning": "Artinya",
     "keywords": [
-      { "k": "PIC / Nama / HP", "d": "Data customer atau penanggung jawab yang bisa dihubungi." },
-      { "k": "Booking", "d": "Waktu order dibuat. Di website otomatis memakai waktu order dibuat; di WhatsApp boleh ditulis jika order lama/perlu tanggal khusus." },
-      { "k": "DETAIL / Rincian / Itinerary", "d": "Awal daftar layanan/rute. Setiap nomor jadi satu baris invoice sekaligus satu hari di Schedule. Driver bisa diisi berbeda di tiap nomor." },
-      { "k": "Pickup / Jemput", "d": "Lokasi penjemputan." },
-      { "k": "Dropoff / Tujuan / Antar", "d": "Lokasi tujuan/dropoff." },
-      { "k": "Mobil / Unit", "d": "Kode unit atau tipe mobil, contoh ARA, FCB, VLZ1, Innova." },
-      { "k": "Driver", "d": "Internal cukup nama pendek/tag. External wajib nama + HP + asal." },
-      { "k": "HP Driver / WA Driver", "d": "Nomor WhatsApp driver external." },
-      { "k": "Asal Driver", "d": "Base driver external, contoh Bandung, Bogor, Jakarta." },
-      { "k": "Harga", "d": "Harga per baris layanan. Total order dihitung dari semua baris." },
-      { "k": "Catatan", "d": "Info tambahan untuk admin/driver." },
-      { "k": "TBA / TBC / TBD / menyusul", "d": "Boleh untuk lokasi/jam yang belum pasti, terutama hari berikutnya." }
+      {
+        "k": "PIC / Nama / HP",
+        "d": "Data customer atau penanggung jawab yang bisa dihubungi."
+      },
+      {
+        "k": "Booking",
+        "d": "Waktu order dibuat. Di website otomatis memakai waktu order dibuat; di WhatsApp boleh ditulis jika order lama/perlu tanggal khusus."
+      },
+      {
+        "k": "DETAIL / Rincian / Itinerary",
+        "d": "Awal daftar layanan/rute. Setiap nomor jadi satu baris invoice sekaligus satu hari di Schedule. Driver bisa diisi berbeda di tiap nomor."
+      },
+      {
+        "k": "Pickup / Jemput",
+        "d": "Lokasi penjemputan."
+      },
+      {
+        "k": "Dropoff / Tujuan / Antar",
+        "d": "Lokasi tujuan/dropoff."
+      },
+      {
+        "k": "Mobil / Unit",
+        "d": "Kode unit atau tipe mobil, contoh ARA, FCB, VLZ1, Innova."
+      },
+      {
+        "k": "Driver",
+        "d": "Internal cukup nama pendek/tag. External wajib nama + HP + asal."
+      },
+      {
+        "k": "HP Driver / WA Driver",
+        "d": "Nomor WhatsApp driver external."
+      },
+      {
+        "k": "Asal Driver",
+        "d": "Base driver external, contoh Bandung, Bogor, Jakarta."
+      },
+      {
+        "k": "Harga",
+        "d": "Harga per baris layanan. Total order dihitung dari semua baris."
+      },
+      {
+        "k": "Catatan",
+        "d": "Info tambahan untuk admin/driver."
+      },
+      {
+        "k": "TBA / TBC / TBD / menyusul",
+        "d": "Boleh untuk lokasi/jam yang belum pasti, terutama hari berikutnya."
+      }
     ],
     "componentExampleTitle": "Contoh tampilan komponen",
     "exampleInvoiceTable": "Contoh table invoice",
@@ -692,7 +791,9 @@
     "okInvoiceGenerated": "Invoice berhasil dibuat",
     "okRefundMarked": "Refund ditandai sudah dibayar",
     "okRevisionCreated": "Revisi invoice berhasil dibuat",
-    "okTripAdvanced": "Trip dilanjutkan ke: {status}"
+    "okTripAdvanced": "Trip dilanjutkan ke: {status}",
+    "assignForAll": "Tetapkan untuk Semua",
+    "assignForAllHint": "Menetapkan driver & mobil ini ke semua baris layanan yang belum punya driver. Gunakan tombol Ubah per-hari untuk mengganti satu hari saja."
   },
   "invoicesPage": {
     "title": "Invoice",

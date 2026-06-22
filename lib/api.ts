@@ -217,14 +217,6 @@ export const carsApi = {
   },
 };
 
-// ─── Trips ────────────────────────────────────────────────────────────────────
-
-export const tripsApi = {
-  getById: (id: string) => api.get(`/trips/${id}`),
-  nextStatus: (tripId: string, status: string) =>
-    api.post(`/trips/${tripId}/next-status`, { status }),
-};
-
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 export const usersApi = {

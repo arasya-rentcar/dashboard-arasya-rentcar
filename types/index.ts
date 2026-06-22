@@ -18,19 +18,8 @@ export type PaymentStatus = "UNPAID" | "DP_PAID" | "PAID";
 
 export type OrderSource = "WEB" | "WHATSAPP" | "IMPORT";
 
-export type TripStatus =
-  | "DRIVER_ASSIGNED"
-  | "DEPART_GARAGE"
-  | "ARRIVE_AT_CUSTOMER"
-  | "ON_TRIP"
-  | "DROP_CUSTOMER"
-  | "RETURN_GARAGE"
-  | "ARRIVE_GARAGE"
-  | "COMPLETED";
-
-export type Actor = "ADMIN" | "DRIVER";
-
-export type ExpenseType = "FUEL" | "TOLL" | "PARKING" | "OTHER";
+// Merge: the order-level Trip model is gone. The line IS the trip -
+// OrderServiceItem carries driver/car/line_status + trip timestamps.
 
 export type InvoiceStatus =
   | "DRAFT"
@@ -83,38 +72,6 @@ export interface Car {
   // Sprint 3 (UI placeholder; real photos uploaded manually later).
   photo_url?: string | null;
   photos?: string[];
-}
-
-export interface TripLog {
-  id: string;
-  trip_id: string;
-  status: TripStatus;
-  actor: Actor;
-  created_at: string;
-}
-
-export interface Expense {
-  id: string;
-  trip_id: string;
-  type: ExpenseType;
-  amount: string;
-  note?: string;
-  created_at: string;
-}
-
-export interface Trip {
-  id: string;
-  order_id: string;
-  driver_id: string;
-  driver: Driver;
-  car_id: string;
-  car: Car;
-  current_status: TripStatus;
-  started_at?: string;
-  finished_at?: string;
-  created_at: string;
-  logs: TripLog[];
-  expenses: Expense[];
 }
 
 export interface InvoiceDeliveryLog {
@@ -226,7 +183,6 @@ export interface Order {
   refund_note?: string | null;
   created_at: string;
   updated_at: string;
-  trip?: Trip | null;
   invoices: Invoice[];
   is_external?: boolean;
   external_vendor?: { id: string; name: string; phone?: string | null } | null;
@@ -365,12 +321,7 @@ export interface OrderListItem {
   is_refunded?: boolean;
   created_at: string;
   updated_at: string;
-  trip?: {
-    id: string;
-    current_status: TripStatus;
-    driver: { name: string };
-    car: { plate_number: string; model: string };
-  } | null;
+  // Merge: driver/car summary comes from service_items (declared above).
   invoices: {
     id: string;
     invoice_number: string;
