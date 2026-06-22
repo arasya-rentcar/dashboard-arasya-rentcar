@@ -10,6 +10,7 @@ import {
   Eye,
   FileText,
   Loader2,
+  ReceiptText,
   Search,
   Send,
 } from "lucide-react";
@@ -546,6 +547,44 @@ function FragmentInvoiceRow({
                     {t('pdfNotAvailable')}
                   </div>
                 )}
+
+                {/* Kwitansi / receipt tied to this invoice. */}
+                {(inv.receipts && inv.receipts.length > 0) || inv.receipt_url ? (
+                  <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                        <ReceiptText className="h-4 w-4" /> {t('receiptHeading')}
+                      </div>
+                      {(inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 border-emerald-300 px-2 text-emerald-700 hover:bg-emerald-100"
+                          onClick={() => onPreview((inv.receipts?.[0]?.file_url || inv.receipt_url)!)}
+                        >
+                          <Eye className="mr-1 h-3.5 w-3.5" /> {t('largeView')}
+                        </Button>
+                      )}
+                    </div>
+                    {inv.receipts && inv.receipts.length > 0 && (
+                      <div className="space-y-1">
+                        {inv.receipts.map((rcpt) => (
+                          <div key={rcpt.id} className="flex items-center justify-between text-xs">
+                            <span className="font-mono font-semibold text-emerald-900">{rcpt.receipt_number}</span>
+                            <span className="text-emerald-700/80">{formatCurrency(rcpt.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {(inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                      <iframe
+                        src={pdfViewerUrl((inv.receipts?.[0]?.file_url || inv.receipt_url)!)}
+                        className="h-[360px] w-full rounded-lg border bg-white"
+                        title={`${inv.invoice_number} Receipt PDF`}
+                      />
+                    )}
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-4">

@@ -829,6 +829,7 @@
     "order": "Order",
     "pdfPreview": "PDF Preview",
     "largeView": "Large View",
+    "receiptHeading": "Kwitansi (Receipt)",
     "pdfNotAvailable": "PDF not available yet. Generate/sync the invoice PDF before sending via WhatsApp.",
     "sendToWhatsapp": "Send PDF to Customer WhatsApp",
     "recipient": "Recipient",

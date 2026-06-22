@@ -829,6 +829,7 @@
     "order": "Order",
     "pdfPreview": "Pratinjau PDF",
     "largeView": "Tampilan Besar",
+    "receiptHeading": "Kwitansi",
     "pdfNotAvailable": "PDF belum tersedia. Generate/sync invoice PDF sebelum kirim WhatsApp.",
     "sendToWhatsapp": "Kirim PDF ke WhatsApp Pelanggan",
     "recipient": "Penerima",
