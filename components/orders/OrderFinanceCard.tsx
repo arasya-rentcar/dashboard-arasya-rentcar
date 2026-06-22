@@ -114,8 +114,8 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             <>
               <Stat label={t('opsCost')} value={fin?.total_ops_cost} />
               <Stat
-                label={t('driverCost')}
-                value={fin?.total_driver_amount ?? fin?.total_ops_cost}
+                label={t('driverFee')}
+                value={fin?.total_driver_amount}
               />
             </>
           )}
@@ -170,8 +170,21 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
                 <ReadOnlyStat label={t('opsCost')} value={fin?.total_ops_cost} hint={t('costsReadOnlyHint')} />
               )}
             </div>
+            <details className="rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2 text-xs text-gray-600">
+              <summary className="cursor-pointer font-medium text-gray-700 select-none">
+                {t('driverFeeRefTitle')}
+              </summary>
+              <ul className="mt-2 space-y-1 leading-relaxed">
+                <li>{t('driverFeeRefJabodetabek')}</li>
+                <li>{t('driverFeeRefLuarKota')}</li>
+                <li>{t('driverFeeRefInap')}</li>
+                <li>{t('driverFeeRefSemarang')}</li>
+                <li>{t('driverFeeRefOvertime')}</li>
+                <li className="italic text-gray-400">{t('driverFeeRefNote')}</li>
+              </ul>
+            </details>
             <Field
-              label={t('driverCostOptional')}
+              label={t('driverFeeOptional')}
               value={form.total_driver_amount}
               onChange={(v) => setForm({ ...form, total_driver_amount: v })}
             />

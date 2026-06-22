@@ -46,6 +46,7 @@ export const INVOICE_TYPE_STYLES: Record<InvoiceType, string> = {
   FULL: 'border-emerald-200 text-emerald-700 bg-emerald-50',
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
   COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
+  CANCELLATION_FEE: 'border-red-200 text-red-700 bg-red-50',
 };
 
 export const INVOICE_TYPE_KEYS: Record<InvoiceType, string> = {
@@ -54,4 +55,5 @@ export const INVOICE_TYPE_KEYS: Record<InvoiceType, string> = {
   FULL: 'typeFull',
   ADDITIONAL: 'typeAdditional',
   COMBINED: 'typeCombined',
+  CANCELLATION_FEE: 'typeCancellationFee',
 };

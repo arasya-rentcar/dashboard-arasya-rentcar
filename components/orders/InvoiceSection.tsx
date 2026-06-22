@@ -29,12 +29,13 @@ import {
 import { Invoice, InvoiceType, PaymentMethod } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
-const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined'> = {
+const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined' | 'typeCancellationFee'> = {
   DP: 'typeDP',
   SETTLEMENT: 'typeSettlement',
   FULL: 'typeFull',
   ADDITIONAL: 'typeAdditional',
   COMBINED: 'typeCombined',
+  CANCELLATION_FEE: 'typeCancellationFee',
 };
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
@@ -43,6 +44,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   FULL: 'border-emerald-200 text-emerald-700 bg-emerald-50',
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
   COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
+  CANCELLATION_FEE: 'border-red-200 text-red-700 bg-red-50',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -264,6 +266,60 @@ export default function InvoiceSection({
           {invoices.map((inv) => {
             const active = isActiveInvoice(inv);
             const current = currentInvoice?.id === inv.id;
+
+            // Only the current/latest invoice shows as a full card. Every other
+            // invoice (already paid, revised, historical) collapses into a
+            // compact list row — number/type/status/amount + quick view links.
+            if (!current) {
+              const receiptUrl = inv.receipts?.[0]?.file_url || inv.receipt_url;
+              return (
+                <div
+                  key={inv.id}
+                  className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2"
+                >
+                  <div className="h-7 w-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center shrink-0">
+                    <FileText className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="truncate font-mono text-xs font-medium text-gray-700" title={inv.invoice_number}>
+                        {shortInvoiceNumber(inv.invoice_number)}
+                      </span>
+                      <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
+                        {t(TYPE_KEYS[inv.invoice_type])}
+                      </Badge>
+                      <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
+                        {inv.status}
+                      </Badge>
+                      {(inv.revision ?? 0) > 0 && (
+                        <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">
+                          R{inv.revision}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
+                  </div>
+                  <span className="shrink-0 text-sm font-semibold text-gray-900">
+                    {formatCurrency(inv.amount)}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {inv.file_url && (
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t('invoice')} onClick={() => setPreviewInvoice(inv)}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {receiptUrl && (
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-700" title={t('receipt')} asChild>
+                        <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
+                          <ReceiptText className="h-3.5 w-3.5" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={inv.id}

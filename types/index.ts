@@ -34,7 +34,8 @@ export type InvoiceType =
   | "SETTLEMENT"
   | "FULL"
   | "ADDITIONAL"
-  | "COMBINED";
+  | "COMBINED"
+  | "CANCELLATION_FEE";
 
 export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "QRIS" | "OTHER";
 

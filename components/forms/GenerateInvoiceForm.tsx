@@ -47,7 +47,7 @@ interface Props {
 }
 
 // Rental-payment invoices only. Additional charges have their own dialog.
-const TYPE_OPTIONS: { value: InvoiceType; key: 'typeDP' | 'typeSettlement' | 'typeFull' }[] = [
+const TYPE_OPTIONS: { value: 'DP' | 'SETTLEMENT' | 'FULL'; key: 'typeDP' | 'typeSettlement' | 'typeFull' }[] = [
   { value: 'DP', key: 'typeDP' },
   { value: 'SETTLEMENT', key: 'typeSettlement' },
   { value: 'FULL', key: 'typeFull' },

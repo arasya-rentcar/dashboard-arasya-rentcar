@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<InvoiceType, string> = {
   FULL: 'Full',
   ADDITIONAL: 'Additional',
   COMBINED: 'Gabungan',
+  CANCELLATION_FEE: 'Cancellation Fee',
 };
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
@@ -21,6 +22,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   FULL: 'border-emerald-200 text-emerald-700 bg-emerald-50',
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
   COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
+  CANCELLATION_FEE: 'border-red-200 text-red-700 bg-red-50',
 };
 
 const STATUS_STYLES: Record<string, string> = {
