@@ -2,6 +2,7 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
+  keepPreviousData,
   type QueryClient,
 } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api";
@@ -40,6 +41,7 @@ export function useOrders() {
       const res = await ordersApi.list();
       return parseResponse<OrderListItem[]>(orderListSchema, res.data.data, "useOrders");
     },
+    placeholderData: keepPreviousData,
   });
 }
 
