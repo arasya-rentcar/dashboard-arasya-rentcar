@@ -207,7 +207,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className="flex h-[calc(96vh-92px)] min-h-[620px] flex-col overflow-hidden"
+      className="flex h-[calc(96vh-92px)] min-h-0 flex-col overflow-hidden"
     >
       <div className="flex-1 overflow-y-auto pr-2">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px]">
