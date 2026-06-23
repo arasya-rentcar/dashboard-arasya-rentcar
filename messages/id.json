@@ -1513,6 +1513,8 @@
     "netCash": "Arus Kas Bersih",
     "basisNetCash": "Kas · uang masuk − uang keluar",
     "cashInOut": "Masuk {in} · Keluar {out}",
+    "moneyFlowTitle": "Ke mana uang mengalir",
+    "moneyFlowSub": "Pendapatan dibagi menjadi biaya dan margin untuk periode ini.",
     "channelTitle": "Per jalur",
     "channelSub": "Unit internal vs vendor.",
     "internalCars": "Unit Internal",

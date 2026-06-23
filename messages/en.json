@@ -1513,6 +1513,8 @@
     "netCash": "Net Cash Flow",
     "basisNetCash": "Cash · money in − money out",
     "cashInOut": "In {in} · Out {out}",
+    "moneyFlowTitle": "Where the money goes",
+    "moneyFlowSub": "Revenue split into costs and margin for the period.",
     "channelTitle": "By channel",
     "channelSub": "Internal units vs vendor.",
     "internalCars": "Internal Units",

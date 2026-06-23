@@ -21,6 +21,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import PeriodToggle from '@/components/revenue/PeriodToggle';
 import Sparkbars from '@/components/dashboard/Sparkbars';
+import MoneyFlowBar from '@/components/dashboard/MoneyFlowBar';
 import { useRevenuePeriod } from '@/hooks/useRevenuePeriod';
 import { useDashboardV2 } from '@/hooks/useAnalytics';
 import { describePeriod, resolvePeriod } from '@/lib/revenuePeriod';
@@ -72,6 +73,7 @@ export default function DashboardPage() {
           <SkeletonHealthRow />
         ) : (
           <>
+            <MoneyFlow data={data} />
             <HealthRow data={data} />
             <ChannelSplit data={data} />
             <NeedsAttention data={data} />
@@ -80,6 +82,29 @@ export default function DashboardPage() {
         )}
       </div>
     </DashboardShell>
+  );
+}
+
+// ─── § 0 Money flow (top) ─────────────────────────────────────────────────────
+function MoneyFlow({ data }: { data: DashboardV2 }) {
+  const t = useTranslations('dashboard');
+  const a = data.accrual;
+  return (
+    <section>
+      <SectionTitle title={t('moneyFlowTitle')} sub={t('moneyFlowSub')} />
+      <Card className="border border-gray-200 shadow-none">
+        <CardContent className="p-4">
+          <MoneyFlowBar
+            revenue={a.revenue}
+            opsCost={a.ops_cost}
+            driverCost={a.driver_cost}
+            vendorCost={a.vendor_cost}
+            margin={a.margin}
+            marginPct={a.margin_pct}
+          />
+        </CardContent>
+      </Card>
+    </section>
   );
 }
 
