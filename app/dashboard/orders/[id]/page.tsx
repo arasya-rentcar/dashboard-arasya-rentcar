@@ -293,6 +293,23 @@ export default function OrderDetailPage({
     (item) =>
       item.line_status === "IN_PROGRESS" || item.line_status === "DONE",
   );
+  // WIB service dates (YYYY-MM-DD) of the internal lines still being assigned
+  // (not started, not cancelled). Feeds AssignDriverForm so drivers/cars busy
+  // on any of these dates render disabled (show-but-disable).
+  const assignableServiceDates = Array.from(
+    new Set(
+      (order?.service_items ?? [])
+        .filter(
+          (item) =>
+            !item.is_external &&
+            item.line_status !== "CANCELLED" &&
+            item.line_status !== "IN_PROGRESS" &&
+            item.line_status !== "DONE" &&
+            !!item.service_date,
+        )
+        .map((item) => String(item.service_date).slice(0, 10)),
+    ),
+  );
   const serviceStart = order?.service_start_at;
   const serviceEnd = order?.service_end_at;
   // Rule B: rental must be fully paid by day 1 of service. Warn if service has
@@ -1324,6 +1341,7 @@ export default function OrderDetailPage({
           <AssignDriverForm
             onSubmit={handleAssign}
             isLoading={assignMutation.isPending}
+            serviceDates={assignableServiceDates}
           />
         </DialogContent>
       </Dialog>
@@ -1338,6 +1356,7 @@ export default function OrderDetailPage({
           <AssignDriverForm
             onSubmit={handleReassign}
             isLoading={reassignMutation.isPending}
+            serviceDates={assignableServiceDates}
           />
         </DialogContent>
       </Dialog>

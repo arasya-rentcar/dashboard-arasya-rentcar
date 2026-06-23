@@ -14,8 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAvailableDrivers } from '@/hooks/useDrivers';
-import { useAvailableCars } from '@/hooks/useCars';
+import { useDrivers } from '@/hooks/useDrivers';
+import { useCars } from '@/hooks/useCars';
+import { useBusyUnitsMulti } from '@/hooks/useSchedule';
 
 const schema = z.object({
   driver_id: z.string().uuid('errSelectDriver'),
@@ -27,13 +28,24 @@ type FormValues = z.infer<typeof schema>;
 interface Props {
   onSubmit: (data: { driver_id: string; car_id: string }) => Promise<void>;
   isLoading: boolean;
+  // Service dates (YYYY-MM-DD) of the lines being assigned. A driver/car busy
+  // on ANY of these dates is shown but DISABLED (show-but-disable).
+  serviceDates?: string[];
 }
 
-export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
+export default function AssignDriverForm({
+  onSubmit,
+  isLoading,
+  serviceDates = [],
+}: Props) {
   const t = useTranslations('assignDriver');
   const tc = useTranslations('common');
-  const { data: drivers, isLoading: driversLoading } = useAvailableDrivers();
-  const { data: cars, isLoading: carsLoading } = useAvailableCars();
+  // Show ALL internal drivers/cars (not just free ones) so busy units appear
+  // greyed-out instead of vanishing.
+  const { data: allDrivers, isLoading: driversLoading } = useDrivers();
+  const { data: cars, isLoading: carsLoading } = useCars();
+  const drivers = (allDrivers ?? []).filter((d) => d.type === 'INTERNAL');
+  const { driverBusy, carBusy } = useBusyUnitsMulti(serviceDates);
 
   const {
     handleSubmit,
@@ -59,11 +71,15 @@ export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
                     {t('noDrivers')}
                   </SelectItem>
                 )}
-                {drivers?.map((d) => (
-                  <SelectItem key={d.id} value={d.id}>
-                    {d.name} — {d.phone}
-                  </SelectItem>
-                ))}
+                {drivers?.map((d) => {
+                  const busy = driverBusy.has(d.id);
+                  return (
+                    <SelectItem key={d.id} value={d.id} disabled={busy}>
+                      {d.name} — {d.phone}
+                      {busy ? ` · ${t('onTrip')}` : ''}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}
@@ -89,11 +105,15 @@ export default function AssignDriverForm({ onSubmit, isLoading }: Props) {
                     {t('noCars')}
                   </SelectItem>
                 )}
-                {cars?.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.model} — {c.plate_number}
-                  </SelectItem>
-                ))}
+                {cars?.map((c) => {
+                  const busy = carBusy.has(c.id);
+                  return (
+                    <SelectItem key={c.id} value={c.id} disabled={busy}>
+                      {c.model} — {c.plate_number}
+                      {busy ? ` · ${t('onTrip')}` : ''}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           )}

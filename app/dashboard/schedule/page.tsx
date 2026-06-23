@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, CalendarCheck, Users, ExternalLink, Boxes } from 'lucide-react';
+import { Search, CalendarCheck, ExternalLink, History } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,15 +24,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import TablePagination from '@/components/dashboard/TablePagination';
-import {
-  useSchedule,
-  useDriverAvailability,
-} from '@/hooks/useSchedule';
+import { useSchedule } from '@/hooks/useSchedule';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
 import StockTab from '@/components/schedule/StockTab';
+import HistoryTab from '@/components/schedule/HistoryTab';
 import ConfirmationCell from '@/components/schedule/ConfirmationCell';
 
 const PAGE_SIZE = 30;
@@ -67,50 +65,44 @@ function weekRange(base: string): { from: string; to: string } {
 
 export default function SchedulePage() {
   const tx = useTranslations('schedule');
-  const [tab, setTab] = useState<'agenda' | 'availability' | 'stock'>('agenda');
+  const [tab, setTab] = useState<'schedule' | 'history'>('schedule');
 
   return (
     <DashboardShell title={tx('title')}>
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
-            onClick={() => setTab('agenda')}
+            onClick={() => setTab('schedule')}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === 'agenda'
+              tab === 'schedule'
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <CalendarCheck className="h-4 w-4" /> {tx('agenda')}
+            <CalendarCheck className="h-4 w-4" /> {tx('tabSchedule')}
           </button>
           <button
-            onClick={() => setTab('availability')}
+            onClick={() => setTab('history')}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === 'availability'
+              tab === 'history'
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Users className="h-4 w-4" /> {tx('driverAvailability')}
-          </button>
-          <button
-            onClick={() => setTab('stock')}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
-              tab === 'stock'
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Boxes className="h-4 w-4" /> {tx('stock')}
+            <History className="h-4 w-4" /> {tx('tabHistory')}
           </button>
         </div>
 
-        {tab === 'agenda' ? (
-          <AgendaTab />
-        ) : tab === 'availability' ? (
-          <AvailabilityTab />
+        {tab === 'schedule' ? (
+          <div className="space-y-6">
+            {/* Availability context (read-only): who/what is free before you
+                assign. Folds the old Stock + Availability tabs into one panel. */}
+            <StockTab />
+            {/* Operational day-assignment list (kept as-is). */}
+            <AgendaTab />
+          </div>
         ) : (
-          <StockTab />
+          <HistoryTab />
         )}
       </div>
     </DashboardShell>
@@ -446,94 +438,6 @@ function DateChip({
     >
       {label}
     </button>
-  );
-}
-
-function AvailabilityTab() {
-  const tx = useTranslations('schedule');
-  const tt = useTranslations('terms');
-  const [date, setDate] = useState(todayStr());
-  const [type, setType] = useState('INTERNAL');
-  const { data, isLoading } = useDriverAvailability(
-    date,
-    type === 'ALL' ? undefined : type,
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-3 items-end">
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{tx('date')}</label>
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-44"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{tx('type')}</label>
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="INTERNAL">{tt('internal')}</SelectItem>
-              <SelectItem value="EXTERNAL">{tt('external')}</SelectItem>
-              <SelectItem value="ALL">{tx('all')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <p className="text-gray-400 text-sm py-10 text-center">{tx('loading')}</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {data?.drivers.map((d) => (
-            <div
-              key={d.id}
-              className={`rounded-xl border p-4 ${
-                d.availability === 'FREE'
-                  ? 'border-emerald-200 bg-emerald-50/40'
-                  : 'border-amber-200 bg-amber-50/40'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium text-gray-900">{d.name}</span>
-                <Badge
-                  variant="outline"
-                  className={
-                    d.availability === 'FREE'
-                      ? 'bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]'
-                      : 'bg-amber-100 text-amber-700 border-amber-200 text-[10px]'
-                  }
-                >
-                  {d.availability}
-                </Badge>
-              </div>
-              {d.bookings.length === 0 ? (
-                <p className="text-xs text-gray-400">{tx('noBookings')}</p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {d.bookings.map((b) => (
-                    <li key={b.line_id} className="text-xs text-gray-600">
-                      <Link
-                        href={`/dashboard/orders/${b.order_id}`}
-                        className="text-blue-600 hover:underline"
-                      >
-                        {b.order_code || b.customer_name}
-                      </Link>{' '}
-                      · {b.route}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 

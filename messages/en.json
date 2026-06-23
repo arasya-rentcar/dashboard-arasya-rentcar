@@ -95,7 +95,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "orders": "Orders",
-    "schedule": "Schedule",
+    "schedule": "Trip",
     "revenue": "Revenue",
     "invoices": "Invoices",
     "payables": "Payables",
@@ -817,7 +817,7 @@
     "finalizeOrder": "Finalize Order",
     "finalizeConfirm": "Finalize Order",
     "finalizeConfirmHint": "All service days are finished. Finalizing closes the order (marks it Done). Make sure ops cost and driver fee are recorded first.",
-    "finalizeAdditionalWarning": "This order has additional charges. Before finalizing, double-check the additional items, ops cost, and driver fee are all correct \u2014 finalizing closes the order.",
+    "finalizeAdditionalWarning": "This order has additional charges. Before finalizing, double-check the additional items, ops cost, and driver fee are all correct — finalizing closes the order.",
     "okOrderFinalized": "Order finalized",
     "cancelWarning": "This cancels the whole order: all upcoming days are cancelled, drivers/cars released, active invoices voided, and a cancellation fee is issued per Arasya policy. This cannot be undone.",
     "cancelReasonLabel": "Cancellation reason",
@@ -888,7 +888,7 @@
     "okSent": "Invoice PDF sent to WhatsApp"
   },
   "schedule": {
-    "title": "Schedule",
+    "title": "Trip",
     "agenda": "Agenda",
     "driverAvailability": "Driver Availability",
     "stock": "Stock",
@@ -920,7 +920,47 @@
     "paginationLabel": "lines",
     "updating": "Updating…",
     "date": "Date",
-    "noBookings": "No bookings this day."
+    "noBookings": "No bookings this day.",
+    "tabSchedule": "Schedule",
+    "tabHistory": "History"
+  },
+  "history": {
+    "title": "Trip History",
+    "search": "Search",
+    "searchPlaceholder": "Order code or customer…",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "driver": "Driver",
+    "car": "Car",
+    "allDrivers": "All drivers",
+    "allCars": "All cars",
+    "finance": "Finance",
+    "financeAll": "All",
+    "financeFinalized": "Finalized",
+    "financeAwaiting": "Awaiting finalization",
+    "loading": "Loading…",
+    "empty": "No finished trips match these filters.",
+    "pending": "Pending",
+    "badgeAwaiting": "Awaiting Finalization",
+    "badgeFinalized": "Finalized",
+    "timeline": "Trip Timeline",
+    "tsDepart": "Departed",
+    "tsArrive": "Arrived at pickup",
+    "tsDropoff": "Dropoff / finished",
+    "tsFinishReported": "Finish reported",
+    "notRecorded": "Not recorded",
+    "opsCost": "Ops cost",
+    "driverFeeBase": "Driver fee (base)",
+    "driverFeeTotal": "Driver fee (total)",
+    "driverFeeStatus": "Fee status",
+    "margin": "Margin",
+    "financePendingNote": "Financials are finalized by an admin once the whole order is closed.",
+    "reports": "Driver Reports",
+    "noReports": "No driver reports on this line.",
+    "viewMedia": "View media",
+    "openOrder": "Open order",
+    "externalVendor": "External vendor",
+    "paginationLabel": "trips"
   },
   "agentPage": {
     "title": "Bot Agent",
@@ -1201,7 +1241,8 @@
     "noCars": "No available cars",
     "assignBtn": "Assign Driver",
     "errSelectDriver": "Select a driver",
-    "errSelectCar": "Select a car"
+    "errSelectCar": "Select a car",
+    "onTrip": "On trip"
   },
   "reviseInvoice": {
     "currentInvoice": "Current invoice",
@@ -1323,7 +1364,8 @@
     "vendorCarAdded": "Vendor car added",
     "errVendorNameRequired": "Vendor name is required",
     "errSelectVendorFirst": "Select a vendor first",
-    "errCarModelRequired": "Car type / model is required"
+    "errCarModelRequired": "Car type / model is required",
+    "onTrip": "On trip"
   },
   "financeCard": {
     "title": "Finance & Margin",

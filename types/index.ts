@@ -285,6 +285,61 @@ export interface ScheduleLine {
   } | null;
 }
 
+// A single driver report attached to a finished line (Trip History detail).
+export interface TripReportEntry {
+  id: string;
+  report_type: string;
+  input_type?: string | null;
+  notes?: string | null;
+  file_url?: string | null;
+  file_mime?: string | null;
+  driver_phone?: string | null;
+  status?: string | null;
+  created_at: string;
+}
+
+// One finished (DONE) service line for the Trip History tab. finance_status:
+// FINALIZED = parent order is DONE (money fields trustworthy); AWAITING = line
+// done but order not finalized yet (render money as "Pending").
+export interface TripHistoryRow {
+  id: string;
+  service_date?: string | null;
+  description?: string | null;
+  service_kind?: string | null;
+  pickup_location: string;
+  dropoff_location: string;
+  is_external: boolean;
+  line_status: ScheduleStatus;
+  ops_cost: string | number;
+  margin_amount?: string | number | null;
+  total_price?: string | number | null;
+  // Distinct actual operational timestamps stamped by the WA bot.
+  actual_start_at?: string | null;
+  actual_pickup_at?: string | null;
+  trip_finished_at?: string | null;
+  finish_reported_at?: string | null;
+  trip_started_at?: string | null;
+  finance_status: 'FINALIZED' | 'AWAITING';
+  order?: {
+    id: string;
+    order_code?: string | null;
+    customer_name: string;
+    order_status: OrderStatus;
+    payment_status: PaymentStatus;
+    awaiting_finalization?: boolean;
+  } | null;
+  driver?: { id: string; name: string; phone?: string | null } | null;
+  car?: { id: string; model: string; plate_number?: string | null } | null;
+  external_vendor?: { id: string; name: string; phone?: string | null } | null;
+  external_car?: {
+    id: string;
+    model: string;
+    plate_number?: string | null;
+  } | null;
+  payable?: Payable | null;
+  reports?: TripReportEntry[];
+}
+
 export interface ScheduleTotals {
   revenue: string | number;
   ops_cost: string | number;

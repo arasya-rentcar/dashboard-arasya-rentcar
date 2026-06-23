@@ -95,7 +95,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "orders": "Order",
-    "schedule": "Jadwal",
+    "schedule": "Trip",
     "revenue": "Pendapatan",
     "invoices": "Invoice",
     "payables": "Utang",
@@ -817,7 +817,7 @@
     "finalizeOrder": "Finalisasi Pesanan",
     "finalizeConfirm": "Finalisasi Pesanan",
     "finalizeConfirmHint": "Semua hari layanan sudah selesai. Finalisasi akan menutup pesanan (menandai Selesai). Pastikan biaya operasional dan fee driver sudah dicatat lebih dulu.",
-    "finalizeAdditionalWarning": "Pesanan ini memiliki biaya tambahan. Sebelum finalisasi, periksa kembali item tambahan, biaya operasional, dan fee driver sudah benar \u2014 finalisasi akan menutup pesanan.",
+    "finalizeAdditionalWarning": "Pesanan ini memiliki biaya tambahan. Sebelum finalisasi, periksa kembali item tambahan, biaya operasional, dan fee driver sudah benar — finalisasi akan menutup pesanan.",
     "okOrderFinalized": "Pesanan difinalisasi",
     "cancelWarning": "Ini membatalkan seluruh pesanan: semua hari mendatang dibatalkan, driver/mobil dilepas, invoice aktif dibatalkan, dan biaya pembatalan diterbitkan sesuai kebijakan Arasya. Tindakan ini tidak dapat dibatalkan.",
     "cancelReasonLabel": "Alasan pembatalan",
@@ -888,7 +888,7 @@
     "okSent": "PDF invoice terkirim ke WhatsApp"
   },
   "schedule": {
-    "title": "Jadwal",
+    "title": "Trip",
     "agenda": "Agenda",
     "driverAvailability": "Ketersediaan Driver",
     "stock": "Stok",
@@ -920,7 +920,47 @@
     "paginationLabel": "baris",
     "updating": "Memperbarui…",
     "date": "Tanggal",
-    "noBookings": "Tidak ada booking hari ini."
+    "noBookings": "Tidak ada booking hari ini.",
+    "tabSchedule": "Jadwal",
+    "tabHistory": "Riwayat"
+  },
+  "history": {
+    "title": "Riwayat Perjalanan",
+    "search": "Cari",
+    "searchPlaceholder": "Kode order atau pelanggan…",
+    "dateFrom": "Dari",
+    "dateTo": "Sampai",
+    "driver": "Driver",
+    "car": "Mobil",
+    "allDrivers": "Semua driver",
+    "allCars": "Semua mobil",
+    "finance": "Keuangan",
+    "financeAll": "Semua",
+    "financeFinalized": "Sudah Final",
+    "financeAwaiting": "Menunggu Finalisasi",
+    "loading": "Memuat…",
+    "empty": "Tidak ada perjalanan selesai yang cocok dengan filter ini.",
+    "pending": "Pending",
+    "badgeAwaiting": "Menunggu Finalisasi",
+    "badgeFinalized": "Selesai",
+    "timeline": "Linimasa Perjalanan",
+    "tsDepart": "Berangkat",
+    "tsArrive": "Tiba di penjemputan",
+    "tsDropoff": "Pengantaran / selesai",
+    "tsFinishReported": "Lapor selesai",
+    "notRecorded": "Tidak tercatat",
+    "opsCost": "Biaya ops",
+    "driverFeeBase": "Fee driver (dasar)",
+    "driverFeeTotal": "Fee driver (total)",
+    "driverFeeStatus": "Status fee",
+    "margin": "Margin",
+    "financePendingNote": "Keuangan difinalisasi oleh admin setelah seluruh order ditutup.",
+    "reports": "Laporan Driver",
+    "noReports": "Tidak ada laporan driver pada baris ini.",
+    "viewMedia": "Lihat media",
+    "openOrder": "Buka order",
+    "externalVendor": "Vendor eksternal",
+    "paginationLabel": "perjalanan"
   },
   "agentPage": {
     "title": "Bot Agent",
@@ -1201,7 +1241,8 @@
     "noCars": "Tidak ada mobil tersedia",
     "assignBtn": "Tugaskan Driver",
     "errSelectDriver": "Pilih driver",
-    "errSelectCar": "Pilih mobil"
+    "errSelectCar": "Pilih mobil",
+    "onTrip": "Sedang jalan"
   },
   "reviseInvoice": {
     "currentInvoice": "Invoice saat ini",
@@ -1323,7 +1364,8 @@
     "vendorCarAdded": "Mobil vendor ditambahkan",
     "errVendorNameRequired": "Nama vendor wajib diisi",
     "errSelectVendorFirst": "Pilih vendor terlebih dahulu",
-    "errCarModelRequired": "Tipe / model mobil wajib diisi"
+    "errCarModelRequired": "Tipe / model mobil wajib diisi",
+    "onTrip": "Sedang jalan"
   },
   "financeCard": {
     "title": "Keuangan & Margin",

@@ -27,7 +27,7 @@ import {
   useCreateVendor,
   useAddVendorCar,
 } from '@/hooks/useExternalVendors';
-import { useAssignScheduleLine } from '@/hooks/useSchedule';
+import { useAssignScheduleLine, useBusyUnits } from '@/hooks/useSchedule';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
 import { Plus, Loader2 } from 'lucide-react';
@@ -73,6 +73,14 @@ export default function ScheduleLineDialog({
     vendorId || '',
     { cars_page: 1 },
   );
+
+  // Availability-aware selects: a driver/car already booked on this line's
+  // service_date is shown but DISABLED. The line's own current driver/car stays
+  // selectable (excludeLineId).
+  const lineDate = line?.service_date
+    ? String(line.service_date).slice(0, 10)
+    : undefined;
+  const { driverBusy, carBusy } = useBusyUnits(lineDate, line?.id);
 
   useEffect(() => {
     if (!line) return;
@@ -229,11 +237,15 @@ export default function ScheduleLineDialog({
                   <SelectContent>
                     {(drivers ?? [])
                       .filter((d) => d.type === 'INTERNAL')
-                      .map((d) => (
-                        <SelectItem key={d.id} value={d.id}>
-                          {d.name}
-                        </SelectItem>
-                      ))}
+                      .map((d) => {
+                        const busy = driverBusy.has(d.id) && d.id !== driverId;
+                        return (
+                          <SelectItem key={d.id} value={d.id} disabled={busy}>
+                            {d.name}
+                            {busy ? ` · ${t('onTrip')}` : ''}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>
@@ -244,11 +256,15 @@ export default function ScheduleLineDialog({
                     <SelectValue placeholder={t('selectCar')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {(cars ?? []).map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.model} · {c.plate_number}
-                      </SelectItem>
-                    ))}
+                    {(cars ?? []).map((c) => {
+                      const busy = carBusy.has(c.id) && c.id !== carId;
+                      return (
+                        <SelectItem key={c.id} value={c.id} disabled={busy}>
+                          {c.model} · {c.plate_number}
+                          {busy ? ` · ${t('onTrip')}` : ''}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

@@ -5,6 +5,7 @@ import {
   ScheduleTotals,
   DriverAvailabilityEntry,
   PaginationMeta,
+  TripHistoryRow,
 } from '@/types';
 
 export interface ScheduleListParams {
@@ -102,6 +103,106 @@ export function useScheduleStock(date?: string) {
       return res.data.data;
     },
   });
+}
+
+export interface TripHistoryParams {
+  date_from?: string;
+  date_to?: string;
+  driver_id?: string;
+  car_id?: string;
+  finance?: 'all' | 'finalized' | 'awaiting';
+  search?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface TripHistoryResult {
+  items: TripHistoryRow[];
+  pagination: PaginationMeta;
+}
+
+export function useTripHistory(params: TripHistoryParams) {
+  return useQuery<TripHistoryResult>({
+    queryKey: ['trip-history', params],
+    queryFn: async () => {
+      const res = await scheduleApi.history(
+        params as Record<string, string | number | undefined>,
+      );
+      const p = res.data.pagination;
+      return {
+        items: res.data.items,
+        pagination: {
+          page: p.page,
+          page_size: p.page_size,
+          total: p.total,
+          page_count: p.total_pages ?? p.page_count,
+        },
+      };
+    },
+  });
+}
+
+/**
+ * Availability-aware busy sets for a given WIB date, derived from the schedule
+ * stock monitor. Returns the set of driver_ids and car_ids that already have an
+ * active (SCHEDULED/IN_PROGRESS) line on that date, so assignment selects can
+ * render them DISABLED (show-but-disable) instead of removing them.
+ *
+ * `excludeLineId` keeps the CURRENT line's own driver/car selectable: a unit
+ * busy only because of this very line must not be disabled (you can keep it).
+ */
+export function useBusyUnits(date?: string, excludeLineId?: string) {
+  const { data } = useScheduleStock(date);
+  const driverBusy = new Set<string>();
+  const carBusy = new Set<string>();
+  if (data) {
+    for (const d of data.drivers.used_list) {
+      const onlyThisLine =
+        excludeLineId != null &&
+        d.bookings.length > 0 &&
+        d.bookings.every((b) => b.line_id === excludeLineId);
+      if (!onlyThisLine) driverBusy.add(d.id);
+    }
+    for (const c of data.cars.used_list) {
+      const onlyThisLine =
+        excludeLineId != null &&
+        c.bookings.length > 0 &&
+        c.bookings.every((b) => b.line_id === excludeLineId);
+      if (!onlyThisLine) carBusy.add(c.id);
+    }
+  }
+  return { driverBusy, carBusy, hasData: !!data };
+}
+
+/**
+ * Multi-date busy sets: a unit is busy if booked (active line) on ANY of the
+ * given WIB dates. Used by the order-level "assign for all" form, whose lines
+ * may span several days. Up to 7 distinct dates are queried (hook order is
+ * stable because we always map the same fixed-length, padded slot array).
+ */
+export function useBusyUnitsMulti(dates: string[]) {
+  const unique = Array.from(new Set(dates.filter(Boolean))).slice(0, 7);
+  // Fixed 7 slots so the number of hooks never changes between renders.
+  const slots: (string | undefined)[] = Array.from(
+    { length: 7 },
+    (_, i) => unique[i],
+  );
+  const q0 = useScheduleStock(slots[0]);
+  const q1 = useScheduleStock(slots[1]);
+  const q2 = useScheduleStock(slots[2]);
+  const q3 = useScheduleStock(slots[3]);
+  const q4 = useScheduleStock(slots[4]);
+  const q5 = useScheduleStock(slots[5]);
+  const q6 = useScheduleStock(slots[6]);
+  const results = [q0, q1, q2, q3, q4, q5, q6];
+  const driverBusy = new Set<string>();
+  const carBusy = new Set<string>();
+  results.forEach((r, i) => {
+    if (!slots[i] || !r.data) return;
+    for (const d of r.data.drivers.used_list) driverBusy.add(d.id);
+    for (const c of r.data.cars.used_list) carBusy.add(c.id);
+  });
+  return { driverBusy, carBusy };
 }
 
 export function useAssignScheduleLine() {
