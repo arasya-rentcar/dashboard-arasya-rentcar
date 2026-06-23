@@ -1538,7 +1538,7 @@
     "daysShort": "{days}d",
     "overdueSummary": "{count} overdue · {amount} total",
     "trendTitle": "6-month trend",
-    "trendSub": "Revenue and margin per calendar month (month end = upper bound of the active period).",
+    "trendSub": "Revenue (bars) and margin % (line) per calendar month.",
     "outstanding": "Outstanding",
     "snapshotNow": "Current snapshot",
     "arLabel": "AR (receivables)",

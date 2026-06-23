@@ -1538,7 +1538,7 @@
     "daysShort": "{days}h",
     "overdueSummary": "{count} jatuh tempo · total {amount}",
     "trendTitle": "Tren 6 bulan",
-    "trendSub": "Pendapatan dan margin per bulan kalender (akhir bulan = batas atas periode aktif).",
+    "trendSub": "Pendapatan (batang) dan margin % (garis) per bulan kalender.",
     "outstanding": "Outstanding",
     "snapshotNow": "Snapshot saat ini",
     "arLabel": "AR (piutang)",
