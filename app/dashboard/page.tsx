@@ -188,6 +188,10 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <Row label={t('billed')} value={v.billed} />
               <Row label={t('vendorCost')} value={v.vendor_cost} muted />
+              {/* Placeholder so the vendor card aligns row-for-row with the
+                  internal card (vendors have no driver fee — Arasya pays the
+                  vendor, not a driver). */}
+              <Row label={t('driverFee')} value={0} muted dash />
               <Row label={t('trips')} value={v.trips} raw />
             </div>
             <div className="border-t border-gray-100 pt-2">
@@ -466,11 +470,13 @@ function Row({
   value,
   muted,
   raw,
+  dash,
 }: {
   label: string;
   value: number;
   muted?: boolean;
   raw?: boolean;
+  dash?: boolean;
 }) {
   return (
     <>
@@ -478,7 +484,7 @@ function Row({
       <span
         className={`text-right tabular-nums ${muted ? 'text-gray-500' : 'text-gray-800'}`}
       >
-        {raw ? value : formatCurrency(value)}
+        {dash ? '—' : raw ? value : formatCurrency(value)}
       </span>
     </>
   );

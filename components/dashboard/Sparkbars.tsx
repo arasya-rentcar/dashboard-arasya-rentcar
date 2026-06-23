@@ -36,11 +36,11 @@ export default function Sparkbars({ points }: { points: DashV2TrendPoint[] }) {
   const maxPct = Math.min(100, Math.max(40, ...pctVals.map((v) => Math.ceil(v / 10) * 10)));
 
   const W = 520;
-  const H = 190;
+  const H = 150;
   const PAD_L = 50; // room for the left money axis label
   const PAD_R = 40; // room for the right % axis label
   const PAD_T = 14;
-  const PAD_B = 28;
+  const PAD_B = 26;
   const plotW = W - PAD_L - PAD_R;
   const plotH = H - PAD_T - PAD_B;
   const bw = plotW / points.length;
@@ -60,7 +60,13 @@ export default function Sparkbars({ points }: { points: DashV2TrendPoint[] }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[440px]">
+      {/* Cap width so the chart stays compact and doesn't balloon on wide
+          screens; left-aligned, scrolls on narrow viewports. */}
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full min-w-[440px] max-w-[640px]"
+        preserveAspectRatio="xMidYMid meet"
+      >
         {/* top gridline + left max-revenue label (compact, no clip) */}
         <line
           x1={PAD_L}
