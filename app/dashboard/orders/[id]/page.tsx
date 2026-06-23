@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Clock,
   Ban,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -255,6 +256,12 @@ export default function OrderDetailPage({
   const paidToDate = Number(order?.paid_to_date ?? 0);
   const refundDue = Math.max(paidToDate - orderFinalPrice, 0);
   const isRefunded = Boolean(order?.is_refunded);
+  // Terminal orders are read-only for STRUCTURAL data (fields, service lines,
+  // driver assignment, price adjustments). Billing/closure (invoices, payment,
+  // receipt, refund) stays available because it happens after DONE / on a
+  // cancelled order. Mirrors the API guard (assertOrderStructurallyEditable).
+  const isStructurallyLocked =
+    order?.order_status === "DONE" || order?.order_status === "CANCELLED";
   // Rental base = sum of service lines (excludes billable additionals, which the
   // combined invoice adds back explicitly).
   const rentalBase = (order?.service_items ?? []).reduce(
@@ -628,14 +635,16 @@ export default function OrderDetailPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setEditOpen(true)}
-              size="sm"
-              variant="outline"
-            >
-              <PencilLine className="h-4 w-4 mr-2" />
-              {t('editOrder')}
-            </Button>
+            {!isStructurallyLocked && (
+              <Button
+                onClick={() => setEditOpen(true)}
+                size="sm"
+                variant="outline"
+              >
+                <PencilLine className="h-4 w-4 mr-2" />
+                {t('editOrder')}
+              </Button>
+            )}
             {refundDue > 0 && !isRefunded && (
               <Button
                 onClick={() => setRefundOpen(true)}
@@ -665,6 +674,20 @@ export default function OrderDetailPage({
               )}
           </div>
         </div>
+
+        {isStructurallyLocked && (
+          <div className="rounded-lg border p-3 flex gap-3 text-sm bg-gray-50 border-gray-200 text-gray-600">
+            <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">
+                {order.order_status === "CANCELLED"
+                  ? t('readOnlyCancelledTitle')
+                  : t('readOnlyDoneTitle')}
+              </p>
+              <p className="text-xs mt-1">{t('readOnlyDesc')}</p>
+            </div>
+          </div>
+        )}
 
         {unpaidAtServiceStart && (
           <div className="rounded-lg border p-3 flex gap-3 text-sm bg-red-50 border-red-200 text-red-700">
@@ -810,7 +833,7 @@ export default function OrderDetailPage({
                           : t('singleDay')}
                       </Badge>
                     )}
-                    {hasUnassignedInternalLine && (
+                    {!isStructurallyLocked && hasUnassignedInternalLine && (
                       <Button
                         onClick={() => setAssignOpen(true)}
                         size="sm"
@@ -820,7 +843,7 @@ export default function OrderDetailPage({
                         {t('assignForAll')}
                       </Button>
                     )}
-                    {hasReassignableLine && (
+                    {!isStructurallyLocked && hasReassignableLine && (
                       <Button
                         onClick={() => setReassignOpen(true)}
                         size="sm"
@@ -1051,14 +1074,16 @@ export default function OrderDetailPage({
                   <CardTitle className="text-base">
                     {t('additionalCharges')}
                   </CardTitle>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAdditionalOpen(true)}
-                  >
-                    <Plus className="mr-1 h-3.5 w-3.5" /> {t('addAdditional')}
-                  </Button>
+                  {!isStructurallyLocked && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalOpen(true)}
+                    >
+                      <Plus className="mr-1 h-3.5 w-3.5" /> {t('addAdditional')}
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
