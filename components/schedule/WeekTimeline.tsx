@@ -295,7 +295,7 @@ function TimelineRow({
         return (
           <div
             key={i}
-            className={`min-h-[44px] space-y-1 border-l border-gray-100 p-1 ${
+            className={`min-h-[44px] min-w-0 space-y-1 overflow-hidden border-l border-gray-100 p-1 ${
               isToday ? 'bg-blue-50/30' : ''
             }`}
           >
@@ -303,17 +303,19 @@ function TimelineRow({
               <Link
                 key={b.line_id}
                 href={`/dashboard/orders/${b.order_id}`}
-                className={`block rounded px-1.5 py-1 text-[10px] leading-tight ${
+                className={`block min-w-0 rounded px-1.5 py-1 leading-tight ${
                   b.status === 'IN_PROGRESS'
                     ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
                     : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                 }`}
                 title={`${b.order_code || b.customer_name} · ${b.route}`}
               >
-                <span className="block truncate font-medium">
+                <span className="block truncate text-[9px] font-medium">
                   {b.order_code || b.customer_name}
                 </span>
-                <span className="block truncate opacity-70">{b.route}</span>
+                <span className="block truncate text-[10px] opacity-70">
+                  {b.route}
+                </span>
               </Link>
             ))}
           </div>
