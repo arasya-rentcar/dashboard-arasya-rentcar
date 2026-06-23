@@ -9,6 +9,7 @@ import {
   Users,
   Car as CarIcon,
   Wrench,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScheduleWeek } from '@/hooks/useSchedule';
@@ -185,6 +186,16 @@ export default function WeekTimeline({
               })}
             </div>
 
+            {/* Unassigned lane: scheduled trips with no driver/car yet. */}
+            {data?.unassigned && (
+              <UnassignedLane
+                row={data.unassigned}
+                today={today}
+                days={days}
+                label={t('unassigned')}
+              />
+            )}
+
             {/* Resource rows */}
             {rows.length === 0 ? (
               <p className="py-8 text-center text-sm text-gray-400">
@@ -232,6 +243,68 @@ function CapacityBadge({
       {cap.trips > 0 && (
         <span className="text-gray-400">{cap.trips}t</span>
       )}
+    </div>
+  );
+}
+
+// Highlighted lane for scheduled-but-unassigned trips. Same day grid as a
+// resource row, but amber-styled to flag pending work that needs a driver/car.
+function UnassignedLane({
+  row,
+  today,
+  days,
+  label,
+}: {
+  row: WeekRow;
+  today: string;
+  days: string[];
+  label: string;
+}) {
+  return (
+    <div className="group grid grid-cols-[140px_repeat(7,1fr)] border-b border-amber-200 bg-amber-50/40">
+      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-amber-50 px-3 py-2 shadow-[1px_0_0_0_rgb(253,230,138)]">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <span className="min-w-0 flex-1 truncate text-xs font-semibold text-amber-700">
+          {label}
+        </span>
+      </div>
+      {row.cells.map((cell, i) => {
+        const isToday = days[i] === today;
+        if (cell.bookings.length === 0) {
+          return (
+            <div
+              key={i}
+              className={`min-h-[44px] border-l border-amber-100 ${
+                isToday ? 'bg-blue-50/30' : ''
+              }`}
+            />
+          );
+        }
+        return (
+          <div
+            key={i}
+            className={`min-h-[44px] min-w-0 space-y-1 overflow-hidden border-l border-amber-100 p-1 ${
+              isToday ? 'bg-blue-50/30' : ''
+            }`}
+          >
+            {cell.bookings.map((b) => (
+              <Link
+                key={b.line_id}
+                href={`/dashboard/orders/${b.order_id}`}
+                className="block min-w-0 rounded bg-amber-200 px-1.5 py-1 leading-tight text-amber-900 hover:bg-amber-300"
+                title={`${b.order_code || b.customer_name} · ${b.route}`}
+              >
+                <span className="block truncate text-[9px] font-medium">
+                  {b.order_code || b.customer_name}
+                </span>
+                <span className="block truncate text-[10px] opacity-80">
+                  {b.route}
+                </span>
+              </Link>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

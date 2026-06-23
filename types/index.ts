@@ -324,6 +324,9 @@ export interface ScheduleWeekResult {
   resource: 'drivers' | 'cars';
   days: string[];
   capacity: WeekDayCapacity[];
+  // Lane of scheduled-but-unassigned trips for the chosen resource (no driver in
+  // drivers view / no car in cars view). Null when everything is assigned.
+  unassigned?: WeekRow | null;
   rows: WeekRow[];
 }
 
