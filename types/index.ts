@@ -285,6 +285,48 @@ export interface ScheduleLine {
   } | null;
 }
 
+// ---- Week Timeline (Schedule > Timeline view) ----
+export interface WeekBooking {
+  line_id: string;
+  order_id?: string;
+  order_code?: string | null;
+  customer_name?: string;
+  route: string;
+  status: ScheduleStatus;
+}
+
+export interface WeekCell {
+  free: boolean;
+  bookings: WeekBooking[];
+}
+
+export interface WeekRow {
+  id: string;
+  name: string;
+  phone?: string | null;
+  plate_number?: string | null;
+  unit_code?: string | null;
+  down: boolean;
+  cells: WeekCell[];
+}
+
+export interface WeekDayCapacity {
+  date: string;
+  trips: number;
+  drivers: { total: number; down: number; used: number; free: number };
+  cars: { total: number; down: number; used: number; free: number };
+}
+
+export interface ScheduleWeekResult {
+  week_start: string;
+  week_end: string;
+  today: string;
+  resource: 'drivers' | 'cars';
+  days: string[];
+  capacity: WeekDayCapacity[];
+  rows: WeekRow[];
+}
+
 // A single driver report attached to a finished line (Trip History detail).
 export interface TripReportEntry {
   id: string;

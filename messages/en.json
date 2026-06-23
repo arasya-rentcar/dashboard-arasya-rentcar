@@ -922,7 +922,17 @@
     "date": "Date",
     "noBookings": "No bookings this day.",
     "tabSchedule": "Schedule",
-    "tabHistory": "History"
+    "tabHistory": "History",
+    "viewTimeline": "Timeline",
+    "viewList": "List"
+  },
+  "timeline": {
+    "title": "Availability Timeline",
+    "drivers": "Drivers",
+    "cars": "Cars",
+    "thisWeek": "This week",
+    "loading": "Loading…",
+    "noResources": "No resources to show."
   },
   "history": {
     "title": "Trip History",

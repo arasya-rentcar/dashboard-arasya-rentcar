@@ -177,6 +177,8 @@ export const scheduleApi = {
     api.get("/schedule/stock", { params }),
   history: (params: Record<string, string | number | undefined> = {}) =>
     api.get("/schedule/history", { params }),
+  week: (params: { from?: string; resource?: string } = {}) =>
+    api.get("/schedule/week", { params }),
   assignLine: (id: string, data: object) =>
     api.put(`/schedule/lines/${id}`, data),
   // #A1/#A2 trip-team confirmation (customer + driver). force=re-send.

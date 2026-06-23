@@ -6,6 +6,7 @@ import {
   DriverAvailabilityEntry,
   PaginationMeta,
   TripHistoryRow,
+  ScheduleWeekResult,
 } from '@/types';
 
 export interface ScheduleListParams {
@@ -100,6 +101,16 @@ export function useScheduleStock(date?: string) {
     queryKey: ['schedule-stock', date],
     queryFn: async () => {
       const res = await scheduleApi.stock({ date });
+      return res.data.data;
+    },
+  });
+}
+
+export function useScheduleWeek(from?: string, resource: 'drivers' | 'cars' = 'drivers') {
+  return useQuery<ScheduleWeekResult>({
+    queryKey: ['schedule-week', from ?? 'current', resource],
+    queryFn: async () => {
+      const res = await scheduleApi.week({ from, resource });
       return res.data.data;
     },
   });
