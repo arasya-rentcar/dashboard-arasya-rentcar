@@ -249,14 +249,23 @@ function TimelineRow({
     <div className="group grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-50 last:border-b-0">
       {/* Resource label (frozen first column) */}
       <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-white px-3 py-2 shadow-[1px_0_0_0_rgb(243,244,246)] group-hover:bg-gray-50/80">
-        <span
-          className={`truncate text-xs font-medium ${
-            row.down ? 'text-gray-300 line-through' : 'text-gray-700'
-          }`}
-          title={row.name}
-        >
-          {row.name}
-        </span>
+        <div className="min-w-0 flex-1">
+          <span
+            className={`block truncate text-xs font-medium ${
+              row.down ? 'text-gray-300 line-through' : 'text-gray-700'
+            }`}
+            title={
+              row.plate_number ? `${row.name} · ${row.plate_number}` : row.name
+            }
+          >
+            {row.name}
+          </span>
+          {row.plate_number && (
+            <span className="block truncate text-[10px] text-gray-400">
+              {row.plate_number}
+            </span>
+          )}
+        </div>
         {row.down && <Wrench className="h-3 w-3 shrink-0 text-gray-300" />}
       </div>
 

@@ -30,6 +30,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
 import WeekTimeline from '@/components/schedule/WeekTimeline';
+import DayDrawer from '@/components/schedule/DayDrawer';
 import HistoryTab from '@/components/schedule/HistoryTab';
 import ConfirmationCell from '@/components/schedule/ConfirmationCell';
 
@@ -104,12 +105,15 @@ export default function SchedulePage() {
 }
 
 function ScheduleTab() {
+  // Clicking a timeline day header opens the day drawer (assign-in-context).
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   return (
     <div className="space-y-6">
       {/* Read-only availability context: who's free before you assign. */}
-      <WeekTimeline />
+      <WeekTimeline onPickDay={setSelectedDay} />
       {/* Operational day-assignment list. */}
       <AgendaTab />
+      <DayDrawer date={selectedDay} onClose={() => setSelectedDay(null)} />
     </div>
   );
 }

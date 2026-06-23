@@ -225,6 +225,8 @@ export function useAssignScheduleLine() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-week'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stock'] });
       queryClient.invalidateQueries({ queryKey: ['driver-availability'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     },

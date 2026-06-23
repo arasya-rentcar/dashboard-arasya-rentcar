@@ -933,6 +933,25 @@
     "noResources": "Tidak ada sumber daya untuk ditampilkan.",
     "today": "Hari ini"
   },
+  "dayDrawer": {
+    "title": "Hari",
+    "loading": "Memuat…",
+    "freeDrivers": "Driver bebas",
+    "freeCars": "Mobil bebas",
+    "trips": "Perjalanan",
+    "noTrips": "Tidak ada perjalanan terjadwal hari ini.",
+    "unassigned": "Belum ditugaskan",
+    "assign": "Tugaskan",
+    "reassign": "Ganti",
+    "assignSuccess": "Penugasan tersimpan",
+    "driver": "Driver",
+    "car": "Mobil",
+    "selectDriver": "Pilih driver",
+    "selectCar": "Pilih mobil",
+    "onTrip": "Sedang jalan",
+    "cancel": "Batal",
+    "save": "Simpan"
+  },
   "history": {
     "title": "Riwayat Perjalanan",
     "search": "Cari",

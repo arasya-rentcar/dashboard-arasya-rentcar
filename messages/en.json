@@ -933,6 +933,25 @@
     "noResources": "No resources to show.",
     "today": "Today"
   },
+  "dayDrawer": {
+    "title": "Day",
+    "loading": "Loading…",
+    "freeDrivers": "Free drivers",
+    "freeCars": "Free cars",
+    "trips": "Trips",
+    "noTrips": "No trips scheduled this day.",
+    "unassigned": "Unassigned",
+    "assign": "Assign",
+    "reassign": "Reassign",
+    "assignSuccess": "Assignment saved",
+    "driver": "Driver",
+    "car": "Car",
+    "selectDriver": "Select driver",
+    "selectCar": "Select car",
+    "onTrip": "On trip",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
   "history": {
     "title": "Trip History",
     "search": "Search",
