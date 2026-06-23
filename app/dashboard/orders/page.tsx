@@ -318,7 +318,7 @@ function OrdersPageInner() {
               onChange={(e) => setFilter('search', e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Button variant="outline" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" /> {t('exportPage')}
             </Button>
