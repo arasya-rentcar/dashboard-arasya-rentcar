@@ -196,6 +196,10 @@ export interface Order {
   final_price: string;
   paid_to_date?: string | number;
   order_status: OrderStatus;
+  // True once every active day-line is DONE but the admin has not finalized the
+  // order yet (order_status stays IN_PROGRESS underneath). Drives the AWAITING
+  // FINALIZATION badge + Finalize button + "Needs Finalization" list filter.
+  awaiting_finalization?: boolean;
   payment_status: PaymentStatus;
   // Sprint 5: refund settlement.
   is_refunded?: boolean;

@@ -58,6 +58,9 @@ export const ordersApi = {
   // Full-order cancellation. Server computes the cancellation-fee tier/penalty.
   cancel: (id: string, data: { reason: string }) =>
     api.post(`/orders/${id}/cancel`, data),
+  // Admin-only order finalization. Valid once every active day-line is DONE
+  // (driver finished all service days). Sets order_status = DONE.
+  finalize: (id: string) => api.post(`/orders/${id}/finalize`, {}),
   generateInvoice: (id: string, data: object) =>
     api.post(`/orders/${id}/generate-invoice`, data),
   reviseInvoice: (id: string, invoiceId: string, data: object) =>

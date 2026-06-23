@@ -360,6 +360,7 @@ function OrdersPageInner() {
           {[
             ['ALL', t('bucketAll')],
             ['ACTIVE', t('bucketActive')],
+            ['AWAITING_FINAL', t('bucketAwaitingFinal')],
             ['MISSING_INVOICE', t('bucketMissingInvoice')],
             ['NOT_FINAL', t('bucketNotFinal')],
             ['CANCELLED', t('bucketCancelled')],

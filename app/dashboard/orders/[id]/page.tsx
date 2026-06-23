@@ -61,6 +61,7 @@ import {
   useMarkInvoicePaid,
   useMarkRefunded,
   useCancelOrder,
+  useFinalizeOrder,
   type CancelOrderResult,
 } from "@/hooks/useOrders";
 import {
@@ -112,6 +113,7 @@ export default function OrderDetailPage({
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelResult, setCancelResult] = useState<CancelOrderResult | null>(
     null,
@@ -124,6 +126,7 @@ export default function OrderDetailPage({
   const assignMutation = useAssignOrder();
   const reassignMutation = useReassignOrder();
   const cancelMutation = useCancelOrder();
+  const finalizeMutation = useFinalizeOrder();
   const updateOrderMutation = useUpdateOrder();
   const generateInvoiceMutation = useGenerateInvoice();
   const reviseInvoiceMutation = useReviseInvoice();
@@ -457,6 +460,16 @@ export default function OrderDetailPage({
     }
   }
 
+  async function handleFinalizeOrder() {
+    try {
+      await finalizeMutation.mutateAsync({ id });
+      setFinalizeOpen(false);
+      toast.success(t("okOrderFinalized"));
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
   // Adapt an order service line into the ScheduleLine shape the per-day
   // assignment dialog expects (same underlying record / API route).
   function openDayAssign(item: OrderServiceItem) {
@@ -632,6 +645,14 @@ export default function OrderDetailPage({
                   {t('refunded')}
                 </Badge>
               )}
+              {order.awaiting_finalization && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-amber-50 text-amber-700 border-amber-200"
+                >
+                  {t('awaitingFinalization')}
+                </Badge>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -654,6 +675,16 @@ export default function OrderDetailPage({
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {t('markRefund')}
+              </Button>
+            )}
+            {order.awaiting_finalization && (
+              <Button
+                onClick={() => setFinalizeOpen(true)}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                {t('finalizeOrder')}
               </Button>
             )}
             {order.order_status !== "DONE" &&
@@ -1517,6 +1548,47 @@ export default function OrderDetailPage({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Finalize Order Dialog (admin-authoritative DONE). Ops cost / additional
+          / driver fee are SOFT; if additionals exist we remind the admin to
+          double-check finance before closing the order. */}
+      <Dialog open={finalizeOpen} onOpenChange={setFinalizeOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('finalizeOrder')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {order.adjustments && order.adjustments.length > 0 ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-2 text-sm text-amber-800">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <p>{t('finalizeAdditionalWarning')}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">{t('finalizeConfirmHint')}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setFinalizeOpen(false)}
+              >
+                {tc('cancel')}
+              </Button>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleFinalizeOrder}
+                disabled={finalizeMutation.isPending}
+              >
+                {finalizeMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {t('finalizeConfirm')}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardShell>

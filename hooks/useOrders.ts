@@ -203,6 +203,21 @@ export function useCancelOrder() {
   });
 }
 
+// Admin-only finalize: order_status -> DONE. Only valid once every active
+// day-line is DONE (server enforces a 409 otherwise).
+export function useFinalizeOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const res = await ordersApi.finalize(id);
+      return res.data.data;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateOrderViews(queryClient, variables.id);
+    },
+  });
+}
+
 export function useGenerateInvoice() {
   const queryClient = useQueryClient();
   return useMutation({
