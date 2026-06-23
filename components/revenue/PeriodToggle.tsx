@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, Check, ChevronDown, Link2, Link2Off } from "lucide-react";
+import { CalendarDays, Check, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useTranslations } from "next-intl";
 import {
   describePeriod,
@@ -27,15 +26,12 @@ const PRESETS: PeriodPreset[] = [
   "THIS_YEAR",
 ];
 
-// Compact period selector shared by all revenue panels. Shows presets + a
-// custom range, plus a link/unlink control: "linked" surfaces follow the global
-// shared period; "unlinked" hold their own. A subtle "lokal" badge signals the
-// override so the period is never misread.
+// Compact period selector for a revenue panel. Each surface keeps its own,
+// independent date range. Shows presets + a custom range.
 export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
   const tp = useTranslations("period");
   const tc = useTranslations("common");
-  const { period, linked, setPeriod, unlink, relink } =
-    useRevenuePeriod(surface);
+  const { period, setPeriod } = useRevenuePeriod(surface);
   const [customOpen, setCustomOpen] = useState(period.preset === "CUSTOM");
   const [from, setFrom] = useState(period.date_from ?? "");
   const [to, setTo] = useState(period.date_to ?? "");
@@ -56,7 +52,7 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
       : tp(period.preset);
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
@@ -129,37 +125,6 @@ export default function PeriodToggle({ surface }: { surface: RevenueSurface }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-
-      {/* Link / unlink: shared vs per-surface period. */}
-      {linked ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 text-gray-400 hover:text-gray-700"
-          title={tp("linkedTitle")}
-          onClick={unlink}
-        >
-          <Link2 className="h-4 w-4" />
-        </Button>
-      ) : (
-        <div className="flex items-center gap-1">
-          <Badge
-            variant="outline"
-            className="h-6 border-amber-200 bg-amber-50 px-1.5 text-[10px] text-amber-700"
-          >
-            {tp("localBadge")}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-amber-600 hover:text-amber-800"
-            title={tp("unlinkedTitle")}
-            onClick={relink}
-          >
-            <Link2Off className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

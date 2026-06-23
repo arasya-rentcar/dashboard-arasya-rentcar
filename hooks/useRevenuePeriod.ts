@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RevenuePeriod } from "@/lib/revenuePeriod";
 
-// Surfaces that can carry their own (overridden) revenue period.
+// Surfaces that each carry their OWN, independent revenue period.
 export type RevenueSurface = "dashboard" | "cars" | "external";
 
-const SHARED_KEY = "arasya.revenuePeriod.shared";
-const OVERRIDES_KEY = "arasya.revenuePeriod.overrides";
+const PERIODS_KEY = "arasya…ods";
 const EVENT = "arasya:revenue-period";
 
 const DEFAULT_PERIOD: RevenuePeriod = { preset: "THIS_MONTH" };
@@ -33,25 +32,18 @@ function write(key: string, value: unknown) {
   window.dispatchEvent(new Event(EVENT));
 }
 
-type Overrides = Partial<Record<RevenueSurface, RevenuePeriod>>;
+type Periods = Partial<Record<RevenueSurface, RevenuePeriod>>;
 
 /**
- * Shared-by-default revenue period with per-surface override.
- *
- *  - `linked` (default): the surface follows the shared period; changing it
- *    here changes it for every linked surface.
- *  - unlinked: the surface keeps its own period until re-linked.
- *
- * Returns the effective period plus controls. `linked` tells the UI which mode
- * the surface is in so it can show a "lokal" badge.
+ * Per-surface revenue period. Each surface (dashboard / cars / external) keeps
+ * its OWN date range, independent of the others, persisted in localStorage.
+ * Changing one page's period never affects another page.
  */
 export function useRevenuePeriod(surface: RevenueSurface) {
-  const [shared, setShared] = useState<RevenuePeriod>(DEFAULT_PERIOD);
-  const [overrides, setOverrides] = useState<Overrides>({});
+  const [periods, setPeriods] = useState<Periods>({});
 
   const sync = useCallback(() => {
-    setShared(read<RevenuePeriod>(SHARED_KEY, DEFAULT_PERIOD));
-    setOverrides(read<Overrides>(OVERRIDES_KEY, {}));
+    setPeriods(read<Periods>(PERIODS_KEY, {}));
   }, []);
 
   useEffect(() => {
@@ -65,36 +57,16 @@ export function useRevenuePeriod(surface: RevenueSurface) {
     };
   }, [sync]);
 
-  const override = overrides[surface];
-  const linked = !override;
-  const period = override ?? shared;
+  const period = periods[surface] ?? DEFAULT_PERIOD;
 
-  // Update this surface's period. If linked, update the shared period (affects
-  // all linked surfaces); if unlinked, update only this surface's override.
+  // Update only this surface's period; other surfaces are untouched.
   const setPeriod = useCallback(
     (next: RevenuePeriod) => {
-      if (linked) {
-        write(SHARED_KEY, next);
-      } else {
-        const current = read<Overrides>(OVERRIDES_KEY, {});
-        write(OVERRIDES_KEY, { ...current, [surface]: next });
-      }
+      const current = read<Periods>(PERIODS_KEY, {});
+      write(PERIODS_KEY, { ...current, [surface]: next });
     },
-    [linked, surface],
+    [surface],
   );
 
-  // Unlink: snapshot the current effective period as this surface's override.
-  const unlink = useCallback(() => {
-    const current = read<Overrides>(OVERRIDES_KEY, {});
-    write(OVERRIDES_KEY, { ...current, [surface]: period });
-  }, [surface, period]);
-
-  // Re-link: drop this surface's override so it follows the shared period.
-  const relink = useCallback(() => {
-    const current = read<Overrides>(OVERRIDES_KEY, {});
-    delete current[surface];
-    write(OVERRIDES_KEY, current);
-  }, [surface]);
-
-  return { period, linked, setPeriod, unlink, relink, sharedPeriod: shared };
+  return { period, setPeriod };
 }
