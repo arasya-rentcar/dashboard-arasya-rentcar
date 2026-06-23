@@ -51,6 +51,47 @@ interface Props<T extends { service_items: ServiceItemFormValue[] }> {
   errors: FieldErrors<T>;
 }
 
+// Auto drop-off placeholder from service_kind, mirroring the WA bot rule.
+// Inputs/outputs are `datetime-local` strings ("YYYY-MM-DDTHH:mm") which the
+// admin reads as WIB wall-clock. The real finish still comes from the driver
+// report; this only pre-fills an empty Dropoff Time.
+//   12H      -> pickup + 12h (may cross midnight)
+//   FULLDAY  -> 23:00 same day as pickup
+//   DROP     -> 23:00 same day as pickup
+export function computeAutoEnd(
+  startLocal: string,
+  serviceKind?: string,
+): string {
+  if (!serviceKind) return "";
+  const m = String(startLocal || "").match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/,
+  );
+  if (serviceKind === "FULLDAY" || serviceKind === "DROP") {
+    if (!m) return "";
+    return `${m[1]}-${m[2]}-${m[3]}T23:00`;
+  }
+  if (serviceKind === "12H") {
+    if (!m) return "";
+    // Treat the local wall-clock as UTC purely for +12h arithmetic, then read
+    // the same fields back — no timezone shift, just date/clock rollover.
+    const d = new Date(
+      Date.UTC(
+        Number(m[1]),
+        Number(m[2]) - 1,
+        Number(m[3]),
+        Number(m[4]),
+        Number(m[5]),
+      ) +
+        12 * 3600 * 1000,
+    );
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(
+      d.getUTCDate(),
+    )}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+  }
+  return "";
+}
+
 function newItem(): ServiceItemFormValue {
   return {
     service_date: "",
@@ -170,6 +211,24 @@ export default function OrderServiceItemsEditor<
                     className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     {...register(
                       `service_items.${index}.service_kind` as never,
+                      {
+                        onChange: (e) => {
+                          const kind = e.target.value as string;
+                          const start = (items?.[index]?.start_at ||
+                            "") as string;
+                          const end = (items?.[index]?.end_at || "") as string;
+                          // Only auto-fill when admin hasn't set a finish time.
+                          if (!end) {
+                            const auto = computeAutoEnd(start, kind);
+                            if (auto)
+                              setValue(
+                                `service_items.${index}.end_at` as never,
+                                auto as never,
+                                { shouldDirty: true },
+                              );
+                          }
+                        },
+                      },
                     )}
                   >
                     {DURASI_OPTIONS.map((option) => (
@@ -225,7 +284,23 @@ export default function OrderServiceItemsEditor<
                   <Input
                     type="datetime-local"
                     step={60}
-                    {...register(`service_items.${index}.start_at` as never)}
+                    {...register(`service_items.${index}.start_at` as never, {
+                      onChange: (e) => {
+                        const start = e.target.value as string;
+                        const kind = (items?.[index]?.service_kind ||
+                          "") as string;
+                        const end = (items?.[index]?.end_at || "") as string;
+                        if (!end) {
+                          const auto = computeAutoEnd(start, kind);
+                          if (auto)
+                            setValue(
+                              `service_items.${index}.end_at` as never,
+                              auto as never,
+                              { shouldDirty: true },
+                            );
+                        }
+                      },
+                    })}
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
