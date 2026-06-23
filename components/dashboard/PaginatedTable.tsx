@@ -81,7 +81,8 @@ export default function PaginatedTable<T>({
               ))}
             </div>
           ) : pageRows.length > 0 ? (
-            <table className="w-full text-sm">
+            <div className="w-full overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
@@ -118,6 +119,7 @@ export default function PaginatedTable<T>({
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="px-6 py-10 text-center text-sm text-gray-400">
               {emptyText}
