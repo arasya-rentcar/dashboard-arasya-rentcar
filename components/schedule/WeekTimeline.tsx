@@ -45,6 +45,18 @@ function todayWibYmd(): string {
   return wib.toISOString().slice(0, 10);
 }
 
+// Compact week-range label, e.g. "22–28 Jun" or "29 Jun–5 Jul" (cross-month).
+function weekRangeLabel(start: string, end: string, locale: string): string {
+  const s = parseYmd(start);
+  const e = parseYmd(end);
+  const mon = (d: Date) =>
+    new Intl.DateTimeFormat(locale, { month: 'short' }).format(d);
+  const sameMonth = s.getMonth() === e.getMonth();
+  return sameMonth
+    ? `${s.getDate()}–${e.getDate()} ${mon(e)}`
+    : `${s.getDate()} ${mon(s)} – ${e.getDate()} ${mon(e)}`;
+}
+
 export default function WeekTimeline({
   onPickDay,
 }: {
@@ -60,6 +72,13 @@ export default function WeekTimeline({
   const rows = data?.rows ?? [];
   const capacity = data?.capacity ?? [];
   const today = data?.today ?? todayWibYmd();
+  // Are we viewing the week that contains today? (controls the middle button).
+  const onCurrentWeek =
+    !!data && today >= data.week_start && today <= data.week_end;
+  const rangeLabel =
+    data && days.length
+      ? weekRangeLabel(data.week_start, data.week_end, 'id-ID')
+      : '';
 
   function prevWeek() {
     setFrom(shiftYmd(data?.week_start ?? todayWibYmd(), -7));
@@ -75,8 +94,13 @@ export default function WeekTimeline({
     <div className="rounded-xl border border-gray-200 bg-white">
       {/* Header: title, resource toggle, week nav */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
+            {rangeLabel && (
+              <p className="text-xs text-gray-400">{rangeLabel}</p>
+            )}
+          </div>
           <div className="flex rounded-lg bg-gray-100 p-0.5">
             <button
               onClick={() => setResource('drivers')}
@@ -104,8 +128,15 @@ export default function WeekTimeline({
           <Button variant="outline" size="sm" onClick={prevWeek}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={thisWeek}>
-            {t('thisWeek')}
+          {/* Middle button: a passive "This week" label when already on the
+              current week, or an active "Today" jump-back once navigated away. */}
+          <Button
+            variant={onCurrentWeek ? 'outline' : 'default'}
+            size="sm"
+            onClick={thisWeek}
+            disabled={onCurrentWeek}
+          >
+            {onCurrentWeek ? t('thisWeek') : t('today')}
           </Button>
           <Button variant="outline" size="sm" onClick={nextWeek}>
             <ChevronRight className="h-4 w-4" />
@@ -120,7 +151,7 @@ export default function WeekTimeline({
           <div className="min-w-[760px]">
             {/* Day header row with capacity ribbon */}
             <div className="grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-100">
-              <div className="px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-gray-400">
+              <div className="sticky left-0 z-20 bg-white px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-gray-400 shadow-[1px_0_0_0_rgb(243,244,246)]">
                 {resource === 'drivers' ? t('drivers') : t('cars')}
               </div>
               {days.map((d, i) => {
@@ -215,9 +246,9 @@ function TimelineRow({
   days: string[];
 }) {
   return (
-    <div className="grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-50 last:border-b-0">
-      {/* Resource label */}
-      <div className="flex items-center gap-1.5 px-3 py-2">
+    <div className="group grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-50 last:border-b-0">
+      {/* Resource label (frozen first column) */}
+      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-white px-3 py-2 shadow-[1px_0_0_0_rgb(243,244,246)] group-hover:bg-gray-50/80">
         <span
           className={`truncate text-xs font-medium ${
             row.down ? 'text-gray-300 line-through' : 'text-gray-700'

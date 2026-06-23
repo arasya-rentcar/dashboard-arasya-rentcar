@@ -922,9 +922,7 @@
     "date": "Tanggal",
     "noBookings": "Tidak ada booking hari ini.",
     "tabSchedule": "Jadwal",
-    "tabHistory": "Riwayat",
-    "viewTimeline": "Linimasa",
-    "viewList": "Daftar"
+    "tabHistory": "Riwayat"
   },
   "timeline": {
     "title": "Linimasa Ketersediaan",
@@ -932,7 +930,8 @@
     "cars": "Mobil",
     "thisWeek": "Minggu ini",
     "loading": "Memuat…",
-    "noResources": "Tidak ada sumber daya untuk ditampilkan."
+    "noResources": "Tidak ada sumber daya untuk ditampilkan.",
+    "today": "Hari ini"
   },
   "history": {
     "title": "Riwayat Perjalanan",

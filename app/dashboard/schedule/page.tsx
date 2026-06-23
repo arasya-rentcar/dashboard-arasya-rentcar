@@ -3,14 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import {
-  Search,
-  CalendarCheck,
-  ExternalLink,
-  History,
-  LayoutGrid,
-  List as ListIcon,
-} from 'lucide-react';
+import { Search, CalendarCheck, ExternalLink, History } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +29,6 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
-import StockTab from '@/components/schedule/StockTab';
 import WeekTimeline from '@/components/schedule/WeekTimeline';
 import HistoryTab from '@/components/schedule/HistoryTab';
 import ConfirmationCell from '@/components/schedule/ConfirmationCell';
@@ -112,41 +104,11 @@ export default function SchedulePage() {
 }
 
 function ScheduleTab() {
-  const tx = useTranslations('schedule');
-  // Availability panel view: resource timeline (default) or the stock list.
-  const [view, setView] = useState<'timeline' | 'list'>('timeline');
-
   return (
     <div className="space-y-6">
-      {/* Availability context (read-only): who/what is free before you assign. */}
-      <div className="space-y-3">
-        <div className="flex justify-end">
-          <div className="flex rounded-lg bg-gray-100 p-0.5">
-            <button
-              onClick={() => setView('timeline')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
-                view === 'timeline'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500'
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" /> {tx('viewTimeline')}
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
-                view === 'list'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500'
-              }`}
-            >
-              <ListIcon className="h-3.5 w-3.5" /> {tx('viewList')}
-            </button>
-          </div>
-        </div>
-        {view === 'timeline' ? <WeekTimeline /> : <StockTab />}
-      </div>
-      {/* Operational day-assignment list (kept as-is). */}
+      {/* Read-only availability context: who's free before you assign. */}
+      <WeekTimeline />
+      {/* Operational day-assignment list. */}
       <AgendaTab />
     </div>
   );
