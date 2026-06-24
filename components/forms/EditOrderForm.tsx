@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Order } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { expandServiceItemsByDays } from "@/lib/expandServiceItems";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
 } from "./OrderServiceItemsEditor";
@@ -174,21 +175,23 @@ export default function EditOrderForm({
       service_end_at: iso(values.service_items[0]?.end_at),
       final_price: newPrice,
       change_reason: priceChanged ? values.change_reason : undefined,
-      service_items: values.service_items.map((item, index) => ({
-        service_date: dateIso(item.service_date),
-        start_at: iso(item.start_at),
-        end_at: iso(item.end_at),
-        description: item.description || undefined,
-        service_kind: item.service_kind || undefined,
-        service_package: item.service_package || undefined,
-        pickup_location: item.pickup_location,
-        dropoff_location: item.dropoff_location,
-        quantity: Number(item.quantity || 1),
-        unit_price: Number(item.unit_price || 0),
-        total_price: Number(item.quantity || 1) * Number(item.unit_price || 0),
-        notes: item.notes || undefined,
-        sort_order: index,
-      })),
+      service_items: expandServiceItemsByDays(values.service_items).map(
+        (item, index) => ({
+          service_date: dateIso(item.service_date),
+          start_at: iso(item.start_at),
+          end_at: iso(item.end_at),
+          description: item.description || undefined,
+          service_kind: item.service_kind || undefined,
+          service_package: item.service_package || undefined,
+          pickup_location: item.pickup_location,
+          dropoff_location: item.dropoff_location,
+          quantity: 1,
+          unit_price: Number(item.unit_price || 0),
+          total_price: Number(item.unit_price || 0),
+          notes: item.notes || undefined,
+          sort_order: index,
+        }),
+      ),
     });
   }
   return (
