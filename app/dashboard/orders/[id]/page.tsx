@@ -73,6 +73,7 @@ import {
   formatDate,
   formatDateTime,
   getErrorMessage,
+  isoToWibDate,
 } from "@/lib/utils";
 import {
   GenerateInvoiceInput,
@@ -339,7 +340,7 @@ export default function OrderDetailPage({
     const items = order?.service_items ?? [];
     if (!items.length) return null;
     const dayKey = (d?: string | null) =>
-      d ? new Date(d).toISOString().slice(0, 10) : "no-date";
+      d ? isoToWibDate(d) : "no-date";
 
     const groupMap = new Map<
       string,
@@ -364,7 +365,7 @@ export default function OrderDetailPage({
     const dates = items
       .map((it) => it.service_date)
       .filter((d): d is string => !!d)
-      .map((d) => new Date(d).toISOString().slice(0, 10))
+      .map((d) => isoToWibDate(d))
       .sort();
     const total = items.reduce(
       (sum, it) => sum + Number(it.total_price || 0),
@@ -432,9 +433,9 @@ export default function OrderDetailPage({
 
     // 4) Nothing started by status. Calendar tiebreak: if today is on/after a
     //    scheduled day, surface the calendar day so a forgotten START isn't a lie.
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = isoToWibDate(new Date().toISOString());
     const datedKeys = groups
-      .map((g) => (g.date ? new Date(g.date).toISOString().slice(0, 10) : null))
+      .map((g) => (g.date ? isoToWibDate(g.date) : null))
       .filter((k): k is string => !!k)
       .sort();
     const elapsed = datedKeys.filter((k) => k <= todayKey).length;
