@@ -60,6 +60,35 @@ export function formatTimeWib(date: string): string {
   }).format(new Date(date));
 }
 
+// Form values are entered as WIB wall-clock time. Convert with a FIXED +07:00
+// offset so the stored instant never depends on the browser's timezone.
+const WIB_MS = 7 * 3600 * 1000;
+
+/** "YYYY-MM-DDTHH:mm" (datetime-local, WIB) -> ISO string. */
+export function wibDateTimeToIso(v?: string | null): string | undefined {
+  if (!v) return undefined;
+  const d = new Date(`${v.length === 16 ? `${v}:00` : v}+07:00`);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+/** "YYYY-MM-DD" (WIB calendar day) -> ISO string at 00:00 WIB. */
+export function wibDateToIso(v?: string | null): string | undefined {
+  return v ? wibDateTimeToIso(`${v}T00:00`) : undefined;
+}
+
+/** ISO string -> "YYYY-MM-DDTHH:mm" in WIB (for datetime-local inputs). */
+export function isoToWibDateTimeLocal(v?: string | null): string {
+  if (!v) return '';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Date(d.getTime() + WIB_MS).toISOString().slice(0, 16);
+}
+
+/** ISO string -> "YYYY-MM-DD" in WIB (for date inputs). */
+export function isoToWibDate(v?: string | null): string {
+  return isoToWibDateTimeLocal(v).slice(0, 10);
+}
+
 export function exportToCsv(
   filename: string,
   rows: Record<string, unknown>[],

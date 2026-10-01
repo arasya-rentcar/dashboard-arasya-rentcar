@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Order } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import {
+  formatCurrency,
+  isoToWibDate,
+  isoToWibDateTimeLocal,
+  wibDateToIso,
+  wibDateTimeToIso,
+} from "@/lib/utils";
 import { expandServiceItemsByDays } from "@/lib/expandServiceItems";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
@@ -57,22 +63,10 @@ interface Props {
   onSubmit: (data: any) => Promise<void>;
   isLoading: boolean;
 }
-function toDateTimeLocal(value?: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  const tzOffset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
-}
-function toDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
-}
-function iso(v?: string) {
-  return v ? new Date(v).toISOString() : undefined;
-}
-function dateIso(v?: string) {
-  return v ? new Date(`${v}T00:00:00`).toISOString() : undefined;
-}
+const toDateTimeLocal = isoToWibDateTimeLocal;
+const toDate = isoToWibDate;
+const iso = wibDateTimeToIso;
+const dateIso = wibDateToIso;
 
 export default function EditOrderForm({
   order,

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, wibDateToIso, wibDateTimeToIso } from "@/lib/utils";
 import { expandServiceItemsByDays } from "@/lib/expandServiceItems";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
@@ -65,12 +65,8 @@ interface Props {
   isLoading: boolean;
   prefill?: CreateOrderPrefill | null;
 }
-function iso(v?: string) {
-  return v ? new Date(v).toISOString() : undefined;
-}
-function dateIso(v?: string) {
-  return v ? new Date(`${v}T00:00:00`).toISOString() : undefined;
-}
+const iso = wibDateTimeToIso;
+const dateIso = wibDateToIso;
 const defaultItem: ServiceItemFormValue = {
   service_date: "",
   start_at: "",
