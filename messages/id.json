@@ -493,7 +493,7 @@
     "fromLead": "Dari lead website {code}. Data perjalanan sudah terisi; lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan.",
     "phoneRequiredFromLead": "Isi nomor WhatsApp pelanggan dari chat",
     "leadReturnHint": "Lead ini minta paket pulang-pergi / multi-hari. Layanan diisi 12 Jam; sesuaikan jumlah hari, durasi, dan harga.",
-    "leadNeedPartnerHint": "Unit ini tidak ada di armada Arasya — pilih Vendor/rekanan di bagian 'Order Fulfilled By'."
+    "leadNeedPartnerHint": "Unit ini tidak ada di armada Arasya — pilih Vendor/rekanan di bagian 'Pelaksana Order'."
   },
   "guide": {
     "title": "Panduan",
