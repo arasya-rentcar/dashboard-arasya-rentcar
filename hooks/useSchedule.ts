@@ -7,6 +7,7 @@ import {
   PaginationMeta,
   TripHistoryRow,
   ScheduleWeekResult,
+  SendConfirmationResult,
 } from '@/types';
 
 export interface ScheduleListParams {
@@ -244,7 +245,8 @@ export function useSendConfirmation() {
       force?: boolean;
     }) => {
       const res = await scheduleApi.sendConfirmation(id, { force });
-      return res.data.data;
+      // data.customer.wa_url is set in manual WhatsApp mode.
+      return res.data.data as SendConfirmationResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['schedule'] });

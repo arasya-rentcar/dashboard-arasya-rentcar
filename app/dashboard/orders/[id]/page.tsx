@@ -17,6 +17,10 @@ import {
   Clock,
   Ban,
   Lock,
+  UserCheck,
+  Hourglass,
+  Car,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -77,6 +81,7 @@ import {
   OrderStatus,
 } from "@/types";
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from "@/lib/statusStyles";
+import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
 
 const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
   CREATED: "statusCreated",
@@ -149,14 +154,17 @@ export default function OrderDetailPage({
       toast.error(t("okNoPhone"));
       return;
     }
+    const wa = openWaWindow();
     try {
-      await sendInvoiceMutation.mutateAsync({
+      const result = await sendInvoiceMutation.mutateAsync({
         id,
         invoiceId: invoice.id,
         data: { target_phone: phone, target_name: name },
       });
-      toast.success(t("okInvoiceSent", { number: invoice.invoice_number }));
+      if (wa.finish(extractWaUrl(result))) toast.success(tc("waOpened"));
+      else toast.success(t("okInvoiceSent", { number: invoice.invoice_number }));
     } catch (err) {
+      wa.cancel();
       toast.error(getErrorMessage(err));
     }
   }
@@ -174,14 +182,17 @@ export default function OrderDetailPage({
       toast.error(t("okNoPhone"));
       return;
     }
+    const wa = openWaWindow();
     try {
-      await sendReceiptMutation.mutateAsync({
+      const result = await sendReceiptMutation.mutateAsync({
         id,
         invoiceId: invoice.id,
         data: { target_phone: phone, target_name: name },
       });
-      toast.success(t("okReceiptSent", { number: invoice.invoice_number }));
+      if (wa.finish(extractWaUrl(result))) toast.success(tc("waOpened"));
+      else toast.success(t("okReceiptSent", { number: invoice.invoice_number }));
     } catch (err) {
+      wa.cancel();
       toast.error(getErrorMessage(err));
     }
   }
@@ -950,6 +961,13 @@ export default function OrderDetailPage({
                                 .filter(Boolean)
                                 .join(" · ");
                               const isLive = item.line_status === "IN_PROGRESS";
+                              // Internal driver set but the trip not yet accepted
+                              // in the driver app.
+                              const awaitingAccept =
+                                !!item.driver?.id &&
+                                !item.driver_accepted_at &&
+                                (item.line_status === "SCHEDULED" ||
+                                  item.line_status === "ASSIGNED");
                               return (
                                 <div
                                   key={item.id || index}
@@ -1033,6 +1051,42 @@ export default function OrderDetailPage({
                                           </span>
                                         )}
                                       </div>
+                                      {(item.driver_accepted_at ||
+                                        awaitingAccept) && (
+                                        <div className="mt-1.5 text-[11px]">
+                                          {item.driver_accepted_at ? (
+                                            <span className="inline-flex items-center gap-1 text-blue-700">
+                                              <UserCheck className="h-3 w-3" />
+                                              {t('driverAccepted')}:{" "}
+                                              {formatDateTime(item.driver_accepted_at)}
+                                            </span>
+                                          ) : (
+                                            <span className="inline-flex items-center gap-1 text-gray-400 italic">
+                                              <Hourglass className="h-3 w-3" />
+                                              {t('driverNotAccepted')}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      {(item.actual_start_at ||
+                                        item.actual_pickup_at) && (
+                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-600">
+                                          {item.actual_start_at && (
+                                            <span className="inline-flex items-center gap-1">
+                                              <Car className="h-3 w-3 text-gray-400" />
+                                              {t('actualDeparted')}:{" "}
+                                              {formatDateTime(item.actual_start_at)}
+                                            </span>
+                                          )}
+                                          {item.actual_pickup_at && (
+                                            <span className="inline-flex items-center gap-1">
+                                              <MapPin className="h-3 w-3 text-gray-400" />
+                                              {t('actualArrivedPickup')}:{" "}
+                                              {formatDateTime(item.actual_pickup_at)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
                                       {(item.trip_started_at ||
                                         item.trip_finished_at) && (
                                         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">

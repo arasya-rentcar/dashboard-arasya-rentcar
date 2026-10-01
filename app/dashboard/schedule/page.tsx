@@ -38,6 +38,7 @@ const PAGE_SIZE = 30;
 
 const STATUS_STYLES: Record<ScheduleStatus, string> = {
   SCHEDULED: 'bg-blue-50 text-blue-700 border-blue-200',
+  ASSIGNED: 'bg-blue-50 text-blue-700 border-blue-200',
   IN_PROGRESS: 'bg-amber-50 text-amber-700 border-amber-200',
   DONE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   CANCELLED: 'bg-red-50 text-red-700 border-red-200',
@@ -250,6 +251,7 @@ function AgendaTab() {
               <SelectContent>
                 <SelectItem value="ALL">{tx('allStatus')}</SelectItem>
                 <SelectItem value="SCHEDULED">{tx('statusScheduled')}</SelectItem>
+                <SelectItem value="ASSIGNED">{tx('statusAssigned')}</SelectItem>
                 <SelectItem value="IN_PROGRESS">{tx('statusInProgress')}</SelectItem>
                 <SelectItem value="DONE">{tx('statusDone')}</SelectItem>
                 <SelectItem value="CANCELLED">{tx('statusCancelled')}</SelectItem>

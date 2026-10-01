@@ -234,6 +234,9 @@ export const driversApi = {
   detail: (id: string) => api.get(`/drivers/${id}/detail`),
   create: (data: object) => api.post("/drivers", data),
   update: (id: string, data: object) => api.put(`/drivers/${id}`, data),
+  // Driver app login: the driver signs in with their phone number + this password.
+  setAppPassword: (id: string, password: string) =>
+    api.put(`/drivers/${id}/app-password`, { password }),
 };
 
 // ─── Cars ─────────────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   MapPin,
   FileText,
   ExternalLink,
+  Smartphone,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,16 @@ import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { TripHistoryRow } from '@/types';
 
 const PAGE_SIZE = 20;
+
+// Human label for a TripReport.report_type (driver app + WhatsApp bot types).
+// Unknown types fall back to the raw string.
+function useReportTypeLabel() {
+  const t = useTranslations('history');
+  return (type: string) => {
+    const key = `reportType.${type}`;
+    return !type.includes('.') && t.has(key) ? t(key) : type;
+  };
+}
 
 function todayStr() {
   const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
@@ -207,7 +218,13 @@ function HistoryRow({
   onToggle: () => void;
 }) {
   const t = useTranslations('history');
+  const reportLabel = useReportTypeLabel();
   const awaiting = row.finance_status === 'AWAITING';
+  // Internal driver set but the trip not yet accepted in the driver app.
+  const awaitingAccept =
+    !!row.driver?.id &&
+    !row.driver_accepted_at &&
+    (row.line_status === 'SCHEDULED' || row.line_status === 'ASSIGNED');
   const driverLabel = row.is_external
     ? row.external_vendor?.name || t('externalVendor')
     : row.driver?.name || '—';
@@ -287,6 +304,16 @@ function HistoryRow({
                 <Clock className="h-3.5 w-3.5" /> {t('timeline')}
               </h4>
               <ul className="space-y-1.5 text-sm">
+                {row.driver_accepted_at ? (
+                  <TimelineItem
+                    label={t('tsDriverAccepted')}
+                    value={row.driver_accepted_at}
+                  />
+                ) : awaitingAccept ? (
+                  <li className="text-xs italic text-gray-400">
+                    {t('driverNotAccepted')}
+                  </li>
+                ) : null}
                 <TimelineItem
                   label={t('tsDepart')}
                   value={row.actual_start_at}
@@ -377,16 +404,34 @@ function HistoryRow({
                       className="rounded-lg border border-gray-200 bg-white p-2 text-xs"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <Badge
-                          variant="outline"
-                          className="bg-gray-50 text-gray-700 border-gray-200 text-[10px]"
-                        >
-                          {r.report_type}
-                        </Badge>
-                        <span className="text-gray-400">
+                        <span className="flex flex-wrap items-center gap-1">
+                          <Badge
+                            variant="outline"
+                            className="bg-gray-50 text-gray-700 border-gray-200 text-[10px]"
+                          >
+                            {reportLabel(r.report_type)}
+                          </Badge>
+                          {r.source === 'API' && (
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] gap-0.5"
+                            >
+                              <Smartphone className="h-2.5 w-2.5" />
+                              {t('sourceApp')}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-gray-400 shrink-0">
                           {formatDateTime(r.created_at)}
                         </span>
                       </div>
+                      {r.amount != null && r.amount !== '' && (
+                        <p className="mt-1 font-medium text-gray-800 tabular-nums">
+                          {r.report_type.startsWith('ODOMETER')
+                            ? `${Number(r.amount).toLocaleString('id-ID')} km`
+                            : formatCurrency(r.amount)}
+                        </p>
+                      )}
                       {r.notes && (
                         <p className="text-gray-600 mt-1 break-words">{r.notes}</p>
                       )}

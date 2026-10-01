@@ -31,6 +31,7 @@ interface Props {
 
 const LINE_STATUS_STYLES: Record<string, string> = {
   SCHEDULED: "bg-blue-50 text-blue-700 border-blue-200",
+  ASSIGNED: "bg-blue-50 text-blue-700 border-blue-200",
   IN_PROGRESS: "bg-amber-50 text-amber-700 border-amber-200",
   DONE: "bg-emerald-50 text-emerald-700 border-emerald-200",
   CANCELLED: "bg-red-50 text-red-700 border-red-200",

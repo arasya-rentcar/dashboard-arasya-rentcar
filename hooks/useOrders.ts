@@ -30,6 +30,8 @@ import {
   GenerateInvoiceInput,
   ReviseInvoiceInput,
   SendInvoiceWhatsappInput,
+  InvoiceDeliveryLog,
+  WaManualResult,
   OrdersSearchResult,
   OrdersSearchParams,
 } from "@/types";
@@ -273,7 +275,8 @@ export function useSendInvoiceWhatsapp() {
       data: SendInvoiceWhatsappInput;
     }) => {
       const res = await ordersApi.sendInvoiceWhatsapp(id, invoiceId, data);
-      return res.data.data;
+      // Delivery log; carries wa_url in manual WhatsApp mode.
+      return res.data.data as InvoiceDeliveryLog & WaManualResult;
     },
     onSuccess: (_data, variables) => {
       invalidateOrderViews(queryClient, variables.id);
@@ -294,7 +297,7 @@ export function useSendReceiptWhatsapp() {
       data: SendInvoiceWhatsappInput;
     }) => {
       const res = await ordersApi.sendReceiptWhatsapp(id, invoiceId, data);
-      return res.data.data;
+      return res.data.data as InvoiceDeliveryLog & WaManualResult;
     },
     onSuccess: (_data, variables) => {
       invalidateOrderViews(queryClient, variables.id);

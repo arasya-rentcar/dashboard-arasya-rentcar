@@ -156,6 +156,11 @@ export interface OrderServiceItem {
   // distinct from the planned start_at/end_at pickup/dropoff times.
   trip_started_at?: string | null;
   trip_finished_at?: string | null;
+  // Operational timestamps: departed garage / arrived at pickup.
+  actual_start_at?: string | null;
+  actual_pickup_at?: string | null;
+  // When the driver accepted this trip in the driver app (null = not yet).
+  driver_accepted_at?: string | null;
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
@@ -241,9 +246,21 @@ export interface OrderAdjustment {
 
 export type ScheduleStatus =
   | "SCHEDULED"
+  | "ASSIGNED"
   | "IN_PROGRESS"
   | "DONE"
   | "CANCELLED";
+
+// "Manual WhatsApp" mode: when the API runs without the WhatsApp bot, send-*
+// endpoints return a wa.me link for the admin to open instead of sending.
+export interface WaManualResult {
+  wa_url?: string | null;
+}
+
+export interface SendConfirmationResult {
+  customer?: WaManualResult | null;
+  [key: string]: unknown;
+}
 
 export type ConfirmationState = 'NOT_SENT' | 'SENT' | 'CHANGED';
 
@@ -268,6 +285,8 @@ export interface ScheduleLine {
   // #A1/#A2 trip-team confirmation badge state.
   confirmation_state?: ConfirmationState;
   confirmation_sent_at?: string | null;
+  // When the driver accepted this trip in the driver app (null = not yet).
+  driver_accepted_at?: string | null;
   order?: {
     id: string;
     order_code?: string | null;
@@ -340,6 +359,10 @@ export interface TripReportEntry {
   file_mime?: string | null;
   driver_phone?: string | null;
   status?: string | null;
+  // 'API' = submitted from the driver app; otherwise the WhatsApp bot.
+  source?: string | null;
+  // Cost/odometer value for FUEL/TOLL/PARKING/OTHER_COST etc. (decimal).
+  amount?: string | number | null;
   created_at: string;
 }
 
@@ -364,6 +387,7 @@ export interface TripHistoryRow {
   trip_finished_at?: string | null;
   finish_reported_at?: string | null;
   trip_started_at?: string | null;
+  driver_accepted_at?: string | null;
   finance_status: 'FINALIZED' | 'AWAITING';
   order?: {
     id: string;

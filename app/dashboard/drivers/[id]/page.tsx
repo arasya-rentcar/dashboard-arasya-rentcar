@@ -8,6 +8,7 @@ import DashboardShell from "@/components/layout/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PartnerDetailView from "@/components/partners/PartnerDetailView";
+import DriverAppAccessCard from "@/components/drivers/DriverAppAccessCard";
 import { useDriverDetail } from "@/hooks/useDrivers";
 
 export default function DriverDetailPage() {
@@ -81,6 +82,8 @@ export default function DriverDetailPage() {
             </div>
           </CardContent>
         </Card>
+
+        <DriverAppAccessCard driverId={d.id} phone={d.phone} />
 
         <PartnerDetailView
           kind="DRIVER"

@@ -414,6 +414,7 @@ export default function ScheduleLineDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="SCHEDULED">{t('statusScheduled')}</SelectItem>
+                <SelectItem value="ASSIGNED">{t('statusAssigned')}</SelectItem>
                 <SelectItem value="IN_PROGRESS">{t('statusInProgress')}</SelectItem>
                 <SelectItem value="DONE">{t('statusDone')}</SelectItem>
                 <SelectItem value="CANCELLED">{t('statusCancelled')}</SelectItem>

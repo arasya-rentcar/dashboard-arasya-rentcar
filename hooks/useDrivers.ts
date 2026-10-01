@@ -72,3 +72,14 @@ export function useUpdateDriver() {
     },
   });
 }
+
+// Sets the password the driver uses (with their phone number) to log in to the
+// driver app. Write-only: existing passwords are never returned.
+export function useSetDriverAppPassword() {
+  return useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      const res = await driversApi.setAppPassword(id, password);
+      return res.data;
+    },
+  });
+}

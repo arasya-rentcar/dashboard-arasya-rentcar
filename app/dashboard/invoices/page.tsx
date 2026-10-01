@@ -54,6 +54,7 @@ import {
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import TablePagination from "@/components/dashboard/TablePagination";
 import { formatCurrency, getErrorMessage } from "@/lib/utils";
+import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
 import {
   InvoiceDeliveryLog,
 } from "@/types";
@@ -109,6 +110,7 @@ function invoiceCanSend(inv: InvoiceWithOrder) {
 
 export default function InvoicesPage() {
   const t = useTranslations("invoicesPage");
+  const tc = useTranslations("common");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   // #6: order-level payment bucket (Belum Bayar / DP / Lunas) from
@@ -205,8 +207,9 @@ export default function InvoicesPage() {
       toast.error(t("errPhoneRequired"));
       return;
     }
+    const wa = openWaWindow();
     try {
-      await sendMutation.mutateAsync({
+      const result = await sendMutation.mutateAsync({
         id: inv.order.id,
         invoiceId: inv.id,
         data: {
@@ -215,8 +218,10 @@ export default function InvoicesPage() {
           message_note: noteByInvoice[inv.id] || undefined,
         },
       });
-      toast.success(t("okSent"));
+      if (wa.finish(extractWaUrl(result))) toast.success(tc("waOpened"));
+      else toast.success(t("okSent"));
     } catch (error) {
+      wa.cancel();
       toast.error(getErrorMessage(error));
     }
   }
@@ -227,8 +232,9 @@ export default function InvoicesPage() {
       toast.error(t("errPhoneRequired"));
       return;
     }
+    const wa = openWaWindow();
     try {
-      await sendReceiptMutation.mutateAsync({
+      const result = await sendReceiptMutation.mutateAsync({
         id: inv.order.id,
         invoiceId: inv.id,
         data: {
@@ -237,8 +243,10 @@ export default function InvoicesPage() {
           message_note: noteByInvoice[inv.id] || undefined,
         },
       });
-      toast.success(t("okReceiptSent"));
+      if (wa.finish(extractWaUrl(result))) toast.success(tc("waOpened"));
+      else toast.success(t("okReceiptSent"));
     } catch (error) {
+      wa.cancel();
       toast.error(getErrorMessage(error));
     }
   }

@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Send, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSendConfirmation } from '@/hooks/useSchedule';
+import { openWaWindow, extractWaUrl } from '@/lib/waWindow';
 import { ScheduleLine, ConfirmationState } from '@/types';
 
 const BADGE: Record<
@@ -30,6 +32,7 @@ const BADGE: Record<
 
 export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
   const t = useTranslations('confirmation');
+  const tc = useTranslations('common');
   const [error, setError] = useState<string | null>(null);
   const send = useSendConfirmation();
 
@@ -46,10 +49,16 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
 
   const handle = async () => {
     setError(null);
+    const wa = openWaWindow();
     try {
       // Re-send (force) when already SENT or CHANGED; first send otherwise.
-      await send.mutateAsync({ id: line.id, force: state !== 'NOT_SENT' });
+      const result = await send.mutateAsync({
+        id: line.id,
+        force: state !== 'NOT_SENT',
+      });
+      if (wa.finish(extractWaUrl(result))) toast.success(tc('waOpened'));
     } catch (e: any) {
+      wa.cancel();
       setError(
         e?.response?.data?.message || e?.message || t('sendFailed'),
       );
