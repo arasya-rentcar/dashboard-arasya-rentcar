@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSendConfirmation } from '@/hooks/useSchedule';
-import { openWaWindow, extractWaUrl } from '@/lib/waWindow';
+import { openWaWindow, extractWaUrl, extractRecipientWaUrl } from '@/lib/waWindow';
 import { ScheduleLine, ConfirmationState } from '@/types';
 
 const BADGE: Record<
@@ -34,6 +34,11 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
   const t = useTranslations('confirmation');
   const tc = useTranslations('common');
   const [error, setError] = useState<string | null>(null);
+  // Secondary links (driver / previous driver) from the last successful send.
+  const [extra, setExtra] = useState<{ driver: string | null; old: string | null }>({
+    driver: null,
+    old: null,
+  });
   const send = useSendConfirmation();
 
   // Only internal lines with a driver + car assigned can be confirmed.
@@ -49,6 +54,7 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
 
   const handle = async () => {
     setError(null);
+    setExtra({ driver: null, old: null });
     const wa = openWaWindow();
     try {
       // Re-send (force) when already SENT or CHANGED; first send otherwise.
@@ -57,6 +63,10 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
         force: state !== 'NOT_SENT',
       });
       if (wa.finish(extractWaUrl(result))) toast.success(tc('waOpened'));
+      setExtra({
+        driver: extractRecipientWaUrl(result, 'driver'),
+        old: extractRecipientWaUrl(result, 'old_driver_standdown'),
+      });
     } catch (e: any) {
       wa.cancel();
       setError(
@@ -97,6 +107,26 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
           <span className="ml-1">{btnLabel}</span>
         </Button>
       </div>
+      {extra.driver && (
+        <a
+          href={extra.driver}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-[10px] text-emerald-700 underline underline-offset-2 hover:text-emerald-800"
+        >
+          {t('alsoDriver')}
+        </a>
+      )}
+      {extra.old && (
+        <a
+          href={extra.old}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-[10px] text-amber-700 underline underline-offset-2 hover:text-amber-800"
+        >
+          {t('notifyOldDriver')}
+        </a>
+      )}
       {error && <div className="text-[10px] text-red-600 max-w-[160px]">{error}</div>}
     </div>
   );
