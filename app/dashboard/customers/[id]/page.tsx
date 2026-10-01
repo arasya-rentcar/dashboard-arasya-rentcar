@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import CustomerIdentityCard from '@/components/customers/CustomerIdentityCard';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useCustomer, useUpdateCustomer } from '@/hooks/useCustomers';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
@@ -114,6 +115,8 @@ export default function CustomerDetailPage() {
             value={customer.last_order_at ? formatDate(customer.last_order_at) : '-'}
           />
         </div>
+
+        <CustomerIdentityCard customer={customer} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           {/* Profile + loyalty */}
