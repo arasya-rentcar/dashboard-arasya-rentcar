@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, Eye, ArrowUpDown } from 'lucide-react';
+import { Search, Eye, ArrowUpDown, BadgeCheck } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -93,6 +93,7 @@ export default function CustomersPage() {
                 <Th className="w-12">{t('colNo')}</Th>
                 <Th>{t('colName')}</Th>
                 <Th className="hidden sm:table-cell">{t('colPhone')}</Th>
+                <Th className="hidden md:table-cell">{t('colIdentity')}</Th>
                 <Th className="hidden lg:table-cell">{t('colTags')}</Th>
                 <Th className="text-right">{t('colOrders')}</Th>
                 <Th className="hidden md:table-cell text-right">{t('colTotalSpent')}</Th>
@@ -104,7 +105,7 @@ export default function CustomersPage() {
               {isLoading ? (
                 [...Array(8)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(8)].map((__, j) => (
+                    {[...Array(9)].map((__, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
@@ -114,7 +115,7 @@ export default function CustomersPage() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     className="text-center py-10 text-gray-400 text-sm"
                   >
                     {t('noCustomers')}
@@ -133,9 +134,48 @@ export default function CustomersPage() {
                       >
                         {c.name}
                       </Link>
+                      {c.company_name && (
+                        <p className="text-xs text-gray-400 max-w-56 truncate">
+                          {c.company_name}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden sm:table-cell">
                       {c.phone}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {c.has_ktp ? (
+                          <Badge
+                            variant="outline"
+                            title={c.id_number_masked ?? undefined}
+                            className="text-[10px] bg-sky-50 text-sky-700 border-sky-200"
+                          >
+                            {t('hasKtp')}
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] bg-gray-50 text-gray-400 border-gray-200"
+                          >
+                            {t('noKtp')}
+                          </Badge>
+                        )}
+                        {c.verified && (
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"
+                          >
+                            <BadgeCheck className="h-3 w-3 mr-0.5" />
+                            {t('verified')}
+                          </Badge>
+                        )}
+                      </div>
+                      {c.id_number_masked && (
+                        <p className="hidden lg:block mt-1 font-mono text-[11px] text-gray-400">
+                          {c.id_number_masked}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
