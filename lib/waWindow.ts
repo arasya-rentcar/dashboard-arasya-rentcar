@@ -2,9 +2,10 @@
 // send-* endpoints return a `wa_url` (https://wa.me/...?text=...) instead of
 // sending. The admin then presses Send inside WhatsApp themselves.
 //
-// window.open() after an await is usually popup-blocked, so a blank tab is
-// opened synchronously in the click handler (openWaWindow) and only pointed at
-// the wa.me link once the request succeeds — or closed when there is no link.
+// window.open() after an await can be popup-blocked, so in manual mode
+// (NEXT_PUBLIC_WA_DELIVERY=manual) a blank tab is opened synchronously in the
+// click handler and pointed at the wa.me link once the request succeeds, or
+// closed when there is no link. Otherwise the link is opened directly.
 
 export interface WaWindow {
   /** Navigate the pre-opened tab to `url`; closes it when `url` is empty.
@@ -28,15 +29,21 @@ export function extractWaUrl(data: unknown): string | null {
   return safeWaUrl(typeof url === "string" ? url : null);
 }
 
+// Only pre-open when the deployment runs in manual mode; with the bot no
+// link comes back, so a pre-opened tab would just flash open and shut.
+const PRE_OPEN = process.env.NEXT_PUBLIC_WA_DELIVERY === "manual";
+
 /** Call synchronously inside the click handler, before the request. */
 export function openWaWindow(): WaWindow {
   let w: Window | null = null;
-  try {
-    w = window.open("", "_blank");
-    // Drop the opener link before the tab navigates to an external site.
-    if (w) w.opener = null;
-  } catch {
-    w = null;
+  if (PRE_OPEN) {
+    try {
+      w = window.open("", "_blank");
+      // Drop the opener link before the tab navigates to an external site.
+      if (w) w.opener = null;
+    } catch {
+      w = null;
+    }
   }
 
   const close = () => {
@@ -57,7 +64,7 @@ export function openWaWindow(): WaWindow {
       if (w && !w.closed) {
         w.location.href = safe;
       } else {
-        // Pre-open was blocked/closed: best-effort direct open.
+        // Not pre-opened (bot mode) or blocked: open directly.
         window.open(safe, "_blank", "noopener");
       }
       return true;
