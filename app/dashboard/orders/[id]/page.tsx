@@ -836,6 +836,16 @@ export default function OrderDetailPage({
                     label={t('finalPrice')}
                     value={formatCurrency(order.final_price)}
                   />
+                  {order.notes?.trim() && (
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-400 mb-0.5">
+                        {t('orderNotes')}
+                      </p>
+                      <p className="text-sm text-gray-900 whitespace-pre-line">
+                        {order.notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 {order.customers && order.customers.length > 1 && (
                   <div className="mt-5 pt-4 border-t border-gray-100">
@@ -868,6 +878,77 @@ export default function OrderDetailPage({
                 )}
               </CardContent>
             </Card>
+
+            {order.web_lead && (
+              <Card className="shadow-none border border-gray-200">
+                <CardHeader className="pb-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      {t('webLeadTitle')}
+                      <span className="font-mono text-sm font-semibold text-gray-700">
+                        {order.web_lead.lead_code}
+                      </span>
+                    </CardTitle>
+                    <Link
+                      href={`/dashboard/leads?q=${encodeURIComponent(order.web_lead.lead_code)}`}
+                      className="text-xs font-medium text-blue-600 hover:underline"
+                    >
+                      {t('webLeadOpen')}
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <InfoRow
+                      label={t('webLeadReceived')}
+                      value={formatDateTime(order.web_lead.created_at)}
+                    />
+                    <InfoRow
+                      label={t('webLeadSource')}
+                      value={order.web_lead.page_path || "-"}
+                    />
+                    <InfoRow
+                      label={t('webLeadCampaign')}
+                      value={
+                        [order.web_lead.campaign, order.web_lead.gclid && `gclid ${order.web_lead.gclid}`]
+                          .filter(Boolean)
+                          .join(" · ") || "-"
+                      }
+                    />
+                    <InfoRow
+                      label={t('webLeadLanguage')}
+                      value={order.web_lead.language?.toUpperCase() || "-"}
+                    />
+                    <InfoRow
+                      label={t('webLeadUnit')}
+                      value={order.web_lead.unit || "-"}
+                    />
+                    <InfoRow
+                      label={t('webLeadPax')}
+                      value={
+                        order.web_lead.passenger_count
+                          ? String(order.web_lead.passenger_count)
+                          : "-"
+                      }
+                    />
+                    <InfoRow
+                      label={t('webLeadDuration')}
+                      value={order.web_lead.duration || "-"}
+                    />
+                    {order.web_lead.notes?.trim() && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-gray-400 mb-0.5">
+                          {t('webLeadNotes')}
+                        </p>
+                        <p className="text-sm italic text-gray-900 whitespace-pre-line">
+                          “{order.web_lead.notes}”
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <OrderFinanceCard order={order} />
 

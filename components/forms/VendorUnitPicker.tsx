@@ -19,18 +19,22 @@ export interface VendorUnitValue {
 export default function VendorUnitPicker({
   value,
   onChange,
+  initialMode,
 }: {
   value: VendorUnitValue;
   onChange: (v: VendorUnitValue) => void;
+  /** Tab shown first when the value has no vendor yet (e.g. a lead for a unit we do not own). */
+  initialMode?: "INTERNAL" | "VENDOR" | "FREELANCE";
 }) {
   const tv = useTranslations("vendorPicker");
   const tt = useTranslations("terms");
   const [mode, setMode] = useState<"INTERNAL" | "VENDOR" | "FREELANCE">(
-    value.is_external
+    initialMode ??
+      (value.is_external
       ? value.external_vendor_id
         ? "VENDOR"
         : "FREELANCE"
-      : "INTERNAL",
+      : "INTERNAL"),
   );
 
   const { data: vendorList } = useExternalVendors({

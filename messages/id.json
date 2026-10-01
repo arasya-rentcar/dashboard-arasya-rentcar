@@ -490,7 +490,10 @@
     "typeParking": "Parkir",
     "typeToll": "Tol",
     "typeAdditional": "Tambahan",
-    "fromLead": "Dari lead website {code}. Data perjalanan sudah terisi; lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan."
+    "fromLead": "Dari lead website {code}. Data perjalanan sudah terisi; lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan.",
+    "phoneRequiredFromLead": "Isi nomor WhatsApp pelanggan dari chat",
+    "leadReturnHint": "Lead ini minta paket pulang-pergi / multi-hari. Layanan diisi 12 Jam; sesuaikan jumlah hari, durasi, dan harga.",
+    "leadNeedPartnerHint": "Unit ini tidak ada di armada Arasya — pilih Vendor/rekanan di bagian 'Order Fulfilled By'."
   },
   "guide": {
     "title": "Panduan",
@@ -742,6 +745,17 @@
     "orderInformation": "Informasi Order",
     "primaryPic": "PIC Utama",
     "primaryPhone": "Telepon Utama",
+    "orderNotes": "Catatan Order",
+    "webLeadTitle": "Lead Website",
+    "webLeadReceived": "Masuk",
+    "webLeadSource": "Halaman sumber",
+    "webLeadCampaign": "Kampanye",
+    "webLeadLanguage": "Bahasa",
+    "webLeadUnit": "Unit diminta",
+    "webLeadPax": "Penumpang",
+    "webLeadDuration": "Durasi",
+    "webLeadNotes": "Catatan dari form",
+    "webLeadOpen": "Lihat di Lead Website",
     "pickup": "Jemput",
     "dropoff": "Tujuan",
     "orderDate": "Tanggal Order",
@@ -1307,7 +1321,9 @@
     "sendFailed": "Gagal mengirim konfirmasi",
     "sendChanges": "Kirim Perubahan",
     "resend": "Kirim Ulang",
-    "sendToCustomer": "Kirim ke Customer"
+    "sendToCustomer": "Kirim ke Customer",
+    "alsoDriver": "Kirim juga ke driver (WhatsApp)",
+    "notifyOldDriver": "Beri tahu driver lama"
   },
   "assignDriver": {
     "driver": "Driver",
@@ -1673,6 +1689,10 @@
     "linkPlaceholder": "Kode order atau nama (mis. {name})",
     "linkNone": "Order tidak ditemukan.",
     "updating": "Memperbarui…",
-    "paginationLabel": "lead"
+    "paginationLabel": "lead",
+    "inFleet": "Ada di armada",
+    "needPartner": "Perlu rekanan",
+    "inFleetTitle": "Unit di armada: {cars}",
+    "needPartnerTitle": "Unit ini tidak ada di armada Arasya. Cari rekanan/vendor."
   }
 }

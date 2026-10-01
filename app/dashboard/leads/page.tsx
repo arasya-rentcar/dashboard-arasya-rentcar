@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
@@ -60,9 +61,20 @@ const STATUS_STYLE: Record<WebLeadStatus, string> = {
  * chat, or ignores it.
  */
 export default function LeadsPage() {
+  return (
+    <Suspense fallback={null}>
+      <LeadsPageInner />
+    </Suspense>
+  );
+}
+
+function LeadsPageInner() {
   const t = useTranslations('leads');
-  const [tab, setTab] = useState<WebLeadStatus | 'ALL'>('NEW');
-  const [search, setSearch] = useState('');
+  // Deep link from an order: /dashboard/leads?q=ARS-XXXXX searches that code
+  // across every status (the lead may already be converted).
+  const initialQ = useSearchParams().get('q') ?? '';
+  const [tab, setTab] = useState<WebLeadStatus | 'ALL'>(initialQ ? 'ALL' : 'NEW');
+  const [search, setSearch] = useState(initialQ);
   const [page, setPage] = useState(1);
   const q = useDebouncedValue(search.trim());
 
@@ -219,7 +231,10 @@ function LeadCard({
           <p className="text-base font-semibold text-gray-950">{lead.name}</p>
           <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-700">
             <Info icon={CalendarDays}>{tripDate(lead, locale) ?? t('noDate')}</Info>
-            <Info icon={Car}>{lead.unit || t('anyUnit')}</Info>
+            <Info icon={Car}>
+              {lead.unit || t('anyUnit')}
+              <FleetBadge lead={lead} />
+            </Info>
           </div>
           <div className="text-sm text-gray-700">
             <Info icon={MapPin}>
@@ -288,6 +303,35 @@ function LeadCard({
         </div>
       </div>
     </article>
+  );
+}
+
+// Does Arasya own the unit the customer asked for? null = unknown: no badge.
+function FleetBadge({ lead }: { lead: WebLead }) {
+  const t = useTranslations('leads');
+  if (lead.unit_in_fleet == null) return null;
+  if (lead.unit_in_fleet) {
+    const cars = (lead.matching_cars ?? [])
+      .map((c) => `${c.model}${c.plate_number ? ` (${c.plate_number})` : ''}`)
+      .join(', ');
+    return (
+      <Badge
+        variant="outline"
+        title={cars ? t('inFleetTitle', { cars }) : undefined}
+        className="ml-1 shrink-0 text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200"
+      >
+        {t('inFleet')}
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      variant="outline"
+      title={t('needPartnerTitle')}
+      className="ml-1 shrink-0 text-[11px] bg-amber-50 text-amber-700 border-amber-200"
+    >
+      {t('needPartner')}
+    </Badge>
   );
 }
 

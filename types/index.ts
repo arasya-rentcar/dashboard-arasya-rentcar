@@ -230,6 +230,24 @@ export interface Order {
   } | null;
   final_finance?: OrderFinanceDetail | null;
   adjustments?: OrderAdjustment[];
+  notes?: string | null;
+  // Website lead this order was created from (null for other orders).
+  web_lead?: OrderWebLead | null;
+}
+
+export interface OrderWebLead {
+  id: string;
+  lead_code: string;
+  campaign: string | null;
+  gclid: string | null;
+  page_path: string | null;
+  language: string | null;
+  unit: string | null;
+  passenger_count: number | null;
+  duration: string | null;
+  duration_key: WebLeadDurationKey | null;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface OrderAdjustment {
@@ -259,6 +277,9 @@ export interface WaManualResult {
 
 export interface SendConfirmationResult {
   customer?: WaManualResult | null;
+  driver?: WaManualResult | null;
+  // Set when the line was reassigned: tell the previous driver to stand down.
+  old_driver_standdown?: WaManualResult | null;
   [key: string]: unknown;
 }
 
@@ -653,6 +674,8 @@ export interface CreateOrderInput {
 
 export type WebLeadStatus = "NEW" | "CONVERTED" | "IGNORED";
 
+export type WebLeadDurationKey = '12h' | 'allin' | 'oneway' | 'return' | 'multi';
+
 export interface WebLead {
   id: string;
   lead_code: string;
@@ -665,6 +688,10 @@ export interface WebLead {
   unit: string | null;
   passenger_count: number | null;
   duration: string | null;
+  duration_key?: WebLeadDurationKey | null;
+  // Whether the requested unit exists in Arasya's own fleet (null = unknown / no unit).
+  unit_in_fleet?: boolean | null;
+  matching_cars?: { id: string; model: string; plate_number: string | null }[];
   notes: string | null;
   page_path: string | null;
   language: string | null;

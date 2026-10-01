@@ -137,6 +137,11 @@ function OrdersPageInner() {
       pickup: lead.pickup_location,
       dropoff: lead.destination ?? undefined,
       notes: extras.join('\n'),
+      passengerCount: lead.passenger_count,
+      unit: lead.unit,
+      duration: lead.duration,
+      durationKey: lead.duration_key ?? null,
+      unitInFleet: lead.unit_in_fleet ?? null,
     });
     setCreateOpen(true);
   }, [lead]);

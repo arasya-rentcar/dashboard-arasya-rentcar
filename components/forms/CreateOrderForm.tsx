@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +17,7 @@ import OrderServiceItemsEditor, {
 } from "./OrderServiceItemsEditor";
 import CustomerPicker from "./CustomerPicker";
 import VendorUnitPicker, { type VendorUnitValue } from "./VendorUnitPicker";
-import type { Customer } from "@/types";
+import type { Customer, WebLeadDurationKey } from "@/types";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -42,13 +42,13 @@ const additionalSchema = z.object({
   description: z.string().optional(),
   amount: z.string().optional(),
 });
-const schema = z.object({
+const baseSchema = z.object({
   customers: z.array(customerSchema).min(1),
   service_items: z.array(serviceItemSchema).min(1),
   additionals: z.array(additionalSchema).optional(),
   notes: z.string().optional(),
 });
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<typeof baseSchema>;
 /** Prefill from a website lead (Lead Website → "Buat order"). */
 export interface CreateOrderPrefill {
   webLeadId: string;
@@ -59,6 +59,29 @@ export interface CreateOrderPrefill {
   pickup: string;
   dropoff?: string;
   notes?: string;
+  passengerCount?: number | null;
+  /** Requested unit / duration as the customer typed them on the website. */
+  unit?: string | null;
+  duration?: string | null;
+  durationKey?: WebLeadDurationKey | null;
+  /** false = the requested unit is not in Arasya's fleet (needs a partner). */
+  unitInFleet?: boolean | null;
+}
+
+// Service line defaults derived from the lead's duration choice.
+// 12h/allin -> 12 Hours; oneway -> Drop Only; return/multi stay 12 Hours and
+// the admin is told to adjust days/price by hand.
+function leadServiceKind(key?: WebLeadDurationKey | null) {
+  return key === "oneway" ? "DROP" : "12H";
+}
+function leadLineNotes(p: CreateOrderPrefill) {
+  return [
+    p.unit && `Unit diminta: ${p.unit}`,
+    p.passengerCount && `Penumpang: ${p.passengerCount}`,
+    p.duration && `Durasi: ${p.duration}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 interface Props {
   onSubmit: (data: any) => Promise<void>;
@@ -90,6 +113,27 @@ const ADDITIONAL_TYPE_KEYS: { key: string; value: string }[] = [
 
 export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props) {
   const t = useTranslations("createOrder");
+  // From a lead the customer only left a name: the WhatsApp number must be
+  // typed in from the chat before the order can be saved.
+  const needPhone = Boolean(prefill);
+  const schema = useMemo(
+    () =>
+      needPhone
+        ? baseSchema.superRefine((values, ctx) => {
+            const idx = Math.max(
+              0,
+              values.customers.findIndex((c) => c.is_primary),
+            );
+            if (!values.customers[idx]?.phone?.trim())
+              ctx.addIssue({
+                code: "custom",
+                path: ["customers", idx, "phone"],
+                message: t("phoneRequiredFromLead"),
+              });
+          })
+        : baseSchema,
+    [needPhone, t],
+  );
   const {
     register,
     handleSubmit,
@@ -107,8 +151,11 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
               ...defaultItem,
               service_date: prefill.serviceDate ?? "",
               start_at: prefill.startAt ?? "",
+              service_kind: leadServiceKind(prefill.durationKey),
+              service_package: "ALL-IN",
               pickup_location: prefill.pickup,
               dropoff_location: prefill.dropoff ?? "",
+              notes: leadLineNotes(prefill),
             }
           : defaultItem,
       ],
@@ -130,8 +177,10 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
   });
   // Sprint 5 #15/#16: master-customer lock + vendor/unit selection.
   const [masterCustomer, setMasterCustomer] = useState<Customer | null>(null);
+  // A lead for a unit Arasya does not own starts on "Vendor".
+  const needPartner = prefill?.unitInFleet === false;
   const [vendorUnit, setVendorUnit] = useState<VendorUnitValue>({
-    is_external: false,
+    is_external: needPartner,
   });
 
   function selectMaster(c: Customer) {
@@ -199,6 +248,7 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
       })),
       pickup_location: values.service_items[0]?.pickup_location || "-",
       dropoff_location: values.service_items[0]?.dropoff_location || "-",
+      passenger_count: prefill?.passengerCount ?? undefined,
       order_date: new Date().toISOString(),
       service_start_at: iso(values.service_items[0]?.start_at),
       service_end_at: iso(values.service_items[0]?.end_at),
@@ -235,6 +285,17 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
         {prefill && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             {t("fromLead", { code: prefill.leadCode })}
+          </div>
+        )}
+        {needPartner && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">
+            {t("leadNeedPartnerHint")}
+          </div>
+        )}
+        {(prefill?.durationKey === "return" ||
+          prefill?.durationKey === "multi") && (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t("leadReturnHint")}
           </div>
         )}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -326,6 +387,11 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                           placeholder={t("phonePlaceholder")}
                           {...register(`customers.${index}.phone`)}
                         />
+                        {errors.customers?.[index]?.phone && (
+                          <p className="text-xs text-red-500">
+                            {errors.customers[index]?.phone?.message}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -337,7 +403,11 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
               {t("bookingNote")}
             </section>
 
-            <VendorUnitPicker value={vendorUnit} onChange={setVendorUnit} />
+            <VendorUnitPicker
+              value={vendorUnit}
+              onChange={setVendorUnit}
+              initialMode={needPartner ? "VENDOR" : undefined}
+            />
 
             <OrderServiceItemsEditor
               control={control}

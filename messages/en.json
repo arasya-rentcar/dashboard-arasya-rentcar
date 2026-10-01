@@ -490,7 +490,10 @@
     "typeParking": "Parking",
     "typeToll": "Toll",
     "typeAdditional": "Additional",
-    "fromLead": "From website lead {code}. Trip details are filled in; add the customer phone, price and unit, then save."
+    "fromLead": "From website lead {code}. Trip details are filled in; add the customer phone, price and unit, then save.",
+    "phoneRequiredFromLead": "Enter the customer's WhatsApp number from the chat",
+    "leadReturnHint": "This lead asks for a return / multi-day trip. The service is set to 12 Hours; adjust the number of days, duration and price.",
+    "leadNeedPartnerHint": "This unit is not in Arasya's fleet — choose Vendor/partner under 'Order Fulfilled By'."
   },
   "guide": {
     "title": "Guide",
@@ -742,6 +745,17 @@
     "orderInformation": "Order Information",
     "primaryPic": "Primary PIC",
     "primaryPhone": "Primary Phone",
+    "orderNotes": "Order Notes",
+    "webLeadTitle": "Website Lead",
+    "webLeadReceived": "Received",
+    "webLeadSource": "Source page",
+    "webLeadCampaign": "Campaign",
+    "webLeadLanguage": "Language",
+    "webLeadUnit": "Requested unit",
+    "webLeadPax": "Passengers",
+    "webLeadDuration": "Duration",
+    "webLeadNotes": "Notes from the form",
+    "webLeadOpen": "View in Website Leads",
     "pickup": "Pickup",
     "dropoff": "Dropoff",
     "orderDate": "Order Date",
@@ -1307,7 +1321,9 @@
     "sendFailed": "Failed to send confirmation",
     "sendChanges": "Send Changes",
     "resend": "Resend",
-    "sendToCustomer": "Send to Customer"
+    "sendToCustomer": "Send to Customer",
+    "alsoDriver": "Also send to driver (WhatsApp)",
+    "notifyOldDriver": "Notify previous driver"
   },
   "assignDriver": {
     "driver": "Driver",
@@ -1673,6 +1689,10 @@
     "linkPlaceholder": "Order code or name (e.g. {name})",
     "linkNone": "No order found.",
     "updating": "Updating…",
-    "paginationLabel": "leads"
+    "paginationLabel": "leads",
+    "inFleet": "In fleet",
+    "needPartner": "Partner needed",
+    "inFleetTitle": "Fleet units: {cars}",
+    "needPartnerTitle": "This unit is not in Arasya's fleet. Find a partner/vendor."
   }
 }
