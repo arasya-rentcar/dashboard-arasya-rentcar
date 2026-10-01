@@ -105,7 +105,8 @@
     "external": "Eksternal / Vendor",
     "agent": "Agen",
     "guide": "Panduan",
-    "logout": "Keluar"
+    "logout": "Keluar",
+    "leads": "Lead Website"
   },
   "language": {
     "label": "Bahasa",
@@ -472,7 +473,8 @@
     "typeOvertime": "Overtime",
     "typeParking": "Parkir",
     "typeToll": "Tol",
-    "typeAdditional": "Tambahan"
+    "typeAdditional": "Tambahan",
+    "fromLead": "Dari lead website {code}. Data perjalanan sudah terisi; lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan."
   },
   "guide": {
     "title": "Panduan",
@@ -1579,5 +1581,51 @@
     "driverNotePaid": "= sudah dibayar",
     "driverNoteOutstanding": "= masih harus dibayar ke driver",
     "badgeFreelance": "freelance"
+  },
+  "leads": {
+    "title": "Lead Website",
+    "intro": "Permintaan dari form pemesanan di website. Setiap lead juga masuk ke WhatsApp admin dengan kode ARS yang sama. Jadikan order, hubungkan ke order yang sudah dibuat dari chat, atau abaikan.",
+    "tabNEW": "Baru",
+    "tabCONVERTED": "Jadi order",
+    "tabIGNORED": "Diabaikan",
+    "tabALL": "Semua",
+    "statusNEW": "Baru",
+    "statusCONVERTED": "Jadi order",
+    "statusIGNORED": "Diabaikan",
+    "searchPlaceholder": "Cari kode ARS, nama, atau lokasi…",
+    "emptyNew": "Tidak ada lead baru. Semua sudah ditangani 👍",
+    "empty": "Belum ada lead di sini.",
+    "received": "masuk {at}",
+    "noDate": "Tanggal belum diisi",
+    "anyUnit": "Unit: minta disarankan",
+    "pax": "{n} penumpang",
+    "from": "Dari halaman",
+    "ignoredBecause": "Alasan diabaikan: {reason}",
+    "createOrder": "Buat order",
+    "linkOrder": "Hubungkan ke order",
+    "ignore": "Abaikan",
+    "reopen": "Buka lagi",
+    "openOrder": "Buka order",
+    "payUNPAID": "Belum bayar",
+    "payDP_PAID": "DP masuk",
+    "payPAID": "Lunas",
+    "ga4Sent": "Omzet sudah tercatat di GA4",
+    "okReopened": "Lead dibuka lagi",
+    "okIgnored": "Lead diabaikan",
+    "okLinked": "{code} terhubung ke {order}",
+    "ignoreTitle": "Abaikan {code}?",
+    "reasonLabel": "Alasan (opsional)",
+    "reasonPlaceholder": "Tulis alasan lain…",
+    "reasonSpam": "Spam / iseng",
+    "reasonDuplicate": "Dobel",
+    "reasonJustAsking": "Hanya tanya harga",
+    "reasonNoUnit": "Unit tidak tersedia",
+    "cancel": "Batal",
+    "linkTitle": "Hubungkan {code} ke order",
+    "linkHelp": "Pakai ini kalau order untuk pelanggan ini sudah Anda buat dari chat WhatsApp. Cari dengan kode order atau nama pelanggan.",
+    "linkPlaceholder": "Kode order atau nama (mis. {name})",
+    "linkNone": "Order tidak ditemukan.",
+    "updating": "Memperbarui…",
+    "paginationLabel": "lead"
   }
 }

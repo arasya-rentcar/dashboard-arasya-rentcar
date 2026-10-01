@@ -133,6 +133,19 @@ export const sheetImportsApi = {
   latest: () => api.get("/sheet-imports/latest"),
 };
 
+// ─── Website leads (booking form on the public website) ─────────────────────
+
+export const leadsApi = {
+  list: (params: Record<string, string | number | undefined> = {}) =>
+    api.get("/leads", { params }),
+  getById: (id: string) => api.get(`/leads/${id}`),
+  ignore: (id: string, data: { reason?: string } = {}) =>
+    api.post(`/leads/${id}/ignore`, data),
+  reopen: (id: string) => api.post(`/leads/${id}/reopen`, {}),
+  link: (id: string, data: { order_id: string }) =>
+    api.post(`/leads/${id}/link`, data),
+};
+
 // ─── Customers ─────────────────────────────────────────────────
 
 export const customersApi = {

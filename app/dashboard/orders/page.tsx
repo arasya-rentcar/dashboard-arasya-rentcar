@@ -1,6 +1,8 @@
 'use client';
 
-import { Fragment, Suspense, useMemo, useState } from 'react';
+import { Fragment, Suspense, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -44,7 +46,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
-import CreateOrderForm from '@/components/forms/CreateOrderForm';
+import CreateOrderForm, { type CreateOrderPrefill } from '@/components/forms/CreateOrderForm';
+import { useLead } from '@/hooks/useLeads';
 import OrderInvoiceHistory from '@/components/orders/OrderInvoiceHistory';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useOrdersSearch, useCreateOrder } from '@/hooks/useOrders';
@@ -104,6 +107,50 @@ function OrdersPageInner() {
   const [presetName, setPresetName] = useState('');
 
   const createMutation = useCreateOrder();
+
+  // Lead Website → "Buat order": /dashboard/orders?lead=<id> opens the create
+  // dialog prefilled from the website booking request.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  // Captured once on arrival: the filter hook rewrites the query string, so the
+  // param itself does not survive until the lead has loaded.
+  const [leadId, setLeadId] = useState(() => searchParams.get('lead'));
+  const { data: lead } = useLead(leadId);
+  const [prefill, setPrefill] = useState<CreateOrderPrefill | null>(null);
+  useEffect(() => {
+    if (!lead || lead.status !== 'NEW') return;
+    const extras = [
+      lead.unit && `Unit diminta: ${lead.unit}`,
+      lead.passenger_count && `Penumpang: ${lead.passenger_count}`,
+      lead.duration && `Durasi: ${lead.duration}`,
+      lead.notes,
+      `Lead website ${lead.lead_code}`,
+    ].filter(Boolean);
+    setPrefill({
+      webLeadId: lead.id,
+      leadCode: lead.lead_code,
+      customerName: lead.name,
+      serviceDate: lead.trip_date ?? undefined,
+      startAt: lead.trip_date && lead.pickup_time ? `${lead.trip_date}T${lead.pickup_time}` : undefined,
+      pickup: lead.pickup_location,
+      dropoff: lead.destination ?? undefined,
+      notes: extras.join('\n'),
+    });
+    setCreateOpen(true);
+  }, [lead]);
+  function clearLeadParam() {
+    if (!leadId) return;
+    setLeadId(null);
+    setPrefill(null);
+    if (searchParams.has('lead')) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('lead');
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+  }
   const previewMutation = usePreviewSheetImport();
   const importMutation = useRunSheetImport();
   const [exportingAll, setExportingAll] = useState(false);
@@ -176,6 +223,10 @@ function OrdersPageInner() {
         toast.success(t('okOrderCreated'));
       }
       setCreateOpen(false);
+      if (orderPayload.web_lead_id) {
+        queryClient.invalidateQueries({ queryKey: ['leads'] });
+        clearLeadParam();
+      }
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -704,12 +755,20 @@ function OrdersPageInner() {
       </div>
 
       {/* Create Order Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) clearLeadParam();
+        }}
+      >
         <DialogContent className="!w-[96vw] !max-w-[1500px] max-h-[96vh] overflow-hidden p-4 sm:p-5 lg:p-6">
           <DialogHeader>
             <DialogTitle>{t('createNewOrder')}</DialogTitle>
           </DialogHeader>
           <CreateOrderForm
+            key={prefill?.webLeadId ?? 'blank'}
+            prefill={prefill}
             onSubmit={handleCreate}
             isLoading={createMutation.isPending}
           />

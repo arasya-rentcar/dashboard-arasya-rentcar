@@ -49,9 +49,21 @@ const schema = z.object({
   notes: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
+/** Prefill from a website lead (Lead Website → "Buat order"). */
+export interface CreateOrderPrefill {
+  webLeadId: string;
+  leadCode: string;
+  customerName: string;
+  serviceDate?: string; // YYYY-MM-DD
+  startAt?: string; // YYYY-MM-DDTHH:mm (datetime-local)
+  pickup: string;
+  dropoff?: string;
+  notes?: string;
+}
 interface Props {
   onSubmit: (data: any) => Promise<void>;
   isLoading: boolean;
+  prefill?: CreateOrderPrefill | null;
 }
 function iso(v?: string) {
   return v ? new Date(v).toISOString() : undefined;
@@ -80,7 +92,7 @@ const ADDITIONAL_TYPE_KEYS: { key: string; value: string }[] = [
   { key: "typeAdditional", value: "OTHER" },
 ];
 
-export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
+export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props) {
   const t = useTranslations("createOrder");
   const {
     register,
@@ -92,10 +104,20 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      customers: [{ name: "", phone: "", is_primary: true }],
-      service_items: [defaultItem],
+      customers: [{ name: prefill?.customerName ?? "", phone: "", is_primary: true }],
+      service_items: [
+        prefill
+          ? {
+              ...defaultItem,
+              service_date: prefill.serviceDate ?? "",
+              start_at: prefill.startAt ?? "",
+              pickup_location: prefill.pickup,
+              dropoff_location: prefill.dropoff ?? "",
+            }
+          : defaultItem,
+      ],
       additionals: [],
-      notes: "",
+      notes: prefill?.notes ?? "",
     },
   });
   const { fields, append, remove } = useFieldArray({
@@ -204,6 +226,7 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
         }),
       ),
       additionals: cleanAdditionals,
+      web_lead_id: prefill?.webLeadId,
     });
   }
 
@@ -213,6 +236,11 @@ export default function CreateOrderForm({ onSubmit, isLoading }: Props) {
       className="flex h-[calc(96vh-92px)] min-h-0 flex-col overflow-hidden"
     >
       <div className="flex-1 overflow-y-auto pr-2">
+        {prefill && (
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+            {t("fromLead", { code: prefill.leadCode })}
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-5 min-w-0">
             <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">

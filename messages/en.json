@@ -105,7 +105,8 @@
     "external": "External / Vendors",
     "agent": "Agent",
     "guide": "Guide",
-    "logout": "Log out"
+    "logout": "Log out",
+    "leads": "Website leads"
   },
   "language": {
     "label": "Language",
@@ -472,7 +473,8 @@
     "typeOvertime": "Overtime",
     "typeParking": "Parking",
     "typeToll": "Toll",
-    "typeAdditional": "Additional"
+    "typeAdditional": "Additional",
+    "fromLead": "From website lead {code}. Trip details are filled in; add the customer phone, price and unit, then save."
   },
   "guide": {
     "title": "Guide",
@@ -1579,5 +1581,51 @@
     "driverNotePaid": "= already paid",
     "driverNoteOutstanding": "= still owed to the driver",
     "badgeFreelance": "freelance"
+  },
+  "leads": {
+    "title": "Website leads",
+    "intro": "Requests from the booking form on the website. Each lead also reaches the admin WhatsApp with the same ARS code. Turn it into an order, link it to an order you already made from the chat, or ignore it.",
+    "tabNEW": "New",
+    "tabCONVERTED": "Converted",
+    "tabIGNORED": "Ignored",
+    "tabALL": "All",
+    "statusNEW": "New",
+    "statusCONVERTED": "Converted",
+    "statusIGNORED": "Ignored",
+    "searchPlaceholder": "Search ARS code, name or place…",
+    "emptyNew": "No new leads. All handled 👍",
+    "empty": "No leads here yet.",
+    "received": "received {at}",
+    "noDate": "No date given",
+    "anyUnit": "Unit: wants a suggestion",
+    "pax": "{n} passengers",
+    "from": "From page",
+    "ignoredBecause": "Ignored because: {reason}",
+    "createOrder": "Create order",
+    "linkOrder": "Link to order",
+    "ignore": "Ignore",
+    "reopen": "Reopen",
+    "openOrder": "Open order",
+    "payUNPAID": "Unpaid",
+    "payDP_PAID": "Deposit paid",
+    "payPAID": "Paid",
+    "ga4Sent": "Revenue recorded in GA4",
+    "okReopened": "Lead reopened",
+    "okIgnored": "Lead ignored",
+    "okLinked": "{code} linked to {order}",
+    "ignoreTitle": "Ignore {code}?",
+    "reasonLabel": "Reason (optional)",
+    "reasonPlaceholder": "Other reason…",
+    "reasonSpam": "Spam",
+    "reasonDuplicate": "Duplicate",
+    "reasonJustAsking": "Only asking the price",
+    "reasonNoUnit": "No unit available",
+    "cancel": "Cancel",
+    "linkTitle": "Link {code} to an order",
+    "linkHelp": "Use this when you already created this customer's order from the WhatsApp chat. Search by order code or customer name.",
+    "linkPlaceholder": "Order code or name (e.g. {name})",
+    "linkNone": "No order found.",
+    "updating": "Updating…",
+    "paginationLabel": "leads"
   }
 }

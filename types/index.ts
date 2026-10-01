@@ -622,6 +622,52 @@ export interface CreateOrderInput {
   area?: string;
   driver_origin?: string;
   notes?: string;
+  web_lead_id?: string;
+}
+
+// ─── Website leads ───────────────────────────────────────────────────────────
+
+export type WebLeadStatus = "NEW" | "CONVERTED" | "IGNORED";
+
+export interface WebLead {
+  id: string;
+  lead_code: string;
+  status: WebLeadStatus;
+  name: string;
+  trip_date: string | null;
+  pickup_time: string | null;
+  pickup_location: string;
+  destination: string | null;
+  unit: string | null;
+  passenger_count: number | null;
+  duration: string | null;
+  notes: string | null;
+  page_path: string | null;
+  language: string | null;
+  campaign: string | null;
+  gclid: string | null;
+  ignore_reason: string | null;
+  order_id: string | null;
+  order?: {
+    id: string;
+    order_code: string | null;
+    final_price?: string | number;
+    payment_status?: string;
+    order_status?: string;
+  } | null;
+  purchase_reported_at: string | null;
+  created_at: string;
+}
+
+export interface WebLeadsResult {
+  data: WebLead[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+    counts: Partial<Record<WebLeadStatus, number>>;
+  };
 }
 
 export interface UpdateOrderInput {

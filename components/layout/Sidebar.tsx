@@ -16,7 +16,9 @@ import {
   Handshake,
   CalendarDays,
   Wallet,
+  Inbox,
 } from "lucide-react";
+import { useLeads } from "@/hooks/useLeads";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
@@ -25,6 +27,7 @@ import { User } from "@/types";
 
 const NAV_ITEMS = [
   { href: "/dashboard", key: "dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/leads", key: "leads", icon: Inbox },
   { href: "/dashboard/orders", key: "orders", icon: ClipboardList },
   { href: "/dashboard/schedule", key: "schedule", icon: CalendarDays },
   { href: "/dashboard/customers", key: "customers", icon: UserRound },
@@ -42,6 +45,9 @@ export default function Sidebar() {
   const router = useRouter();
   const t = useTranslations("nav");
   const tc = useTranslations("common");
+  // Unhandled website leads, shown as a badge on "Lead Website".
+  const { data: newLeads } = useLeads({ status: "NEW", limit: 1 }, { refetchInterval: 60_000 });
+  const newLeadCount = newLeads?.meta.counts.NEW ?? 0;
   // Read localStorage only on client to avoid SSR hydration mismatch
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => {
@@ -84,6 +90,16 @@ export default function Sidebar() {
             >
               <Icon className="h-4 w-4 shrink-0" />
               {t(key)}
+              {key === "leads" && newLeadCount > 0 && (
+                <span
+                  className={cn(
+                    "ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums",
+                    isActive ? "bg-white text-gray-900" : "bg-blue-600 text-white",
+                  )}
+                >
+                  {newLeadCount}
+                </span>
+              )}
             </Link>
           );
         })}
