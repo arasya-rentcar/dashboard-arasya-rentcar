@@ -16,6 +16,7 @@ import OrderServiceItemsEditor, {
   ServiceItemFormValue,
 } from "./OrderServiceItemsEditor";
 import CustomerPicker from "./CustomerPicker";
+import CustomerLookupHint from "./CustomerLookupHint";
 import VendorUnitPicker, { type VendorUnitValue } from "./VendorUnitPicker";
 import type { Customer, WebLeadDurationKey } from "@/types";
 
@@ -336,6 +337,11 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                   </p>
                 )}
               </div>
+              <CustomerLookupHint
+                phone={primary?.phone}
+                locked={masterCustomer !== null}
+                onUse={selectMaster}
+              />
               <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
                 {fields.map((field, index) => (
                   <div

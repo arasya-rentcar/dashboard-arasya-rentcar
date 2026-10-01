@@ -1748,5 +1748,15 @@
     "deleteTitle": "Hapus dokumen?",
     "deleteConfirm": "Dokumen {kind} akan dihapus permanen dan tidak bisa dikembalikan.",
     "privacyNote": "Dokumen bersifat rahasia; hanya untuk verifikasi pemesanan. Hapus bila pelanggan meminta."
+  },
+  "customerLookup": {
+    "returning": "Pelanggan lama: {name}",
+    "orders": "{count} order",
+    "last": "terakhir {date}",
+    "ktpOk": "KTP ✓",
+    "verified": "Terverifikasi",
+    "noKtp": "KTP belum ada — minta saat konfirmasi",
+    "notVerified": "Belum terverifikasi — cek KTP saat konfirmasi",
+    "use": "Pakai data ini"
   }
 }

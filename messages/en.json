@@ -1748,5 +1748,15 @@
     "deleteTitle": "Delete document?",
     "deleteConfirm": "The {kind} document will be permanently deleted and cannot be restored.",
     "privacyNote": "Documents are confidential and only used to verify bookings. Delete them if the customer asks."
+  },
+  "customerLookup": {
+    "returning": "Returning customer: {name}",
+    "orders": "{count} orders",
+    "last": "last {date}",
+    "ktpOk": "ID ✓",
+    "verified": "Verified",
+    "noKtp": "No ID on file — ask for it at confirmation",
+    "notVerified": "Not verified — check their ID at confirmation",
+    "use": "Use this data"
   }
 }
