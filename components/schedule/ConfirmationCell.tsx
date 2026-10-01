@@ -41,10 +41,20 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
   });
   const send = useSendConfirmation();
 
-  // Only internal lines with a driver + car assigned can be confirmed.
-  const assignable =
-    !line.is_external && Boolean(line.driver?.id) && Boolean(line.car?.id);
-  if (!assignable) {
+  // Internal lines need a driver + car; partner lines need the vendor's driver
+  // name and a plate (typed on the line, or the vendor car's plate).
+  if (line.is_external) {
+    const partnerReady =
+      Boolean(line.driver_name_raw?.trim()) &&
+      Boolean(line.plate_raw?.trim() || line.external_car?.plate_number?.trim());
+    if (!partnerReady) {
+      return (
+        <span className="text-[11px] text-amber-600 italic">
+          {t('completePartner')}
+        </span>
+      );
+    }
+  } else if (!(Boolean(line.driver?.id) && Boolean(line.car?.id))) {
     return <span className="text-[11px] text-gray-300 italic">—</span>;
   }
 

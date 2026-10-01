@@ -182,7 +182,10 @@
     "adding": "Adding…",
     "errModelRequired": "Car model is required.",
     "okCarAdded": "Car added",
-    "okCarRemoved": "Car removed"
+    "okCarRemoved": "Car removed",
+    "nameRequired": "Name *",
+    "phone": "Phone",
+    "errNameRequired": "Vendor name is required."
   },
   "customersPage": {
     "title": "Customers",
@@ -872,7 +875,8 @@
     "cancelPaid": "Already paid",
     "cancelRefundDue": "Refund owed to customer",
     "cancelStillOwed": "Customer still owes",
-    "cancelRefundHint": "The customer overpaid versus the cancellation fee. Process the refund via the Mark Refund flow."
+    "cancelRefundHint": "The customer overpaid versus the cancellation fee. Process the refund via the Mark Refund flow.",
+    "partnerDriver": "Partner driver"
   },
   "invoicesPage": {
     "title": "Invoices",
@@ -1329,7 +1333,8 @@
     "resend": "Resend",
     "sendToCustomer": "Send to Customer",
     "alsoDriver": "Also send to driver (WhatsApp)",
-    "notifyOldDriver": "Notify previous driver"
+    "notifyOldDriver": "Notify previous driver",
+    "completePartner": "Complete the partner driver & plate"
   },
   "assignDriver": {
     "driver": "Driver",
@@ -1465,7 +1470,13 @@
     "errVendorNameRequired": "Vendor name is required",
     "errSelectVendorFirst": "Select a vendor first",
     "errCarModelRequired": "Car type / model is required",
-    "onTrip": "On trip"
+    "onTrip": "On trip",
+    "partnerDriverTitle": "Partner driver & unit",
+    "partnerDriverName": "Partner driver name",
+    "partnerDriverNamePlaceholder": "Driver name from the vendor",
+    "partnerDriverPhone": "Driver phone",
+    "partnerPlate": "Plate number",
+    "partnerHint": "Used to confirm the trip with the customer and the partner's driver over WhatsApp."
   },
   "financeCard": {
     "title": "Finance & Margin",
@@ -1758,5 +1769,24 @@
     "noKtp": "No ID on file — ask for it at confirmation",
     "notVerified": "Not verified — check their ID at confirmation",
     "use": "Use this data"
+  },
+  "vendorFields": {
+    "pic": "PIC / contact",
+    "picPlaceholder": "Person in charge",
+    "area": "Service area",
+    "areaPlaceholder": "e.g. Jabodetabek, Bandung",
+    "bankTitle": "Payment account",
+    "bankName": "Bank name",
+    "bankAccount": "Account number",
+    "bankHolder": "Account holder",
+    "bankHolderPlaceholder": "Account holder name",
+    "bankEmpty": "No bank details yet",
+    "copy": "Copy",
+    "copied": "Account number copied",
+    "edit": "Edit vendor",
+    "editTitle": "Edit Vendor",
+    "save": "Save",
+    "saving": "Saving…",
+    "okUpdated": "Vendor updated"
   }
 }

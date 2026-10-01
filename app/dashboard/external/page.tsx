@@ -30,6 +30,11 @@ import {
 } from '@/hooks/useExternalVendors';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { getErrorMessage } from '@/lib/utils';
+import VendorExtraFields, {
+  emptyVendorExtra,
+  vendorExtraPayload,
+  type VendorExtraForm,
+} from '@/components/partners/VendorExtraFields';
 
 const PAGE_SIZE = 20;
 
@@ -39,6 +44,7 @@ export default function ExternalVendorsPage() {
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', notes: '' });
+  const [extra, setExtra] = useState<VendorExtraForm>(emptyVendorExtra);
 
   const debouncedSearch = useDebouncedValue(search.trim());
   const { data, isLoading, isFetching } = useExternalVendors({
@@ -70,9 +76,11 @@ export default function ExternalVendorsPage() {
         name: form.name.trim(),
         phone: form.phone.trim() || undefined,
         notes: form.notes.trim() || undefined,
+        ...vendorExtraPayload(extra),
       });
       toast.success(t('okCreated'));
       setForm({ name: '', phone: '', notes: '' });
+      setExtra(emptyVendorExtra);
       setCreateOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -142,9 +150,9 @@ export default function ExternalVendorsPage() {
                       >
                         {v.name}
                       </Link>
-                      {v.notes && (
+                      {(v.pic_name || v.area || v.notes) && (
                         <p className="text-xs text-gray-400 max-w-64 truncate">
-                          {v.notes}
+                          {[v.pic_name, v.area, v.notes].filter(Boolean).join(' · ')}
                         </p>
                       )}
                     </TableCell>
@@ -197,7 +205,7 @@ export default function ExternalVendorsPage() {
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('addExternalVendor')}</DialogTitle>
           </DialogHeader>
@@ -220,6 +228,7 @@ export default function ExternalVendorsPage() {
                 placeholder="08…"
               />
             </div>
+            <VendorExtraFields value={extra} onChange={setExtra} />
             <div>
               <label className="text-xs font-medium text-gray-500">{t('notes')}</label>
               <Input

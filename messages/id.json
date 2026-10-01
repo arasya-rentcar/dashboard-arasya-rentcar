@@ -182,7 +182,10 @@
     "adding": "Menambahkan…",
     "errModelRequired": "Model mobil wajib diisi.",
     "okCarAdded": "Mobil ditambahkan",
-    "okCarRemoved": "Mobil dihapus"
+    "okCarRemoved": "Mobil dihapus",
+    "nameRequired": "Nama *",
+    "phone": "Telepon",
+    "errNameRequired": "Nama vendor wajib diisi."
   },
   "customersPage": {
     "title": "Pelanggan",
@@ -872,7 +875,8 @@
     "cancelPaid": "Sudah dibayar",
     "cancelRefundDue": "Refund ke pelanggan",
     "cancelStillOwed": "Pelanggan masih berhutang",
-    "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund."
+    "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund.",
+    "partnerDriver": "Driver rekanan"
   },
   "invoicesPage": {
     "title": "Invoice",
@@ -1329,7 +1333,8 @@
     "resend": "Kirim Ulang",
     "sendToCustomer": "Kirim ke Customer",
     "alsoDriver": "Kirim juga ke driver (WhatsApp)",
-    "notifyOldDriver": "Beri tahu driver lama"
+    "notifyOldDriver": "Beri tahu driver lama",
+    "completePartner": "Lengkapi driver & plat rekanan"
   },
   "assignDriver": {
     "driver": "Driver",
@@ -1465,7 +1470,13 @@
     "errVendorNameRequired": "Nama vendor wajib diisi",
     "errSelectVendorFirst": "Pilih vendor terlebih dahulu",
     "errCarModelRequired": "Tipe / model mobil wajib diisi",
-    "onTrip": "Sedang jalan"
+    "onTrip": "Sedang jalan",
+    "partnerDriverTitle": "Driver & unit rekanan",
+    "partnerDriverName": "Nama driver rekanan",
+    "partnerDriverNamePlaceholder": "Nama driver dari vendor",
+    "partnerDriverPhone": "No. HP driver",
+    "partnerPlate": "Plat nomor",
+    "partnerHint": "Dipakai untuk konfirmasi ke pelanggan dan driver rekanan lewat WhatsApp."
   },
   "financeCard": {
     "title": "Keuangan & Margin",
@@ -1758,5 +1769,24 @@
     "noKtp": "KTP belum ada — minta saat konfirmasi",
     "notVerified": "Belum terverifikasi — cek KTP saat konfirmasi",
     "use": "Pakai data ini"
+  },
+  "vendorFields": {
+    "pic": "PIC / kontak",
+    "picPlaceholder": "Nama penanggung jawab",
+    "area": "Area layanan",
+    "areaPlaceholder": "mis. Jabodetabek, Bandung",
+    "bankTitle": "Rekening pembayaran",
+    "bankName": "Nama bank",
+    "bankAccount": "No. rekening",
+    "bankHolder": "Atas nama",
+    "bankHolderPlaceholder": "Nama pemilik rekening",
+    "bankEmpty": "Rekening belum diisi",
+    "copy": "Salin",
+    "copied": "Nomor rekening disalin",
+    "edit": "Edit vendor",
+    "editTitle": "Edit Vendor",
+    "save": "Simpan",
+    "saving": "Menyimpan…",
+    "okUpdated": "Vendor diperbarui"
   }
 }

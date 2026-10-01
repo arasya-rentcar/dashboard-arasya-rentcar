@@ -68,6 +68,10 @@ export default function ScheduleLineDialog({
   const [status, setStatus] = useState('SCHEDULED');
   const [ops, setOps] = useState('');
   const [rtr, setRtr] = useState('');
+  // Partner (rekanan) driver + plate, kept on the line itself.
+  const [partnerDriver, setPartnerDriver] = useState('');
+  const [partnerPhone, setPartnerPhone] = useState('');
+  const [partnerPlate, setPartnerPlate] = useState('');
 
   const { data: vendorDetail } = useExternalVendor(
     vendorId || '',
@@ -92,6 +96,9 @@ export default function ScheduleLineDialog({
     setStatus(line.line_status);
     setOps(num(line.ops_cost));
     setRtr(num(line.rtr_amount));
+    setPartnerDriver(line.driver_name_raw || '');
+    setPartnerPhone(line.driver_phone_raw || '');
+    setPartnerPlate(line.plate_raw || line.external_car?.plate_number || '');
   }, [line]);
 
   if (!line) return null;
@@ -117,6 +124,13 @@ export default function ScheduleLineDialog({
           car_id: isExternal ? null : carId || null,
           external_vendor_id: isExternal ? vendorId || null : null,
           external_car_id: isExternal ? vendorCarId || null : null,
+          ...(isExternal
+            ? {
+                driver_name_raw: partnerDriver.trim() || null,
+                driver_phone_raw: partnerPhone.trim() || null,
+                plate_raw: partnerPlate.trim() || null,
+              }
+            : {}),
         },
       });
       toast.success(t('savedToast'));
@@ -171,6 +185,8 @@ export default function ScheduleLineDialog({
       });
       const created = res?.data?.data;
       if (created?.id) setVendorCarId(created.id);
+      if (!partnerPlate.trim() && newCarPlate.trim())
+        setPartnerPlate(newCarPlate.trim());
       toast.success(t('vendorCarAdded'));
       setNewCarOpen(false);
       setNewCarModel('');
@@ -378,7 +394,15 @@ export default function ScheduleLineDialog({
                       </Button>
                     </div>
                   ) : (
-                    <Select value={vendorCarId} onValueChange={setVendorCarId}>
+                    <Select
+                      value={vendorCarId}
+                      onValueChange={(v) => {
+                        setVendorCarId(v);
+                        // Prefill the plate from the chosen unit when still empty.
+                        const plate = vendorCars.find((c) => c.id === v)?.plate_number;
+                        if (!partnerPlate.trim() && plate) setPartnerPlate(plate);
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder={t('selectCar')} />
                       </SelectTrigger>
@@ -394,6 +418,43 @@ export default function ScheduleLineDialog({
                   )}
                 </div>
               )}
+              <div className="rounded-lg border border-purple-100 bg-purple-50/40 p-2.5 space-y-2">
+                <p className="text-xs font-medium text-purple-800">
+                  {t('partnerDriverTitle')}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">
+                      {t('partnerDriverName')}
+                    </Label>
+                    <Input
+                      value={partnerDriver}
+                      onChange={(e) => setPartnerDriver(e.target.value)}
+                      placeholder={t('partnerDriverNamePlaceholder')}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">
+                      {t('partnerDriverPhone')}
+                    </Label>
+                    <Input
+                      inputMode="tel"
+                      value={partnerPhone}
+                      onChange={(e) => setPartnerPhone(e.target.value)}
+                      placeholder="08…"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-500">{t('partnerPlate')}</Label>
+                  <Input
+                    value={partnerPlate}
+                    onChange={(e) => setPartnerPlate(e.target.value)}
+                    placeholder={t('platePlaceholder')}
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500">{t('partnerHint')}</p>
+              </div>
               <div className="space-y-1.5">
                 <Label>{t('rtrDay')}</Label>
                 <Input

@@ -519,6 +519,7 @@ export default function OrderDetailPage({
       is_external: item.is_external ?? false,
       line_status: (item.line_status as ScheduleStatus) ?? "SCHEDULED",
       driver_name_raw: item.driver_name_raw ?? null,
+      driver_phone_raw: item.driver_phone_raw ?? null,
       plate_raw: item.plate_raw ?? null,
       notes: item.notes ?? null,
       order: {
@@ -1034,11 +1035,14 @@ export default function OrderDetailPage({
                                 item.external_car?.model ||
                                 item.description ||
                                 null;
-                              const carPlate =
-                                item.car?.plate_number ||
-                                item.external_car?.plate_number ||
-                                item.plate_raw ||
-                                null;
+                              const carPlate = item.is_external
+                                ? item.plate_raw ||
+                                  item.external_car?.plate_number ||
+                                  null
+                                : item.car?.plate_number ||
+                                  item.external_car?.plate_number ||
+                                  item.plate_raw ||
+                                  null;
                               const carLabel = [carName, carPlate]
                                 .filter(Boolean)
                                 .join(" · ");
@@ -1133,6 +1137,19 @@ export default function OrderDetailPage({
                                           </span>
                                         )}
                                       </div>
+                                      {item.is_external &&
+                                        (item.driver_name_raw ||
+                                          item.driver_phone_raw) && (
+                                          <p className="mt-1.5 text-[11px] text-purple-700">
+                                            {t('partnerDriver')}:{" "}
+                                            {[
+                                              item.driver_name_raw,
+                                              item.driver_phone_raw,
+                                            ]
+                                              .filter(Boolean)
+                                              .join(" · ")}
+                                          </p>
+                                        )}
                                       {(item.driver_accepted_at ||
                                         awaitingAccept) && (
                                         <div className="mt-1.5 text-[11px]">

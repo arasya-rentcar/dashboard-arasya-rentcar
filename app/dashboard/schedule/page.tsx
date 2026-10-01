@@ -346,6 +346,20 @@ function AgendaTab() {
                             ? ` · ${line.external_car.model}`
                             : ''}
                         </div>
+                        {(line.driver_name_raw ||
+                          line.driver_phone_raw ||
+                          line.plate_raw ||
+                          line.external_car?.plate_number) && (
+                          <div className="text-[11px] text-gray-500">
+                            {[
+                              line.driver_name_raw,
+                              line.driver_phone_raw,
+                              line.plate_raw || line.external_car?.plate_number,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div>

@@ -4,7 +4,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Plus, Trash2, Phone, Car, ClipboardList, Wallet } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Phone,
+  Car,
+  ClipboardList,
+  Wallet,
+  Pencil,
+  User,
+  MapPin,
+  Landmark,
+  Copy,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,8 +43,14 @@ import {
   useExternalVendor,
   useAddVendorCar,
   useDeleteVendorCar,
+  useUpdateVendor,
 } from '@/hooks/useExternalVendors';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
+import VendorExtraFields, {
+  emptyVendorExtra,
+  vendorExtraPayload,
+  type VendorExtraForm,
+} from '@/components/partners/VendorExtraFields';
 import PartnerDetailView from '@/components/partners/PartnerDetailView';
 import VendorRevenuePanel from '@/components/revenue/VendorRevenuePanel';
 import { useVendorDetail2 } from '@/hooks/useExternalVendors';
@@ -53,6 +72,11 @@ export default function VendorDetailPage() {
     cars_page: carsPage,
     orders_page: ordersPage,
   });
+  const tf = useTranslations('vendorFields');
+  const updateMutation = useUpdateVendor();
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', phone: '', notes: '' });
+  const [editExtra, setEditExtra] = useState<VendorExtraForm>(emptyVendorExtra);
   const addCarMutation = useAddVendorCar();
   const deleteCarMutation = useDeleteVendorCar();
   const { data: detail } = useVendorDetail2(tab === 'finance' ? id : undefined);
@@ -76,6 +100,54 @@ export default function VendorDetailPage() {
       setAddCarOpen(false);
     } catch (err) {
       toast.error(getErrorMessage(err));
+    }
+  }
+
+  function openEdit() {
+    if (!vendor) return;
+    setEditForm({
+      name: vendor.name,
+      phone: vendor.phone ?? '',
+      notes: vendor.notes ?? '',
+    });
+    setEditExtra({
+      pic_name: vendor.pic_name ?? '',
+      area: vendor.area ?? '',
+      bank_name: vendor.bank_name ?? '',
+      bank_account: vendor.bank_account ?? '',
+      bank_holder: vendor.bank_holder ?? '',
+    });
+    setEditOpen(true);
+  }
+
+  async function handleUpdate() {
+    if (!editForm.name.trim()) {
+      toast.error(tx('errNameRequired'));
+      return;
+    }
+    try {
+      await updateMutation.mutateAsync({
+        id,
+        data: {
+          name: editForm.name.trim(),
+          phone: editForm.phone.trim() || null,
+          notes: editForm.notes.trim() || null,
+          ...vendorExtraPayload(editExtra),
+        },
+      });
+      toast.success(tf('okUpdated'));
+      setEditOpen(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
+  }
+
+  async function copyAccount(v: string) {
+    try {
+      await navigator.clipboard.writeText(v);
+      toast.success(tf('copied'));
+    } catch {
+      /* clipboard unavailable */
     }
   }
 
@@ -131,6 +203,9 @@ export default function VendorDetailPage() {
                 </p>
               )}
             </div>
+            <Button variant="outline" size="sm" onClick={openEdit}>
+              <Pencil className="h-3.5 w-3.5 mr-1.5" /> {tf('edit')}
+            </Button>
             <div className="flex items-center gap-6 ml-auto">
               <div className="text-center">
                 <p className="text-xl font-semibold text-gray-900">
@@ -148,9 +223,55 @@ export default function VendorDetailPage() {
           </CardContent>
         </Card>
 
-        {vendor.notes && (
-          <p className="text-sm text-gray-500">{vendor.notes}</p>
-        )}
+        {/* Contact + payout details (handy when paying vendor payables) */}
+        <Card className="border border-gray-200 shadow-none">
+          <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="space-y-1.5">
+              <p className="flex items-center gap-1.5 text-gray-700">
+                <User className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-xs text-gray-400">{tf('pic')}:</span>{' '}
+                {vendor.pic_name || '-'}
+              </p>
+              <p className="flex items-center gap-1.5 text-gray-700">
+                <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-xs text-gray-400">{tf('area')}:</span>{' '}
+                {vendor.area || '-'}
+              </p>
+              {vendor.notes && (
+                <p className="text-xs text-gray-500">{vendor.notes}</p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1">
+                <Landmark className="h-3.5 w-3.5 text-gray-400" /> {tf('bankTitle')}
+              </p>
+              {vendor.bank_name || vendor.bank_account || vendor.bank_holder ? (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-medium text-gray-900">
+                    {vendor.bank_name || '-'}
+                  </span>
+                  <span className="font-mono text-gray-900">
+                    {vendor.bank_account || '-'}
+                  </span>
+                  {vendor.bank_account && (
+                    <button
+                      type="button"
+                      onClick={() => copyAccount(vendor.bank_account as string)}
+                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                    >
+                      <Copy className="h-3 w-3" /> {tf('copy')}
+                    </button>
+                  )}
+                  <span className="text-gray-600">
+                    a.n. {vendor.bank_holder || '-'}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400">{tf('bankEmpty')}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Embedded vendor revenue (full report at /dashboard/revenue) */}
         <VendorRevenuePanel vendorId={id} />
@@ -349,6 +470,51 @@ export default function VendorDetailPage() {
       </div>
 
       {/* Add car dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{tf('editTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500">
+                {tx('nameRequired')}
+              </label>
+              <Input
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500">
+                {tx('phone')}
+              </label>
+              <Input
+                value={editForm.phone}
+                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+              />
+            </div>
+            <VendorExtraFields value={editExtra} onChange={setEditExtra} />
+            <div>
+              <label className="text-xs font-medium text-gray-500">
+                {tx('notes')}
+              </label>
+              <Input
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleUpdate}
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? tf('saving') : tf('save')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={addCarOpen} onOpenChange={setAddCarOpen}>
         <DialogContent>
           <DialogHeader>
