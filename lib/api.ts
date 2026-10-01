@@ -155,6 +155,28 @@ export const customersApi = {
     api.get(`/customers/${id}`, { params: { orders_page: ordersPage } }),
   create: (data: object) => api.post("/customers", data),
   update: (id: string, data: object) => api.put(`/customers/${id}`, data),
+  // Returning-customer lookup by phone (data is null when unknown).
+  lookup: (phone: string) =>
+    api.get("/customers/lookup", { params: { phone } }),
+  uploadDocument: (
+    id: string,
+    data: { file: File; kind: string; note?: string },
+  ) => {
+    const fd = new FormData();
+    fd.append("file", data.file);
+    fd.append("kind", data.kind);
+    if (data.note) fd.append("note", data.note);
+    return api.post(`/customers/${id}/documents`, fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  // Short-lived signed URL; fetch on every click, never store it.
+  documentUrl: (id: string, docId: string) =>
+    api.get(`/customers/${id}/documents/${docId}/url`),
+  deleteDocument: (id: string, docId: string) =>
+    api.delete(`/customers/${id}/documents/${docId}`),
+  verify: (id: string, verified: boolean) =>
+    api.post(`/customers/${id}/verify`, { verified }),
 };
 
 // ─── External vendors ───────────────────────────────────────

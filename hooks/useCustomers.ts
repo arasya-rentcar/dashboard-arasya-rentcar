@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi } from '@/lib/api';
-import { Customer, CustomerDetail, PaginationMeta } from '@/types';
+import {
+  Customer,
+  CustomerDetail,
+  CustomerLookupResult,
+  PaginationMeta,
+} from '@/types';
 
 export interface CustomersListParams {
   search?: string;
@@ -54,6 +59,51 @@ export function useUpdateCustomer() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: object }) =>
       customersApi.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['customers'] }),
+  });
+}
+
+/** Returning-customer lookup by phone; pass undefined to disable. */
+export function useCustomerLookup(phone?: string) {
+  return useQuery<CustomerLookupResult | null>({
+    queryKey: ['customer-lookup', phone],
+    queryFn: async () => {
+      const res = await customersApi.lookup(phone as string);
+      return res.data.data ?? null;
+    },
+    enabled: !!phone,
+    staleTime: 30_000,
+  });
+}
+
+export function useUploadCustomerDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { file: File; kind: string; note?: string };
+    }) => customersApi.uploadDocument(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['customers'] }),
+  });
+}
+
+export function useDeleteCustomerDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, docId }: { id: string; docId: string }) =>
+      customersApi.deleteDocument(id, docId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['customers'] }),
+  });
+}
+
+export function useVerifyCustomer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, verified }: { id: string; verified: boolean }) =>
+      customersApi.verify(id, verified),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['customers'] }),
   });
 }

@@ -165,6 +165,7 @@ export interface OrderServiceItem {
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
   driver_name_raw?: string | null;
+  driver_phone_raw?: string | null;
   plate_raw?: string | null;
   driver?: { id: string; name: string } | null;
   car?: {
@@ -301,6 +302,7 @@ export interface ScheduleLine {
   is_external: boolean;
   line_status: ScheduleStatus;
   driver_name_raw?: string | null;
+  driver_phone_raw?: string | null;
   plate_raw?: string | null;
   notes?: string | null;
   // #A1/#A2 trip-team confirmation badge state.
@@ -805,8 +807,45 @@ export interface Customer {
   first_order_at?: string | null;
   last_order_at?: string | null;
   notes?: string | null;
+  // Identity (admin-only). The full NIK is only returned by GET /customers/:id;
+  // list endpoints return id_number_masked.
+  id_number?: string | null;
+  id_number_masked?: string | null;
+  address?: string | null;
+  company_name?: string | null;
+  id_verified_at?: string | null;
+  id_verified_by?: string | null;
+  has_ktp?: boolean;
+  verified?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export type CustomerDocumentKind = "KTP" | "SIM" | "NPWP" | "PASPOR" | "LAINNYA";
+
+export interface CustomerDocument {
+  id: string;
+  kind: CustomerDocumentKind;
+  mime: string;
+  size: number;
+  note?: string | null;
+  uploaded_by?: string | null;
+  created_at: string;
+}
+
+/** GET /customers/lookup?phone=... → returning-customer hint for order creation. */
+export interface CustomerLookupResult {
+  id: string;
+  code?: string | null;
+  name: string;
+  phone: string;
+  email?: string | null;
+  company_name?: string | null;
+  total_orders: number;
+  last_order_at?: string | null;
+  has_ktp?: boolean;
+  verified?: boolean;
+  id_number_masked?: string | null;
 }
 
 export interface CustomerOrderRow {
@@ -830,6 +869,7 @@ export interface PaginationMeta {
 }
 
 export interface CustomerDetail extends Customer {
+  documents?: CustomerDocument[];
   orders: CustomerOrderRow[];
   orders_pagination: PaginationMeta;
 }
@@ -841,6 +881,12 @@ export interface ExternalVendorListItem {
   name: string;
   phone?: string | null;
   notes?: string | null;
+  // Partner (rekanan) contact + payout details.
+  pic_name?: string | null;
+  area?: string | null;
+  bank_name?: string | null;
+  bank_account?: string | null;
+  bank_holder?: string | null;
   order_count: number;
   created_at: string;
   updated_at: string;
