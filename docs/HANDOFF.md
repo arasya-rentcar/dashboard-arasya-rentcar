@@ -4,7 +4,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 
 ## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
 
-Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru (build `0e492789…`) sudah dipasang di HP pemilik. Sebelum uji, pemilik meminta aturan baru: **driver hanya bisa ditugaskan setelah DP atau lunas** (§0.7; kode siap di branch, belum dirilis). **Berikutnya: rilis §0.7 (API dulu, lalu dashboard), lalu uji ulang dengan 0.5.** RLS `public` sudah menyala; schema `arasya_bot` masih terbuka (lihat 0.6).
+Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru (build `0e492789…`) sudah dipasang di HP pemilik. Sebelum uji, pemilik meminta aturan baru: **driver hanya bisa ditugaskan setelah DP atau lunas** (§0.7; sudah dirilis 2 Okt malam). **Berikutnya: uji ulang dengan 0.5.** RLS `public` sudah menyala; schema `arasya_bot` masih terbuka (lihat 0.6).
 
 ### 0.1 Temuan dan penyebab (sudah dibuktikan)
 
@@ -87,7 +87,7 @@ Persiapan: driver uji **Sutan Arief** (nomor HP unik milik pemilik, sudah punya 
 
 ### 0.7 Aturan baru: driver ditugaskan setelah DP (2 Okt malam)
 
-Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-planck-crm2wt` (API `02bbf04`; dashboard: commit "feat(assign): driver pickers wait for the DP"), diuji lokal, belum dirilis.** Rilis: fast-forward `main` API dulu (deploy otomatis), lalu dashboard.
+Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bbf04` (workflow "Deploy API" run #66 sukses 20.58 UTC; `/health` 200), lalu dashboard `9fb9bd3` ("Deploy Dashboard" run #63 ke VPS dan "Deploy to Vercel" run #16, keduanya sukses 21.02 UTC).
 - API (`src/modules/orders/assignment-guard.ts`): driver internal hanya bisa ditugaskan bila `payment_status` order `DP_PAID` atau `PAID` (status ini hanya berubah saat invoice ditandai terbayar). Berlaku di Edit baris (`PUT /schedule/lines/:id`), Tugaskan untuk semua, Ganti semua, dan rute bot lama; selain itu dijawab 409 "Order belum dibayar…".
 - Tetap boleh pada order yang belum dibayar: melepas driver, menyimpan ulang baris dengan driver yang sama (catatan, jam, biaya), memilih mobil, dan baris rekanan.
 - Dashboard: order belum dibayar tidak menampilkan tombol "Tugaskan untuk semua"/"Ganti semua" dan menjelaskan caranya (invoice DP → tandai terbayar); dialog per hari mengunci pilihan driver; laci hari di Jadwal menampilkan "Menunggu DP".
@@ -99,8 +99,8 @@ Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-pla
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (543a938); aturan DP §0.7 di branch `claude/funny-planck-crm2wt` (02bbf04), belum dirilis | ✅ Live di https://api.haikuy.com (deploy 2 Okt 18.28 UTC) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (cf25b20 + handoff ini); aturan DP §0.7 di branch `claude/funny-planck-crm2wt`, belum dirilis | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **api-arasya-rentcar** | `main` (02bbf04, aturan DP §0.7) | ✅ Live di https://api.haikuy.com (deploy 2 Okt 20.58 UTC) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (9fb9bd3 aturan DP §0.7 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (f0b25dc, repo publik) | ⏳ APK baru (EAS build `0e492789…`) sudah dipasang di HP pemilik | Perbaikan upload foto + antrean sudah di kode (§0.2), belum diuji di HP asli. Uji dengan §0.5. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
@@ -115,7 +115,7 @@ Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-pla
    - workflow "EAS Build (Android)" profile `preview` sukses: keystore dibuat otomatis, versionCode dikelola remote oleh EAS (mulai 1), build `324ed7a4-7d74-4977-8c76-5a1b48d78431` di expo.dev (`rimbalun/arasyarentcar`);
    - kunci FCM V1 (service account Firebase `arasya-rentcar-mobile-apps`) sudah diunggah di expo.dev → Credentials → Android;
    - sisa untuk pemilik: unduh APK dari halaman build itu.
-6. ⏳ **Uji coba aplikasi driver**: uji pertama gagal (lihat §0); perbaikan sudah dirilis dan APK baru sudah dipasang di HP pemilik. Berikutnya: rilis aturan DP (§0.7), uji ulang dengan §0.5, baru bagikan ke semua driver.
+6. ⏳ **Uji coba aplikasi driver**: uji pertama gagal (lihat §0); perbaikan sudah dirilis dan APK baru sudah dipasang di HP pemilik. Aturan DP (§0.7) sudah dirilis. Berikutnya: uji ulang dengan §0.5, baru bagikan ke semua driver.
 7. ✅ **GA4 purchase**: `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env` API dan API sudah direstart. Bukti berfungsi: event `purchase` di GA4 Realtime saat invoice pertama ditandai PAID.
 
 ## 3. Yang sudah dikerjakan (ringkas)
