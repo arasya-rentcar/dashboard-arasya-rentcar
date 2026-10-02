@@ -7,7 +7,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (02978ea + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
+| **api-arasya-rentcar** | `main` (d6d6544 + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
 | **dashboard-arasya-rentcar** | `main` (aee7632 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (565230a, repo publik) | ⏳ Build APK pertama sudah dikirim ke EAS (2 Okt) | Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. Sisa: unduh APK dari expo.dev dan uji coba driver (langkah 6). |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
@@ -32,7 +32,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - **Aplikasi driver**: tugas, terima/berangkat/sampai/selesai, laporan foto & biaya, offline queue + sinkron latar belakang, idempotent (tidak ada data dobel), jam kejadian dari HP.
 - **WhatsApp tanpa bot**: tombol kirim di dashboard membuka WhatsApp dengan pesan terisi (pelanggan, driver, driver lama); pengingat driver lewat push aplikasi.
 - **Database pelanggan**: NIK, alamat, perusahaan, dokumen KTP/SIM/NPWP privat, status terverifikasi, pengenalan pelanggan lama dari nomor HP di form order.
-- **Rekanan**: badge "Ada di armada / Perlu rekanan" di lead, Vendor otomatis terpilih, driver & plat rekanan per trip, konfirmasi pelanggan untuk order rekanan, PIC/area/rekening rekanan; driver rekanan tampil di Riwayat, Riwayat Trip vendor, dan kartu Keuangan order.
+- **Rekanan**: badge "Ada di armada / Perlu rekanan" di lead, Vendor otomatis terpilih, driver & plat rekanan per trip, konfirmasi pelanggan untuk order rekanan, PIC/area/rekening rekanan; driver rekanan tampil di Riwayat, Riwayat Trip vendor, dan kartu Keuangan order; pencarian Order juga menemukan nama/HP/plat driver rekanan, nama vendor, dan mobil vendor.
 - **Konsistensi**: hanya rekening BCA PT Ayomi Raya Karsa; kebijakan pembatalan sama di website, caption, PDF, dan sistem; semua tanggal WIB.
 - **Operasional**: Supabase keep-alive tiap 3 hari (`SUPABASE_KEEPALIVE_DB_URL`), smoke test API, verifikasi GA4 + lead di situs live.
 
@@ -44,6 +44,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - Bot WhatsApp dihentikan; diganti website + dashboard + aplikasi driver.
 - Kode lead menjadi kode order.
 - Daftar harga resmi ditunda (BACKLOG).
+- Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".
 - Langganan VPS diperpanjang: API dan dashboard.haikuy.com tetap di VPS (tidak pindah hosting).
 - Uji upload dokumen pelanggan dan PDF ke Supabase menunggu rencana yang matang, karena menyangkut data pribadi pelanggan (NIK/KTP, UU PDP).
 
