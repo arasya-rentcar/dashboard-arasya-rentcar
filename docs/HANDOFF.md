@@ -87,7 +87,7 @@ Persiapan: driver uji **Sutan Arief** (nomor HP unik milik pemilik, sudah punya 
 
 ### 0.7 Aturan baru: driver ditugaskan setelah DP (2 Okt malam)
 
-Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-planck-crm2wt` (API `02bbf04`, dashboard `5ee4315`), diuji lokal, belum dirilis.** Rilis: fast-forward `main` API dulu (deploy otomatis), lalu dashboard.
+Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-planck-crm2wt` (API `02bbf04`; dashboard: commit "feat(assign): driver pickers wait for the DP"), diuji lokal, belum dirilis.** Rilis: fast-forward `main` API dulu (deploy otomatis), lalu dashboard.
 - API (`src/modules/orders/assignment-guard.ts`): driver internal hanya bisa ditugaskan bila `payment_status` order `DP_PAID` atau `PAID` (status ini hanya berubah saat invoice ditandai terbayar). Berlaku di Edit baris (`PUT /schedule/lines/:id`), Tugaskan untuk semua, Ganti semua, dan rute bot lama; selain itu dijawab 409 "Order belum dibayar…".
 - Tetap boleh pada order yang belum dibayar: melepas driver, menyimpan ulang baris dengan driver yang sama (catatan, jam, biaya), memilih mobil, dan baris rekanan.
 - Dashboard: order belum dibayar tidak menampilkan tombol "Tugaskan untuk semua"/"Ganti semua" dan menjelaskan caranya (invoice DP → tandai terbayar); dialog per hari mengunci pilihan driver; laci hari di Jadwal menampilkan "Menunggu DP".
@@ -100,7 +100,7 @@ Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-pla
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
 | **api-arasya-rentcar** | `main` (543a938); aturan DP §0.7 di branch `claude/funny-planck-crm2wt` (02bbf04), belum dirilis | ✅ Live di https://api.haikuy.com (deploy 2 Okt 18.28 UTC) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (cf25b20 + handoff ini); aturan DP §0.7 di branch `claude/funny-planck-crm2wt` (5ee4315), belum dirilis | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **dashboard-arasya-rentcar** | `main` (cf25b20 + handoff ini); aturan DP §0.7 di branch `claude/funny-planck-crm2wt`, belum dirilis | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (f0b25dc, repo publik) | ⏳ APK baru (EAS build `0e492789…`) sudah dipasang di HP pemilik | Perbaikan upload foto + antrean sudah di kode (§0.2), belum diuji di HP asli. Uji dengan §0.5. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
