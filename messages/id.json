@@ -876,7 +876,8 @@
     "cancelRefundDue": "Refund ke pelanggan",
     "cancelStillOwed": "Pelanggan masih berhutang",
     "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund.",
-    "partnerDriver": "Driver rekanan"
+    "partnerDriver": "Driver rekanan",
+    "awaitingDpAssign": "Driver baru bisa ditugaskan setelah pelanggan membayar DP. Buat invoice Uang Muka (DP), lalu tandai terbayar dengan bukti transfer. Hari yang memakai rekanan tetap bisa diatur."
   },
   "invoicesPage": {
     "title": "Invoice",
@@ -1002,7 +1003,8 @@
     "selectCar": "Pilih mobil",
     "onTrip": "Sedang jalan",
     "cancel": "Batal",
-    "save": "Simpan"
+    "save": "Simpan",
+    "awaitingDp": "Menunggu DP"
   },
   "history": {
     "title": "Riwayat Perjalanan",
@@ -1482,7 +1484,8 @@
     "partnerDriverNamePlaceholder": "Nama driver dari vendor",
     "partnerDriverPhone": "No. HP driver",
     "partnerPlate": "Plat nomor",
-    "partnerHint": "Dipakai untuk konfirmasi ke pelanggan dan driver rekanan lewat WhatsApp."
+    "partnerHint": "Dipakai untuk konfirmasi ke pelanggan dan driver rekanan lewat WhatsApp.",
+    "awaitingDpNote": "Order ini belum dibayar. Driver baru bisa dipilih setelah DP atau pelunasan tercatat (invoice ditandai terbayar). Mobil dan rekanan tetap bisa diatur."
   },
   "financeCard": {
     "title": "Keuangan & Margin",

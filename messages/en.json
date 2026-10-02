@@ -876,7 +876,8 @@
     "cancelRefundDue": "Refund owed to customer",
     "cancelStillOwed": "Customer still owes",
     "cancelRefundHint": "The customer overpaid versus the cancellation fee. Process the refund via the Mark Refund flow.",
-    "partnerDriver": "Partner driver"
+    "partnerDriver": "Partner driver",
+    "awaitingDpAssign": "A driver can be assigned once the customer pays the DP. Create a Down Payment (DP) invoice, then mark it paid with the transfer proof. Days served by a partner can still be set."
   },
   "invoicesPage": {
     "title": "Invoices",
@@ -1002,7 +1003,8 @@
     "selectCar": "Select car",
     "onTrip": "On trip",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "awaitingDp": "Awaiting DP"
   },
   "history": {
     "title": "Trip History",
@@ -1482,7 +1484,8 @@
     "partnerDriverNamePlaceholder": "Driver name from the vendor",
     "partnerDriverPhone": "Driver phone",
     "partnerPlate": "Plate number",
-    "partnerHint": "Used to confirm the trip with the customer and the partner's driver over WhatsApp."
+    "partnerHint": "Used to confirm the trip with the customer and the partner's driver over WhatsApp.",
+    "awaitingDpNote": "This order is unpaid. A driver can be chosen once the DP or full payment is recorded (invoice marked paid). Car and partner can still be set."
   },
   "financeCard": {
     "title": "Finance & Margin",

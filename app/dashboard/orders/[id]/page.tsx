@@ -291,6 +291,9 @@ export default function OrderDetailPage({
       item.line_status !== "CANCELLED" &&
       !item.driver?.id,
   );
+  // Drivers are assigned only once the DP (or full payment) is recorded; the
+  // API rejects it otherwise. Partner (external) lines are not affected.
+  const awaitingDp = order?.payment_status === "UNPAID";
   // "Reassign All" swaps the driver/car on every internal line that is assigned
   // but NOT yet started (line_status === ASSIGNED). Show it only when at least
   // one such line exists, so you can change drivers without editing day-by-day.
@@ -975,7 +978,7 @@ export default function OrderDetailPage({
                           : t('singleDay')}
                       </Badge>
                     )}
-                    {!isStructurallyLocked && hasUnassignedInternalLine && (
+                    {!isStructurallyLocked && !awaitingDp && hasUnassignedInternalLine && (
                       <Button
                         onClick={() => setAssignOpen(true)}
                         size="sm"
@@ -985,7 +988,7 @@ export default function OrderDetailPage({
                         {t('assignForAll')}
                       </Button>
                     )}
-                    {!isStructurallyLocked && hasReassignableLine && (
+                    {!isStructurallyLocked && !awaitingDp && hasReassignableLine && (
                       <Button
                         onClick={() => setReassignOpen(true)}
                         size="sm"
@@ -998,6 +1001,11 @@ export default function OrderDetailPage({
                     )}
                   </div>
                 </div>
+                {!isStructurallyLocked && awaitingDp && hasUnassignedInternalLine && (
+                  <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    {t('awaitingDpAssign')}
+                  </p>
+                )}
                 {serviceSummary && serviceSummary.dayCount > 1 && (
                   <p className="text-xs text-gray-500 mt-1">
                     {t('rangeSummary', { range: serviceSummary.rangeLabel, count: serviceSummary.lineCount })}

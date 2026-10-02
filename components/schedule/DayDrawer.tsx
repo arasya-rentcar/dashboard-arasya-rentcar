@@ -133,6 +133,8 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
   const started =
     line.line_status === 'IN_PROGRESS' || line.line_status === 'DONE';
   const cancelled = line.line_status === 'CANCELLED';
+  // No driver assignment before the DP is paid (enforced by the API).
+  const awaitingDp = line.order?.payment_status === 'UNPAID';
   const [editing, setEditing] = useState(false);
 
   return (
@@ -170,7 +172,10 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
           <span className="text-amber-600">{t('unassigned')}</span>
         )}
 
-        {!cancelled && !started && !editing && (
+        {!cancelled && !started && awaitingDp && (
+          <span className="shrink-0 text-amber-700">{t('awaitingDp')}</span>
+        )}
+        {!cancelled && !started && !awaitingDp && !editing && (
           <Button
             variant="outline"
             size="sm"

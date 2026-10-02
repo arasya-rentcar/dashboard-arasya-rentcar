@@ -103,6 +103,10 @@ export default function ScheduleLineDialog({
 
   if (!line) return null;
 
+  // Internal drivers only after a paid DP (API rejects it otherwise). The
+  // current driver stays shown so other fields can still be edited.
+  const awaitingDp = line.order?.payment_status === 'UNPAID';
+
   const toNum = (s: string) =>
     s.trim() === '' ? null : Number(s.replace(/[^\d.-]/g, ''));
 
@@ -244,9 +248,18 @@ export default function ScheduleLineDialog({
 
           {!isExternal ? (
             <>
+              {awaitingDp && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {t('awaitingDpNote')}
+                </p>
+              )}
               <div className="space-y-1.5">
                 <Label>{t('driver')}</Label>
-                <Select value={driverId} onValueChange={setDriverId}>
+                <Select
+                  value={driverId}
+                  onValueChange={setDriverId}
+                  disabled={awaitingDp}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder={t('selectDriver')} />
                   </SelectTrigger>
