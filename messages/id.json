@@ -969,7 +969,11 @@
     "date": "Tanggal",
     "noBookings": "Tidak ada booking hari ini.",
     "tabSchedule": "Jadwal",
-    "tabHistory": "Riwayat"
+    "tabHistory": "Riwayat",
+    "overdue": "Belum ditutup",
+    "overdueBanner": "Ada {count} trip lama (sebelum kemarin) yang belum ditutup. Trip ini sudah tidak muncul di aplikasi driver.",
+    "overdueShow": "Lihat",
+    "overdueHint": "Trip lama yang masih terbuka. Klik Edit pada barisnya, ubah status ke Selesai kalau trip sudah jalan atau Dibatalkan kalau tidak jadi, lalu simpan."
   },
   "timeline": {
     "title": "Linimasa Ketersediaan",

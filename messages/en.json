@@ -969,7 +969,11 @@
     "date": "Date",
     "noBookings": "No bookings this day.",
     "tabSchedule": "Schedule",
-    "tabHistory": "History"
+    "tabHistory": "History",
+    "overdue": "Not closed",
+    "overdueBanner": "{count} old trips (before yesterday) are still open. They no longer appear in the driver app.",
+    "overdueShow": "Show",
+    "overdueHint": "Old trips that are still open. Click Edit on the row, set the status to Done if the trip took place or Cancelled if it did not, then save."
   },
   "timeline": {
     "title": "Availability Timeline",

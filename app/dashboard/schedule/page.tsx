@@ -128,8 +128,16 @@ function AgendaTab() {
   // Default to today (WIB) per Sprint 4 — quick chips switch the range.
   const [dateFrom, setDateFrom] = useState(todayStr());
   const [dateTo, setDateTo] = useState(todayStr());
+  // "Belum ditutup": open trips dated before yesterday (WIB). The driver app no
+  // longer lists them, so they are closed here (Edit → Selesai / Dibatalkan).
+  const [overdue, setOverdue] = useState(false);
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ScheduleLine | null>(null);
+  const setRange = (from: string, to: string) => {
+    setOverdue(false);
+    setDateFrom(from);
+    setDateTo(to);
+  };
 
   const debouncedSearch = useDebouncedValue(search.trim());
   const { data, isLoading, isFetching } = useSchedule({
@@ -139,16 +147,18 @@ function AgendaTab() {
     date_from: dateFrom || undefined,
     // Backend normalizes both ends to WIB day-bounds, so the bare date is fine.
     date_to: dateTo || undefined,
+    overdue: overdue ? 'true' : undefined,
     page,
     page_size: PAGE_SIZE,
   });
+  const overdueCount = useSchedule({ overdue: 'true', page: 1, page_size: 1 }).data?.pagination.total ?? 0;
 
   const rows = data?.items ?? [];
   const pagination = data?.pagination;
   const totals = data?.totals;
   const start = pagination ? (pagination.page - 1) * pagination.page_size : 0;
 
-  const key = `${debouncedSearch}|${type}|${status}|${dateFrom}|${dateTo}`;
+  const key = `${debouncedSearch}|${type}|${status}|${dateFrom}|${dateTo}|${overdue}`;
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);
@@ -172,42 +182,44 @@ function AgendaTab() {
           <div className="flex items-end gap-1.5">
             <DateChip
               label={tx('today')}
-              active={dateFrom === todayStr() && dateTo === todayStr()}
-              onClick={() => {
-                setDateFrom(todayStr());
-                setDateTo(todayStr());
-              }}
+              active={!overdue && dateFrom === todayStr() && dateTo === todayStr()}
+              onClick={() => setRange(todayStr(), todayStr())}
             />
             <DateChip
               label={tx('tomorrow')}
               active={
+                !overdue &&
                 dateFrom === addDaysStr(todayStr(), 1) &&
                 dateTo === addDaysStr(todayStr(), 1)
               }
               onClick={() => {
                 const t = addDaysStr(todayStr(), 1);
-                setDateFrom(t);
-                setDateTo(t);
+                setRange(t, t);
               }}
             />
             <DateChip
               label={tx('thisWeek')}
               active={
+                !overdue &&
                 dateFrom === weekRange(todayStr()).from &&
                 dateTo === weekRange(todayStr()).to
               }
               onClick={() => {
                 const w = weekRange(todayStr());
-                setDateFrom(w.from);
-                setDateTo(w.to);
+                setRange(w.from, w.to);
               }}
             />
             <DateChip
               label={tx('all')}
-              active={!dateFrom && !dateTo}
+              active={!overdue && !dateFrom && !dateTo}
+              onClick={() => setRange('', '')}
+            />
+            <DateChip
+              label={overdueCount ? `${tx('overdue')} (${overdueCount})` : tx('overdue')}
+              active={overdue}
               onClick={() => {
-                setDateFrom('');
-                setDateTo('');
+                setRange('', '');
+                setOverdue(true);
               }}
             />
           </div>
@@ -216,7 +228,7 @@ function AgendaTab() {
             <Input
               type="date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => setRange(e.target.value, dateTo)}
               className="w-40"
             />
           </div>
@@ -225,7 +237,7 @@ function AgendaTab() {
             <Input
               type="date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => setRange(dateFrom, e.target.value)}
               className="w-40"
             />
           </div>
@@ -260,6 +272,26 @@ function AgendaTab() {
           </div>
         </div>
       </div>
+
+      {overdue ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {tx('overdueHint')}
+        </div>
+      ) : overdueCount > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>{tx('overdueBanner', { count: overdueCount })}</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setRange('', '');
+              setOverdue(true);
+            }}
+          >
+            {tx('overdueShow')}
+          </Button>
+        </div>
+      ) : null}
 
       {/* Totals */}
       {totals && (

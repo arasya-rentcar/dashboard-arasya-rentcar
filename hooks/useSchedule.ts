@@ -18,6 +18,8 @@ export interface ScheduleListParams {
   type?: string;
   status?: string;
   search?: string;
+  /** 'true': open trips dated before yesterday (WIB), see "Belum ditutup". */
+  overdue?: string;
   page?: number;
   page_size?: number;
 }
