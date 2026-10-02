@@ -8,23 +8,22 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
 | **api-arasya-rentcar** | `main` (02978ea + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (39d0612 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS, release 20261002143731) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (f702457, repo publik) | ❌ Belum ada APK | `EXPO_TOKEN` dan `google-services.json` sudah ada. Sisa: `owner` + `projectId` di `app.json`, build pertama, kunci FCM V1 (lihat langkah 5). |
-| **wa-bot-arasya** | branch `development` | Masih jalan di VPS | Dipensiunkan. API dan dashboard baru sudah live, jadi bisa dimatikan sekarang. |
+| **dashboard-arasya-rentcar** | `main` (aee7632 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (565230a, repo publik) | ⏳ Build APK pertama sudah dikirim ke EAS (2 Okt) | Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. Sisa: unduh APK dari expo.dev dan uji coba driver (langkah 6). |
+| **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
 
 1. ✅ **Deploy API** (2 Okt, migrasi `20261001180000_customer_identity_partner` tercatat 08:42 UTC).
 2. ✅ **Cek API live**: `/health` 200, endpoint terproteksi 401, pesan login versi baru.
 3. ✅ **Rilis dashboard**: `main` di-fast-forward ke 39d0612; Vercel dan VPS ter-deploy otomatis lewat GitHub Actions.
-4. ⏳ **Matikan bot**: `pm2 stop arasya-wa-bot` di VPS (mode WhatsApp manual sudah default di API baru).
-5. ⏳ **Rilis APK pertama** (README repo mobile, bagian "Rilis pertama"):
-   - ✅ `google-services.json` (paket `com.arasyarentcar.driver`, proyek Firebase `arasya-rentcar-mobile-apps`) sudah di root repo;
-   - ✅ secret GitHub `EXPO_TOKEN` sudah diisi;
-   - isi `app.json`: `"owner": "rimbalun"` dan `extra.eas.projectId` = `08ba4d2a-eafe-4590-a04a-23b0e469f171`; pastikan slug proyek di expo.dev sama dengan `"slug": "arasya-driver"`;
-   - jalankan workflow "EAS Build (Android)" profile `preview`. Build pertama di CI membuat keystore otomatis (tidak perlu file keystore);
-   - setelah build pertama, `com.arasyarentcar.driver` muncul di expo.dev → Credentials → Android: upload JSON FCM V1 di bagian *FCM V1 service account key* (lewati bagian keystore). Tidak perlu build ulang.
-6. ⏳ **Atur password aplikasi** 1–2 driver di dashboard (halaman driver → Akses aplikasi driver), uji coba, lalu bagikan ke semua driver.
+4. ✅ **Matikan bot**: `pm2 stop arasya-wa-bot` di VPS (2 Okt, oleh pemilik; mode WhatsApp manual sudah default di API baru).
+5. ✅ **Build APK pertama** (2 Okt; README repo mobile, bagian "Rilis pertama"):
+   - `app.json`: `"owner": "rimbalun"`, `extra.eas.projectId` = `08ba4d2a-eafe-4590-a04a-23b0e469f171`, dan `"slug": "arasyarentcar"` (slug proyek di expo.dev; dengan `arasya-driver` EAS menolak build karena slug tidak cocok);
+   - workflow "EAS Build (Android)" profile `preview` sukses: keystore dibuat otomatis, versionCode dikelola remote oleh EAS (mulai 1), build `324ed7a4-7d74-4977-8c76-5a1b48d78431` di expo.dev (`rimbalun/arasyarentcar`);
+   - kunci FCM V1 (service account Firebase `arasya-rentcar-mobile-apps`) sudah diunggah di expo.dev → Credentials → Android;
+   - sisa untuk pemilik: unduh APK dari halaman build itu.
+6. ⏳ **Atur password aplikasi** (pemilik) 1–2 driver di dashboard (halaman driver → Akses aplikasi driver), uji coba, lalu bagikan ke semua driver.
 7. ✅ **GA4 purchase**: `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env` API dan API sudah direstart. Bukti berfungsi: event `purchase` di GA4 Realtime saat invoice pertama ditandai PAID.
 
 ## 3. Yang sudah dikerjakan (ringkas)
@@ -33,7 +32,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - **Aplikasi driver**: tugas, terima/berangkat/sampai/selesai, laporan foto & biaya, offline queue + sinkron latar belakang, idempotent (tidak ada data dobel), jam kejadian dari HP.
 - **WhatsApp tanpa bot**: tombol kirim di dashboard membuka WhatsApp dengan pesan terisi (pelanggan, driver, driver lama); pengingat driver lewat push aplikasi.
 - **Database pelanggan**: NIK, alamat, perusahaan, dokumen KTP/SIM/NPWP privat, status terverifikasi, pengenalan pelanggan lama dari nomor HP di form order.
-- **Rekanan**: badge "Ada di armada / Perlu rekanan" di lead, Vendor otomatis terpilih, driver & plat rekanan per trip, konfirmasi pelanggan untuk order rekanan, PIC/area/rekening rekanan.
+- **Rekanan**: badge "Ada di armada / Perlu rekanan" di lead, Vendor otomatis terpilih, driver & plat rekanan per trip, konfirmasi pelanggan untuk order rekanan, PIC/area/rekening rekanan; driver rekanan tampil di Riwayat, Riwayat Trip vendor, dan kartu Keuangan order.
 - **Konsistensi**: hanya rekening BCA PT Ayomi Raya Karsa; kebijakan pembatalan sama di website, caption, PDF, dan sistem; semua tanggal WIB.
 - **Operasional**: Supabase keep-alive tiap 3 hari (`SUPABASE_KEEPALIVE_DB_URL`), smoke test API, verifikasi GA4 + lead di situs live.
 
@@ -45,16 +44,17 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - Bot WhatsApp dihentikan; diganti website + dashboard + aplikasi driver.
 - Kode lead menjadi kode order.
 - Daftar harga resmi ditunda (BACKLOG).
+- Langganan VPS diperpanjang: API dan dashboard.haikuy.com tetap di VPS (tidak pindah hosting).
+- Uji upload dokumen pelanggan dan PDF ke Supabase menunggu rencana yang matang, karena menyangkut data pribadi pelanggan (NIK/KTP, UU PDP).
 
 ## 5. Sisa yang belum dikerjakan
 
-- **Belum teruji di produksi**: upload dokumen pelanggan & PDF ke Supabase, pengiriman GA4 purchase, push notifikasi (butuh APK + Firebase), sinkron latar belakang di HP asli.
-- **Kecil / tampilan**: nama driver rekanan belum tampil di tab Riwayat trip dan kartu keuangan; placeholder pencarian order belum menyebut kode lead.
-- **Infrastruktur**: VPS berakhir **16 Oktober 2026**, perlu pindah hosting API (+ dashboard ke Vercel dengan domain dashboard.haikuy.com, tambahkan domain ke CORS bila berubah). Secret SSH deploy sudah diisi (workflow deploy VPS berjalan). Connector Vercel di sesi Claude tidak melihat project (perlu disambung ulang ke akun pemilik tim). `dashboard.haikuy.com` belum diizinkan di network environment.
+- **Belum teruji di produksi**: upload dokumen pelanggan & PDF ke Supabase (menunggu rencana keamanan data, lihat keputusan pemilik), pengiriman GA4 purchase, push notifikasi dan sinkron latar belakang di HP asli (build APK pertama sudah dikirim ke EAS; menunggu uji coba driver).
+- **Infrastruktur**: langganan VPS diperpanjang pemilik (tidak pindah hosting). Secret SSH deploy sudah diisi (workflow deploy VPS berjalan). Connector Vercel di sesi Claude tidak melihat project (perlu disambung ulang ke akun pemilik tim). `dashboard.haikuy.com` belum diizinkan di network environment.
 - **BACKLOG**: daftar harga, master kota, enum layanan, data armada asli.
 
 ## 6. Usulan sesi berikutnya
 
 1. Test suite permanen di CI (API dengan Postgres lokal, smoke Playwright untuk dashboard/website) + alur pull request dengan `/code-review` dan `/security-review`.
-2. Rilis APK pertama dan uji coba driver.
-3. Rencana pindah hosting sebelum 16 Oktober.
+2. Hasil uji coba aplikasi driver (push, offline, sinkron latar belakang) dan perbaikannya.
+3. Rencana keamanan dan pengujian upload dokumen pelanggan (KTP/SIM/NPWP) dan PDF ke Supabase.
