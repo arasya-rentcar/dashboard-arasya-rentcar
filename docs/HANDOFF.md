@@ -119,6 +119,7 @@ Persiapan: satu driver uji dengan nomor HP unik dan **tanpa trip aktif lain** (c
 - Langganan VPS diperpanjang: API dan dashboard.haikuy.com tetap di VPS (tidak pindah hosting).
 - Uji upload dokumen pelanggan dan PDF ke Supabase menunggu rencana yang matang, karena menyangkut data pribadi pelanggan (NIK/KTP, UU PDP).
 - Claude boleh menjalankan SQL di Supabase (`execute_sql`) tanpa bertanya lagi (izin penuh dari pemilik, 2 Okt). Tetap laporkan setiap perintah yang dijalankan.
+- Perubahan pada `docs/HANDOFF.md` langsung di-commit, di-push, dan di-merge (fast-forward) ke `main` tanpa bertanya lagi (pemilik, 2 Okt).
 - Distribusi aplikasi driver nanti lewat Google Play Console (jalur Internal testing); sejak 30 Sep 2026 Android di Indonesia mewajibkan developer terverifikasi untuk APK di luar Play.
 
 ## 5. Sisa yang belum dikerjakan
