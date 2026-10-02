@@ -4,7 +4,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 
 ## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
 
-Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Kerjakan 0.2 dan 0.3 dulu, baru uji ulang dengan 0.5. Data transaksi sudah dikosongkan 2 Okt malam (lihat 0.3); berikutnya mulai dari 0.2.
+Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru sedang di-build. **Berikutnya: pasang APK baru di HP pemilik, lalu uji ulang dengan 0.5.** RLS Supabase masih menunggu pemilik (lihat 0.6).
 
 ### 0.1 Temuan dan penyebab (sudah dibuktikan)
 
@@ -19,6 +19,12 @@ Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **
 Server sehat: upload 5 MB lolos nginx (dijawab 401 tanpa token), bucket `driver-reports` ada, tetapi belum ada satu pun objek `trip-reports/` di storage.
 
 ### 0.2 Perbaikan wajib sebelum uji ulang
+
+**Status 2 Okt malam: nomor 1–4 selesai dan dirilis; nomor 5 (APK) sedang di-build** (workflow "EAS Build (Android)" run #3 dari mobile `f0b25dc`, profile `preview`, build `0e492789-bd5e-4c9f-8e51-418dc68d1944`: https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/0e492789-bd5e-4c9f-8e51-418dc68d1944 — APK diunduh dari halaman itu setelah selesai). Yang dikerjakan:
+- Mobile `f0b25dc`: `appendPhoto` mengirim `{ name, type: 'image/jpeg', bytes }` (dibuktikan dengan encoder `expo/fetch` asli: bentuk lama gagal "Unsupported FormDataPart implementation", bentuk baru lolos dan diterima API lokal → foto tersimpan, report FUEL + `expenses` dibuat, kirim ulang tidak dobel). `request()`: status 0 hanya timeout/gagal jaringan; error di HP = `CLIENT_ERROR` (-1) dengan pesan aslinya. Antrean: error HP gagal setelah 3 kali; "tidak ada jawaban" saat HP online dihitung (batas 30) dan hanya menahan trip itu; offline tidak dihitung. "Kirim sekarang" dan banner memberi hasil (terkirim semua / sisa + penyebab).
+- API `543a938` (deploy 2 Okt 18.28 UTC sukses): tugas `active` = trip mulai kemarin (WIB) + trip `IN_PROGRESS`, yang berjalan di atas; `GET /schedule?overdue=true` untuk trip lama yang masih terbuka; nomor HP driver unik (409, disimpan `08…`, simpan ulang nomor sendiri tetap boleh); login dengan nomor milik >1 driver ditolak (409 hanya bila kata sandi cocok, selain itu 401 biasa).
+- Dashboard `cf25b20`: Trip → Agenda punya chip **Belum ditutup (N)** dan banner; tutup lewat Edit → Selesai/Dibatalkan.
+- Diuji lokal (Postgres 16 + API asli + mock storage): daftar tugas, filter overdue, nomor ganda (buat/ubah/login), upload foto. Belum diuji di HP asli.
 
 1. **Mobile, upload foto** (`appendPhoto` di `src/lib/photos.ts`): kirim bagian yang dipahami `expo/fetch`, misalnya objek `{ name, type: 'image/jpeg', bytes: () => new File(uri).bytes() }` (`File` dari `expo-file-system`; `convertFormData` membaca `name`, `type`, dan `bytes()`). `type` harus `image/jpeg` karena API menolak tipe lain dengan 415. Alternatif cepat: `EXPO_PUBLIC_USE_RN_FETCH=1` di `env` setiap profil `eas.json` (kembali ke fetch React Native). Uji di HP asli.
 2. **Mobile, antrean**: `request()` jangan mengubah semua error menjadi status 0; hanya timeout/abort dan kegagalan jaringan yang status 0, error lain dianggap gagal dan dihitung. Di `processQueue`, status 0 jangan menahan semua trip tanpa batas: hitung percobaannya (batas lebih longgar) lalu tandai `failed` supaya tidak menahan item lain. "Kirim sekarang" perlu memberi umpan balik (misalnya pesan error terakhir).
@@ -57,7 +63,7 @@ Catatan asli (sebelum dikosongkan):
 
 ### 0.5 Urutan uji ulang (setelah 0.2 dan 0.3)
 
-Persiapan: satu driver uji dengan nomor HP unik dan **tanpa trip aktif lain** (cek di DB); di HP, notifikasi aktif dan baterai "Tanpa pembatasan". Order uji dibuat lewat Order → Buat Order: pelanggan `TEST UJI APLIKASI`, nomor HP pemilik, tanggal hari ini, jam jemput sekitar 1 jam ke depan. Jangan buat invoice untuk order uji ini. Pada setiap langkah, Claude mengecek database (`order_service_items`, `trip_reports`, `expenses`) supaya kegagalan langsung terlihat.
+Persiapan: driver uji **Sutan Arief** (nomor HP unik milik pemilik, sudah punya kata sandi dan token push), **tanpa trip aktif lain** (cek di DB); pasang APK build 2 Okt malam di atas versi lama (item antrean lama di HP akan dijawab 404 dan terhapus sendiri karena trip-nya sudah dihapus); di HP, notifikasi aktif dan baterai "Tanpa pembatasan". Order uji dibuat lewat Order → Buat Order: pelanggan `TEST UJI APLIKASI`, nomor HP pemilik, tanggal hari ini, jam jemput sekitar 1 jam ke depan. Jangan buat invoice untuk order uji ini. Pada setiap langkah, Claude mengecek database (`order_service_items`, `trip_reports`, `expenses`) supaya kegagalan langsung terlihat.
 
 1. Tugaskan driver + mobil → push "Tugas baru" muncul; tab Tugas **hanya** berisi trip uji.
 2. Terima tugas → `driver_accepted_at` terisi dalam ±10 detik; terlihat di detail order.
@@ -73,14 +79,18 @@ Persiapan: satu driver uji dengan nomor HP unik dan **tanpa trip aktif lain** (c
 12. Admin: Finalisasi order uji → `DONE`.
 13. Bersihkan semua data uji (cara seperti 0.3).
 
+### 0.6 Keamanan Supabase: RLS (menunggu pemilik)
+
+RLS mati di 26 tabel `public`, jadi pemegang anon key bisa membaca/mengubah semua data lewat REST Supabase (termasuk NIK). Sudah dicek aman untuk dinyalakan: semua tabel milik `postgres` (bypass RLS), API konek sebagai `postgres` lewat Supavisor, storage memakai `service_role` (bypass RLS), keep-alive hanya `select 1`, dan dashboard/mobile/API tidak memakai anon key. Panduan sudah diberikan ke pemilik (jalankan di SQL Editor): nyalakan RLS di semua tabel `public` (loop `alter table … enable row level security`), `revoke all` tabel/sequence `public` dari `anon, authenticated`, dan `alter default privileges for role postgres in schema public revoke all on tables/sequences from anon, authenticated`. Setelah pemilik menjalankannya: cek `pg_class.relrowsecurity` semua tabel, hak akses anon kosong, API `/health` dan dashboard tetap jalan. Security Advisor akan menampilkan "RLS Enabled No Policy" (memang disengaja).
+
 ## 1. Status rilis
 
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (d6d6544 + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (aee7632 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (565230a, repo publik) | ⚠️ APK preview terpasang di HP pemilik; uji pertama gagal | Login dan push jalan; upload foto dan antrean rusak di HP asli, daftar tugas memuat trip lama. Lihat §0 sebelum menguji lagi. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
+| **api-arasya-rentcar** | `main` (543a938) | ✅ Live di https://api.haikuy.com (deploy 2 Okt 18.28 UTC) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (cf25b20 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (f0b25dc, repo publik) | ⏳ APK baru di-build 2 Okt malam (EAS build `0e492789…`); HP pemilik masih versi lama | Perbaikan upload foto + antrean sudah di kode (§0.2), belum diuji di HP asli. Pasang APK baru lalu uji dengan §0.5. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
@@ -94,7 +104,7 @@ Persiapan: satu driver uji dengan nomor HP unik dan **tanpa trip aktif lain** (c
    - workflow "EAS Build (Android)" profile `preview` sukses: keystore dibuat otomatis, versionCode dikelola remote oleh EAS (mulai 1), build `324ed7a4-7d74-4977-8c76-5a1b48d78431` di expo.dev (`rimbalun/arasyarentcar`);
    - kunci FCM V1 (service account Firebase `arasya-rentcar-mobile-apps`) sudah diunggah di expo.dev → Credentials → Android;
    - sisa untuk pemilik: unduh APK dari halaman build itu.
-6. ⏳ **Uji coba aplikasi driver**: password 1 driver sudah diatur dan login berhasil; uji pertama gagal (lihat §0). Perbaiki, build ulang, uji lagi, baru bagikan ke semua driver.
+6. ⏳ **Uji coba aplikasi driver**: uji pertama gagal (lihat §0); perbaikan sudah dirilis dan APK baru di-build 2 Okt malam. Berikutnya: pasang APK, uji ulang dengan §0.5, baru bagikan ke semua driver.
 7. ✅ **GA4 purchase**: `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env` API dan API sudah direstart. Bukti berfungsi: event `purchase` di GA4 Realtime saat invoice pertama ditandai PAID.
 
 ## 3. Yang sudah dikerjakan (ringkas)
