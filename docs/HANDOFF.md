@@ -4,7 +4,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 
 ## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
 
-Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Kerjakan 0.2 dan 0.3 dulu, baru uji ulang dengan 0.5.
+Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Kerjakan 0.2 dan 0.3 dulu, baru uji ulang dengan 0.5. Data transaksi sudah dikosongkan 2 Okt malam (lihat 0.3); berikutnya mulai dari 0.2.
 
 ### 0.1 Temuan dan penyebab (sudah dibuktikan)
 
@@ -29,6 +29,15 @@ Server sehat: upload 5 MB lolos nginx (dijawab 401 tanpa token), bucket `driver-
 ### 0.3 Data yang harus dirapikan
 
 Supabase proyek `uepxyavktaqpzvgdubyt` ("Arasya Rentcar"); pemilik memberi izin penuh menjalankan SQL (lihat §4).
+
+**Status 2 Okt malam: semua data transaksi sudah dikosongkan** atas permintaan pemilik, supaya uji ulang mulai dari nol. Poin order uji, order Putri, dan 5 trip lama di bawah ikut selesai; yang tersisa hanya **nomor HP driver**.
+- Dihapus: semua `orders` (74: 68 impor Google Sheet 1–11 Jun, 5 order web Jun–Jul, 1 order uji) beserta trip, finance, adjustment, log, summary; `invoices`, `receipts`, `invoice_delivery_logs`, `payables`, `trip_reports`, `expenses`, `web_leads` (2, keduanya tes), `sheet_import_rows`, pelanggan uji `a10c9c1d…`. File di bucket `invoices`, `payment-proofs`, `driver-reports` dihapus pemilik lewat Storage (tinggal `.emptyFolderPlaceholder`).
+- Disimpan: `users` 12, `drivers` 10, `cars` 9 (+ `car-photos`), `external_vendors` 31, `external_cars` 47, `customers` 61, `device_tokens`, `counters` (kode pelanggan berlanjut dari 65). Angka turunan di-nol-kan: total di `customers`, `order_count` vendor, status driver/mobil kembali `AVAILABLE`.
+- Cadangan sebelum hapus: schema `backup_20261002` (21 tabel, akses anon/authenticated dicabut). Berisi data pribadi; hapus setelah uji selesai (`drop schema backup_20261002 cascade;`).
+- Konektor Supabase di sesi Claude menahan setiap DELETE/UPDATE menunggu konfirmasi yang tidak pernah muncul (timeout 60 detik, tidak ada yang tereksekusi). Perintah hapus dijalankan pemilik di SQL Editor; query baca tetap jalan.
+- Temuan keamanan (belum ditindak): RLS mati di semua 26 tabel `public`, jadi pemegang anon key bisa membaca/mengubah semua data lewat REST Supabase, termasuk NIK. API memakai Prisma sebagai pemilik tabel; menyalakan RLS tanpa policy perlu keputusan pemilik.
+
+Catatan asli (sebelum dikosongkan):
 
 - **Order uji** `ARS-20261002-C65-1` (order `41cd2653-7572-4a91-93e2-0f522e449d34`, trip `66740de5-0239-4fe4-8a07-7c2e5548242a`): hapus beserta invoice `INV-20261002-C65-1` (PAID Rp 750.000) dan data pembayarannya, payable Rp 0, pelanggan uji `a10c9c1d-aa34-4fe7-a10e-ff61cbf99b36` (dibuat untuk uji, hanya 1 order), dan file storage-nya (2 PDF di bucket `invoices` dan 1 bukti bayar di `payment-proofs`, sekitar 14.20 UTC 2 Okt; hapus lewat Storage API, bukan SQL). Cek foreign key dulu.
 - **Order asli** `ARS-20260627-C1-4` (Putri, trip `a73ab35e-87c5-4448-b386-0bfe1222b72e`, 29 Jun): akibat uji, trip ini berstatus DONE dengan jam 2 Okt (`driver_accepted_at`, `actual_start_at`, `trip_started_at`, `actual_pickup_at`, `trip_finished_at`, `finish_reported_at`) dan punya 3 `trip_reports` `source = API` (START, ARRIVE_CUSTOMER, FINISH). **Tanya pemilik** apakah trip 29 Jun itu benar terjadi. Kalau ya: tetap DONE, kosongkan jam-jam 2 Okt, hapus 3 report. Kalau tidak: kembalikan ke ASSIGNED (status sebelum uji tidak tercatat; trip ini punya driver) atau batalkan. Setelah itu hitung ulang status order (`deriveAndSetOrderStatus`).
