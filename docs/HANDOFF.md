@@ -7,24 +7,25 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` = branch `claude/trusting-dijkstra-hocd9x` (02978ea + CLAUDE.md) | ⚠️ **Belum** — produksi masih versi lead + driver app awal | Perlu deploy di VPS. Dua migrasi baru (aditif): `20261001150000_web_lead_duration_key`, `20261001180000_customer_identity_partner`. |
-| **dashboard-arasya-rentcar** | branch `claude/trusting-dijkstra-hocd9x` (11 commit di atas `main`) | ⚠️ **Belum** — `main` masih 891865a | Rilis **setelah** API ter-deploy: fast-forward `main`, lalu deploy VPS. |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (0c20152 + CLAUDE.md) | ❌ Belum ada APK | Menunggu Expo projectId, Firebase, `EXPO_TOKEN`. |
-| **wa-bot-arasya** | branch `development` | Masih jalan di VPS | Dipensiunkan. Matikan setelah API baru live. |
+| **api-arasya-rentcar** | `main` (02978ea + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (39d0612 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS, release 20261002143731) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (f702457, repo publik) | ❌ Belum ada APK | `EXPO_TOKEN` dan `google-services.json` sudah ada. Sisa: `owner` + `projectId` di `app.json`, build pertama, kunci FCM V1 (lihat langkah 5). |
+| **wa-bot-arasya** | branch `development` | Masih jalan di VPS | Dipensiunkan. API dan dashboard baru sudah live, jadi bisa dimatikan sekarang. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
 
-1. **VPS — deploy API**: `cd /root/.openclaw/workspace/arasya-projects && GIT_SYNC=1 ./deploy-local.sh api`
-2. **Cek API live**: workflow GitHub "API smoke test" (repo API), atau langsung `curl https://api.haikuy.com/health` (domain ini sudah diizinkan di environment).
-3. **Rilis dashboard**: fast-forward `main` ke branch `claude/trusting-dijkstra-hocd9x` (Vercel otomatis), lalu di VPS: `GIT_SYNC=1 ./deploy-local.sh dashboard`.
-4. **Matikan bot**: `pm2 stop arasya-wa-bot` (mode WhatsApp manual sudah default di API baru).
-5. **Rilis APK pertama** (README repo mobile, bagian "Rilis pertama"):
-   - isi `owner` dan `extra.eas.projectId` di `app.json`;
-   - taruh `google-services.json` (Firebase, paket `com.arasyarentcar.driver`) di root repo;
-   - upload FCM V1 key di expo.dev → Credentials;
-   - secret GitHub `EXPO_TOKEN` → jalankan workflow "EAS build" (profile preview → APK).
-6. **Atur password aplikasi** 1–2 driver di dashboard (halaman driver → Akses aplikasi driver), uji coba, lalu bagikan ke semua driver.
-7. **GA4 purchase**: buat API secret di GA4 (Data streams → Measurement Protocol API secrets) dan isi `GA4_MEASUREMENT_ID=G-3S9ZDTJ0XE` + `GA4_API_SECRET` di `.env` API.
+1. ✅ **Deploy API** (2 Okt, migrasi `20261001180000_customer_identity_partner` tercatat 08:42 UTC).
+2. ✅ **Cek API live**: `/health` 200, endpoint terproteksi 401, pesan login versi baru.
+3. ✅ **Rilis dashboard**: `main` di-fast-forward ke 39d0612; Vercel dan VPS ter-deploy otomatis lewat GitHub Actions.
+4. ⏳ **Matikan bot**: `pm2 stop arasya-wa-bot` di VPS (mode WhatsApp manual sudah default di API baru).
+5. ⏳ **Rilis APK pertama** (README repo mobile, bagian "Rilis pertama"):
+   - ✅ `google-services.json` (paket `com.arasyarentcar.driver`, proyek Firebase `arasya-rentcar-mobile-apps`) sudah di root repo;
+   - ✅ secret GitHub `EXPO_TOKEN` sudah diisi;
+   - isi `app.json`: `"owner": "rimbalun"` dan `extra.eas.projectId` = `08ba4d2a-eafe-4590-a04a-23b0e469f171`; pastikan slug proyek di expo.dev sama dengan `"slug": "arasya-driver"`;
+   - jalankan workflow "EAS Build (Android)" profile `preview`. Build pertama di CI membuat keystore otomatis (tidak perlu file keystore);
+   - setelah build pertama, `com.arasyarentcar.driver` muncul di expo.dev → Credentials → Android: upload JSON FCM V1 di bagian *FCM V1 service account key* (lewati bagian keystore). Tidak perlu build ulang.
+6. ⏳ **Atur password aplikasi** 1–2 driver di dashboard (halaman driver → Akses aplikasi driver), uji coba, lalu bagikan ke semua driver.
+7. ✅ **GA4 purchase**: `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env` API dan API sudah direstart. Bukti berfungsi: event `purchase` di GA4 Realtime saat invoice pertama ditandai PAID.
 
 ## 3. Yang sudah dikerjakan (ringkas)
 
@@ -49,7 +50,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 
 - **Belum teruji di produksi**: upload dokumen pelanggan & PDF ke Supabase, pengiriman GA4 purchase, push notifikasi (butuh APK + Firebase), sinkron latar belakang di HP asli.
 - **Kecil / tampilan**: nama driver rekanan belum tampil di tab Riwayat trip dan kartu keuangan; placeholder pencarian order belum menyebut kode lead.
-- **Infrastruktur**: VPS berakhir **16 Oktober 2026**, perlu pindah hosting API (+ dashboard ke Vercel dengan domain dashboard.haikuy.com, tambahkan domain ke CORS bila berubah). Secret SSH deploy belum ada. Connector Vercel di sesi Claude tidak melihat project (perlu disambung ulang ke akun pemilik tim). `dashboard.haikuy.com` belum diizinkan di network environment.
+- **Infrastruktur**: VPS berakhir **16 Oktober 2026**, perlu pindah hosting API (+ dashboard ke Vercel dengan domain dashboard.haikuy.com, tambahkan domain ke CORS bila berubah). Secret SSH deploy sudah diisi (workflow deploy VPS berjalan). Connector Vercel di sesi Claude tidak melihat project (perlu disambung ulang ke akun pemilik tim). `dashboard.haikuy.com` belum diizinkan di network environment.
 - **BACKLOG**: daftar harga, master kota, enum layanan, data armada asli.
 
 ## 6. Usulan sesi berikutnya

@@ -20,8 +20,8 @@ Admin dashboard: Next.js 16 (app router, client components), TanStack Query, axi
 Playwright is a devDependency; launch Chromium with `executablePath: '/opt/pw-browsers/chromium'`. For pages that need data, build against a throwaway node mock API (`NEXT_PUBLIC_API_URL=http://localhost:<port>/api/v1 npx next build && npx next start -p 3100`). Stop servers by PID; `ss` is not installed (use `ps -eo pid,args`).
 
 ## Deploy
-- Push to `main` → `vercel.yml` deploys the Vercel copy (works). `deploy.yml` (VPS over SSH) fails: SSH secrets unset.
-- dashboard.haikuy.com (what admins use) is the VPS copy: `cd /root/.openclaw/workspace/arasya-projects && GIT_SYNC=1 ./deploy-local.sh dashboard`.
+- Push to `main` → `vercel.yml` deploys the Vercel copy and `deploy.yml` deploys the VPS copy over SSH (secrets `SSH_HOST`, `SSH_USER`, `SSH_PORT`, `SSH_DEPLOY_KEY`; only when dashboard code paths change, or run it manually).
+- dashboard.haikuy.com (what admins use) is the VPS copy; `deploy.yml` runs `cd /root/.openclaw/workspace/arasya-projects && GIT_SYNC=1 ./deploy-local.sh dashboard`.
 - Release the dashboard only after the API it depends on is deployed.
 - Work happens on `claude/trusting-dijkstra-hocd9x`; fast-forward `main` to release.
 
