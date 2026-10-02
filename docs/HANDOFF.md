@@ -4,7 +4,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 
 ## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
 
-Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru sedang di-build. **Berikutnya: pasang APK baru di HP pemilik, lalu uji ulang dengan 0.5.** RLS Supabase masih menunggu pemilik (lihat 0.6).
+Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru sedang di-build. **Berikutnya: pasang APK baru di HP pemilik, lalu uji ulang dengan 0.5.** RLS `public` sudah menyala; schema `arasya_bot` masih terbuka (lihat 0.6).
 
 ### 0.1 Temuan dan penyebab (sudah dibuktikan)
 
@@ -79,9 +79,11 @@ Persiapan: driver uji **Sutan Arief** (nomor HP unik milik pemilik, sudah punya 
 12. Admin: Finalisasi order uji → `DONE`.
 13. Bersihkan semua data uji (cara seperti 0.3).
 
-### 0.6 Keamanan Supabase: RLS (menunggu pemilik)
+### 0.6 Keamanan Supabase: RLS
 
-RLS mati di 26 tabel `public`, jadi pemegang anon key bisa membaca/mengubah semua data lewat REST Supabase (termasuk NIK). Sudah dicek aman untuk dinyalakan: semua tabel milik `postgres` (bypass RLS), API konek sebagai `postgres` lewat Supavisor, storage memakai `service_role` (bypass RLS), keep-alive hanya `select 1`, dan dashboard/mobile/API tidak memakai anon key. Panduan sudah diberikan ke pemilik (jalankan di SQL Editor): nyalakan RLS di semua tabel `public` (loop `alter table … enable row level security`), `revoke all` tabel/sequence `public` dari `anon, authenticated`, dan `alter default privileges for role postgres in schema public revoke all on tables/sequences from anon, authenticated`. Setelah pemilik menjalankannya: cek `pg_class.relrowsecurity` semua tabel, hak akses anon kosong, API `/health` dan dashboard tetap jalan. Security Advisor akan menampilkan "RLS Enabled No Policy" (memang disengaja).
+**Schema `public`: selesai (2 Okt malam, dijalankan pemilik di SQL Editor).** RLS menyala di 26/26 tabel, `anon`/`authenticated` tidak punya hak apa pun di tabel/sequence `public`, dan default privileges `postgres` tidak lagi memberi `anon`/`authenticated` akses ke tabel baru (migrasi Prisma berikutnya tetap tertutup, tetapi RLS tabel baru tetap perlu dinyalakan di migrasinya). Diverifikasi: REST dengan publishable key → `42501 permission denied` untuk `customers`/`drivers`; API `/health` 200 dan login tetap jalan (API konek sebagai `postgres`, bypass RLS; storage pakai `service_role`). Security Advisor menampilkan "RLS Enabled No Policy" (INFO, memang disengaja).
+
+**Schema `arasya_bot` (bot lama): masih terbuka, menunggu pemilik.** Schema ini ikut diekspos ke REST/GraphQL, RLS mati, dan `anon` punya SELECT/INSERT/UPDATE/DELETE. Isi: `driver_reports` 43 baris (nama/HP driver, lokasi, koordinat, foto; terakhir Juni), `orders` dan `driver_assignments` kosong. Terbukti bisa dibaca dengan publishable key (HEAD → `content-range: 0-42/43`). Bot sudah dihentikan, jadi aman ditutup: `enable row level security` di ketiga tabel, `revoke all` tabel/sequence dan `usage` schema dari `anon, authenticated`, lalu hapus `arasya_bot` dari Project Settings → Data API → Exposed schemas. Kalau bot lama suatu saat dinyalakan lagi, ia harus memakai service key.
 
 ## 1. Status rilis
 
