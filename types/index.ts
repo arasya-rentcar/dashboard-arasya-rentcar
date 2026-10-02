@@ -411,6 +411,10 @@ export interface TripHistoryRow {
   finish_reported_at?: string | null;
   trip_started_at?: string | null;
   driver_accepted_at?: string | null;
+  // Partner (vendor) driver and plate typed on the line.
+  driver_name_raw?: string | null;
+  driver_phone_raw?: string | null;
+  plate_raw?: string | null;
   finance_status: 'FINALIZED' | 'AWAITING';
   order?: {
     id: string;
@@ -1101,6 +1105,11 @@ export interface PartnerTripRow {
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
+  is_external?: boolean;
+  // Partner (vendor) driver and plate typed on the line.
+  driver_name_raw?: string | null;
+  driver_phone_raw?: string | null;
+  plate_raw?: string | null;
   order?: { id: string; order_code?: string | null; customer_name?: string } | null;
   car?: { id: string; model: string; plate_number?: string | null } | null;
   external_car?: { id: string; model: string; plate_number?: string | null } | null;

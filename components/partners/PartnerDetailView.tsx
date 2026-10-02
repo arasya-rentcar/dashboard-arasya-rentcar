@@ -161,6 +161,17 @@ export default function PartnerDetailView({
               ) : (
                 trips.map((t) => {
                   const car = t.car || t.external_car;
+                  // Partner lines: the plate typed on the line wins over the
+                  // vendor car's stored plate (same rule as the order page).
+                  const plate = t.is_external
+                    ? t.plate_raw || car?.plate_number
+                    : car?.plate_number || t.plate_raw;
+                  const unit = [car?.model, plate].filter(Boolean).join(" · ");
+                  const partnerDriver = t.is_external
+                    ? [t.driver_name_raw, t.driver_phone_raw]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : "";
                   const route = [t.pickup_location, t.dropoff_location]
                     .filter(Boolean)
                     .join(" → ");
@@ -189,9 +200,12 @@ export default function PartnerDetailView({
                         {route || "-"}
                       </TableCell>
                       <TableCell className="text-sm text-gray-500">
-                        {car
-                          ? `${car.model}${car.plate_number ? ` · ${car.plate_number}` : ""}`
-                          : "-"}
+                        {unit || "-"}
+                        {partnerDriver && (
+                          <p className="text-[11px] text-purple-700">
+                            {tx("partnerDriver")}: {partnerDriver}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {formatCurrency(t.total_price)}

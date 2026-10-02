@@ -27,6 +27,20 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
   const t = useTranslations('financeCard');
   const fin = order.final_finance;
   const isExternal = !!order.is_external;
+  // Partner driver (and line plate) of each partner line, one entry per
+  // distinct driver so a multi-day trip with the same driver shows once.
+  const partnerDrivers = [
+    ...new Set(
+      (order.service_items ?? [])
+        .filter((it) => it.is_external)
+        .map((it) =>
+          [it.driver_name_raw, it.driver_phone_raw, it.plate_raw]
+            .filter(Boolean)
+            .join(' · '),
+        )
+        .filter(Boolean),
+    ),
+  ];
   const [open, setOpen] = useState(false);
   const mutation = useUpdateOrderFinance();
 
@@ -101,6 +115,14 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             {order.external_car
               ? ` · ${order.external_car.model}${order.external_car.plate_number ? ` (${order.external_car.plate_number})` : ''}`
               : ''}
+          </p>
+        )}
+        {partnerDrivers.length > 0 && (
+          <p className="text-xs text-gray-500 mb-3">
+            {t('partnerDriver')}:{' '}
+            <span className="font-medium text-gray-700">
+              {partnerDrivers.join(', ')}
+            </span>
           </p>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">

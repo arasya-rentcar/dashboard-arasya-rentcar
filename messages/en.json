@@ -356,7 +356,7 @@
   },
   "ordersPage": {
     "title": "Orders",
-    "searchPlaceholder": "Search name, phone, route, driver, car, invoice, code…",
+    "searchPlaceholder": "Search order / ARS code, name, phone, route, driver, car, invoice…",
     "exportPage": "Export Page",
     "exportAll": "Export All",
     "previewSheet": "Preview Sheet",
@@ -1003,7 +1003,7 @@
   "history": {
     "title": "Trip History",
     "search": "Search",
-    "searchPlaceholder": "Order code or customer…",
+    "searchPlaceholder": "Order / ARS code or customer…",
     "dateFrom": "From",
     "dateTo": "To",
     "driver": "Driver",
@@ -1036,6 +1036,7 @@
     "viewMedia": "View media",
     "openOrder": "Open order",
     "externalVendor": "External vendor",
+    "partnerDriver": "Partner driver",
     "paginationLabel": "trips",
     "tsDriverAccepted": "Accepted by driver",
     "driverNotAccepted": "Not yet accepted by driver",
@@ -1098,6 +1099,7 @@
     "revenueFromTrips": "Revenue from Trips",
     "marginGenerated": "Margin Generated",
     "tripHistory": "Trip History ({count})",
+    "partnerDriver": "Partner driver",
     "paymentHistory": "Payment History ({count})",
     "colDate": "Date",
     "colOrder": "Order",
@@ -1480,6 +1482,7 @@
   },
   "financeCard": {
     "title": "Finance & Margin",
+    "partnerDriver": "Partner driver",
     "external": "External",
     "internal": "Internal",
     "editFinance": "Edit Finance",

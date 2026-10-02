@@ -226,12 +226,23 @@ function HistoryRow({
     !row.driver_accepted_at &&
     (row.line_status === 'SCHEDULED' || row.line_status === 'ASSIGNED');
   const driverLabel = row.is_external
-    ? row.external_vendor?.name || t('externalVendor')
+    ? [row.external_vendor?.name || t('externalVendor'), row.driver_name_raw]
+        .filter(Boolean)
+        .join(' · ')
     : row.driver?.name || '—';
+  const partnerDriver = row.is_external
+    ? [row.driver_name_raw, row.driver_phone_raw, row.plate_raw]
+        .filter(Boolean)
+        .join(' · ')
+    : '';
+  // Partner lines: the plate typed on the line wins over the vendor car's.
   const carLabel = row.is_external
-    ? row.external_car
-      ? `${row.external_car.model}${row.external_car.plate_number ? ` · ${row.external_car.plate_number}` : ''}`
-      : '—'
+    ? [
+        row.external_car?.model,
+        row.plate_raw || row.external_car?.plate_number,
+      ]
+        .filter(Boolean)
+        .join(' · ') || '—'
     : row.car
       ? `${row.car.model}${row.car.plate_number ? ` · ${row.car.plate_number}` : ''}`
       : '—';
@@ -267,13 +278,19 @@ function HistoryRow({
           <span className="text-gray-700 truncate">
             {row.order?.customer_name || '—'}
           </span>
-          <span className="text-gray-600 flex items-center gap-1 truncate">
+          <span
+            className="text-gray-600 flex items-center gap-1 truncate"
+            title={driverLabel}
+          >
             <UserIcon className="h-3 w-3 shrink-0 text-gray-400" />
-            {driverLabel}
+            <span className="truncate">{driverLabel}</span>
           </span>
-          <span className="text-gray-600 flex items-center gap-1 truncate">
+          <span
+            className="text-gray-600 flex items-center gap-1 truncate"
+            title={carLabel}
+          >
             <CarIcon className="h-3 w-3 shrink-0 text-gray-400" />
-            {carLabel}
+            <span className="truncate">{carLabel}</span>
           </span>
           <span className="text-gray-500 text-xs">
             {row.service_date ? formatDate(row.service_date) : '—'}
@@ -335,6 +352,11 @@ function HistoryRow({
               <p className="text-xs text-gray-500 pt-1">
                 {row.pickup_location} → {row.dropoff_location}
               </p>
+              {partnerDriver && (
+                <p className="text-xs text-purple-700">
+                  {t('partnerDriver')}: {partnerDriver}
+                </p>
+              )}
             </div>
 
             {/* Finance */}

@@ -356,7 +356,7 @@
   },
   "ordersPage": {
     "title": "Order",
-    "searchPlaceholder": "Cari nama, telepon, rute, driver, mobil, invoice, kode…",
+    "searchPlaceholder": "Cari kode order / ARS, nama, telepon, rute, driver, mobil, invoice…",
     "exportPage": "Export Halaman",
     "exportAll": "Export Semua",
     "previewSheet": "Preview Sheet",
@@ -1003,7 +1003,7 @@
   "history": {
     "title": "Riwayat Perjalanan",
     "search": "Cari",
-    "searchPlaceholder": "Kode order atau pelanggan…",
+    "searchPlaceholder": "Kode order / ARS atau pelanggan…",
     "dateFrom": "Dari",
     "dateTo": "Sampai",
     "driver": "Driver",
@@ -1036,6 +1036,7 @@
     "viewMedia": "Lihat media",
     "openOrder": "Buka order",
     "externalVendor": "Vendor eksternal",
+    "partnerDriver": "Driver rekanan",
     "paginationLabel": "perjalanan",
     "tsDriverAccepted": "Diterima driver",
     "driverNotAccepted": "Belum diterima driver",
@@ -1098,6 +1099,7 @@
     "revenueFromTrips": "Pendapatan dari Trip",
     "marginGenerated": "Margin Dihasilkan",
     "tripHistory": "Riwayat Trip ({count})",
+    "partnerDriver": "Driver rekanan",
     "paymentHistory": "Riwayat Pembayaran ({count})",
     "colDate": "Tanggal",
     "colOrder": "Order",
@@ -1480,6 +1482,7 @@
   },
   "financeCard": {
     "title": "Keuangan & Margin",
+    "partnerDriver": "Driver rekanan",
     "external": "Eksternal",
     "internal": "Internal",
     "editFinance": "Edit Keuangan",
