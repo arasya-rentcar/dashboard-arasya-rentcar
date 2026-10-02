@@ -2,6 +2,68 @@
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
+## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
+
+Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Kerjakan 0.2 dan 0.3 dulu, baru uji ulang dengan 0.5.
+
+### 0.1 Temuan dan penyebab (sudah dibuktikan)
+
+| # | Gejala | Penyebab | Repo |
+|---|---|---|---|
+| 1 | Foto/laporan tidak pernah terkirim; "ketuk untuk kirim sekarang" tidak berbuat apa-apa; aksi sesudahnya ikut tertahan | Expo SDK 57 mengganti `fetch` global dengan `expo/fetch` (`node_modules/expo/src/winter/runtime.native.ts`). `expo/fetch` **tidak mendukung** bagian FormData `{ uri, name, type }` (`node_modules/expo/src/winter/fetch/convertFormData.ts` → "Unsupported FormDataPart implementation"), padahal `appendPhoto` di `src/lib/photos.ts` memakai bentuk itu. Error-nya ditangkap `request()` di `src/lib/api.ts` sebagai status 0 ("tidak ada koneksi"). `processQueue` di `src/lib/queue.ts` lalu `break` untuk **semua** trip, mencoba lagi tiap 30 detik tanpa batas (status 0 tidak dihitung sebagai percobaan). Di web lolos karena web memakai Blob, jadi masalah ini baru terlihat di HP asli. | mobile |
+| 2 | Tombol ditekan di trip yang salah | `listTrips` scope `active` (`src/modules/driver-app/driver-app.service.ts`) mengembalikan semua trip driver yang belum DONE/CANCELLED **tanpa batas tanggal**, urut tanggal naik. Trip lama 29 Jun (`ARS-20260627-C1-4`, pelanggan Putri) tampil paling atas lalu di-terima/berangkat/sampai/selesai oleh penguji (14.07–14.17 UTC). | api |
+| 3 | Order uji dibuatkan invoice dan ditandai lunas | Bukan bug, terjadi saat uji. Order uji tidak terhubung ke lead, jadi GA4 `purchase` tidak terkirim. | data |
+| 4 | Nomor HP driver dobel | 8 driver memakai satu nomor `0812****890` (placeholder). Login dengan nomor itu memilih driver acak (`findDriverByPhone` memakai `findFirst`). | data + api |
+| 5 | Jam jemput order uji 02.18 WIB | Salah input; form sudah benar memakai `+07:00`. | – |
+
+Server sehat: upload 5 MB lolos nginx (dijawab 401 tanpa token), bucket `driver-reports` ada, tetapi belum ada satu pun objek `trip-reports/` di storage.
+
+### 0.2 Perbaikan wajib sebelum uji ulang
+
+1. **Mobile, upload foto** (`appendPhoto` di `src/lib/photos.ts`): kirim bagian yang dipahami `expo/fetch`, misalnya objek `{ name, type: 'image/jpeg', bytes: () => new File(uri).bytes() }` (`File` dari `expo-file-system`; `convertFormData` membaca `name`, `type`, dan `bytes()`). `type` harus `image/jpeg` karena API menolak tipe lain dengan 415. Alternatif cepat: `EXPO_PUBLIC_USE_RN_FETCH=1` di `env` setiap profil `eas.json` (kembali ke fetch React Native). Uji di HP asli.
+2. **Mobile, antrean**: `request()` jangan mengubah semua error menjadi status 0; hanya timeout/abort dan kegagalan jaringan yang status 0, error lain dianggap gagal dan dihitung. Di `processQueue`, status 0 jangan menahan semua trip tanpa batas: hitung percobaannya (batas lebih longgar) lalu tandai `failed` supaya tidak menahan item lain. "Kirim sekarang" perlu memberi umpan balik (misalnya pesan error terakhir).
+3. **API, daftar tugas**: scope `active` hanya trip mulai kemarin (WIB) ke depan plus trip `IN_PROGRESS` berapa pun tanggalnya, urut yang terdekat dulu. Trip lama yang belum ditutup jangan muncul di HP; dashboard perlu cara melihat dan menutupnya.
+4. **API, nomor HP ganda**: tolak menyimpan nomor HP driver yang sudah dipakai driver lain (setelah normalisasi 08/62/+62), dan tolak login bila nomor cocok ke lebih dari satu driver.
+5. **Build APK baru** (workflow "EAS Build (Android)", profile `preview`) lalu pasang di atas versi lama.
+
+### 0.3 Data yang harus dirapikan
+
+Supabase proyek `uepxyavktaqpzvgdubyt` ("Arasya Rentcar"); pemilik memberi izin penuh menjalankan SQL (lihat §4).
+
+- **Order uji** `ARS-20261002-C65-1` (order `41cd2653-7572-4a91-93e2-0f522e449d34`, trip `66740de5-0239-4fe4-8a07-7c2e5548242a`): hapus beserta invoice `INV-20261002-C65-1` (PAID Rp 750.000) dan data pembayarannya, payable Rp 0, pelanggan uji `a10c9c1d-aa34-4fe7-a10e-ff61cbf99b36` (dibuat untuk uji, hanya 1 order), dan file storage-nya (2 PDF di bucket `invoices` dan 1 bukti bayar di `payment-proofs`, sekitar 14.20 UTC 2 Okt; hapus lewat Storage API, bukan SQL). Cek foreign key dulu.
+- **Order asli** `ARS-20260627-C1-4` (Putri, trip `a73ab35e-87c5-4448-b386-0bfe1222b72e`, 29 Jun): akibat uji, trip ini berstatus DONE dengan jam 2 Okt (`driver_accepted_at`, `actual_start_at`, `trip_started_at`, `actual_pickup_at`, `trip_finished_at`, `finish_reported_at`) dan punya 3 `trip_reports` `source = API` (START, ARRIVE_CUSTOMER, FINISH). **Tanya pemilik** apakah trip 29 Jun itu benar terjadi. Kalau ya: tetap DONE, kosongkan jam-jam 2 Okt, hapus 3 report. Kalau tidak: kembalikan ke ASSIGNED (status sebelum uji tidak tercatat; trip ini punya driver) atau batalkan. Setelah itu hitung ulang status order (`deriveAndSetOrderStatus`).
+- **Nomor HP driver**: isi nomor asli untuk 8 driver yang memakai nomor yang sama.
+- **5 trip SCHEDULED lama** (19 Jun – 14 Jul, tanpa driver internal): putuskan ditutup atau dibatalkan.
+
+### 0.4 Alur order yang benar (acuan uji)
+
+1. **Lead** dari website masuk ke menu Lead Website → "Buat order" (kode order = kode lead). Order juga bisa dibuat langsung di Order → Buat Order.
+2. **Order** baru berstatus `CREATED`, dengan satu baris jadwal per hari layanan. Satu baris = satu **trip** (`SCHEDULED`).
+3. **Penugasan**: Trip → Jadwal → Edit baris → pilih driver **dan** mobil internal. Trip menjadi `ASSIGNED`, order `ASSIGNED`, dan payable driver (dasar = biaya ops) dibuat otomatis. Driver menerima push "Tugas baru"; kalau trip-nya hari itu juga, sekaligus "Pengingat trip". Untuk trip besok, pengingat otomatis dikirim pukul 17.00 WIB. Konfirmasi ke pelanggan/driver lewat tombol WhatsApp (mode manual).
+4. **Driver (aplikasi)**: Terima tugas (hanya mencatat `driver_accepted_at`, status tetap) → Foto odometer awal → Berangkat dari garasi (`IN_PROGRESS`) → Sampai di lokasi jemput → laporan biaya (Bensin/Tol/Parkir/Biaya lain, foto struk + jumlah) → Foto odometer akhir → Selesai (`DONE`). Bila semua trip order selesai: order `IN_PROGRESS` dengan `awaiting_finalization`.
+5. **Finalisasi admin**: lengkapi biaya ops, fee driver, dan tambahan → Finalisasi → order `DONE`. Order hanya bisa `DONE` lewat tombol ini.
+6. **Invoice**: DP minimal 20%, lalu pelunasan; pembayaran hanya ke BCA PT Ayomi Raya Karsa. Invoice LUNAS pertama pada order yang berasal dari lead mengirim GA4 `purchase` (sekali).
+7. **Utang driver/vendor**: menu Utang → tandai dibayar.
+8. **Pembatalan**: Order → Batalkan. Denda mengikuti kebijakan; bila pelanggan terhubung, sistem membuat invoice denda bernomor. Jangan memakai pembatalan untuk membersihkan data uji.
+
+### 0.5 Urutan uji ulang (setelah 0.2 dan 0.3)
+
+Persiapan: satu driver uji dengan nomor HP unik dan **tanpa trip aktif lain** (cek di DB); di HP, notifikasi aktif dan baterai "Tanpa pembatasan". Order uji dibuat lewat Order → Buat Order: pelanggan `TEST UJI APLIKASI`, nomor HP pemilik, tanggal hari ini, jam jemput sekitar 1 jam ke depan. Jangan buat invoice untuk order uji ini. Pada setiap langkah, Claude mengecek database (`order_service_items`, `trip_reports`, `expenses`) supaya kegagalan langsung terlihat.
+
+1. Tugaskan driver + mobil → push "Tugas baru" muncul; tab Tugas **hanya** berisi trip uji.
+2. Terima tugas → `driver_accepted_at` terisi dalam ±10 detik; terlihat di detail order.
+3. Foto odometer awal (foto + km) → `trip_reports` ODOMETER_START dengan `file_url`.
+4. Berangkat dari garasi → trip `IN_PROGRESS`.
+5. Sampai di lokasi jemput → `actual_pickup_at` terisi.
+6. Bensin dengan foto struk + jumlah → report FUEL + baris `expenses`.
+7. Foto odometer akhir.
+8. Selesai → trip `DONE`, order menunggu finalisasi; Trip → Riwayat menampilkan linimasa dan foto (label *Aplikasi*).
+9. Tanpa sinyal (order uji kedua): Mode Pesawat → tekan tombol + kirim laporan → "Menunggu dikirim" → sinyal kembali → terkirim sendiri, jamnya = jam tekan, tanpa data ganda.
+10. Latar belakang: setelah menekan tombol saat offline, tutup aplikasi, nyalakan data, tunggu 15–30 menit tanpa membuka aplikasi.
+11. Alihkan trip ke driver lain → push "Tugas dialihkan", trip hilang dari HP.
+12. Admin: Finalisasi order uji → `DONE`.
+13. Bersihkan semua data uji (cara seperti 0.3).
+
 ## 1. Status rilis
 
 | Repo | Kode terbaru | Di produksi? | Catatan |
@@ -9,7 +71,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
 | **api-arasya-rentcar** | `main` (d6d6544 + CLAUDE.md) | ✅ Live di https://api.haikuy.com (deploy 2 Okt) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
 | **dashboard-arasya-rentcar** | `main` (aee7632 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (565230a, repo publik) | ⏳ Build APK pertama sudah dikirim ke EAS (2 Okt) | Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. Sisa: unduh APK dari expo.dev dan uji coba driver (langkah 6). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (565230a, repo publik) | ⚠️ APK preview terpasang di HP pemilik; uji pertama gagal | Login dan push jalan; upload foto dan antrean rusak di HP asli, daftar tugas memuat trip lama. Lihat §0 sebelum menguji lagi. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
@@ -23,7 +85,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
    - workflow "EAS Build (Android)" profile `preview` sukses: keystore dibuat otomatis, versionCode dikelola remote oleh EAS (mulai 1), build `324ed7a4-7d74-4977-8c76-5a1b48d78431` di expo.dev (`rimbalun/arasyarentcar`);
    - kunci FCM V1 (service account Firebase `arasya-rentcar-mobile-apps`) sudah diunggah di expo.dev → Credentials → Android;
    - sisa untuk pemilik: unduh APK dari halaman build itu.
-6. ⏳ **Atur password aplikasi** (pemilik) 1–2 driver di dashboard (halaman driver → Akses aplikasi driver), uji coba, lalu bagikan ke semua driver.
+6. ⏳ **Uji coba aplikasi driver**: password 1 driver sudah diatur dan login berhasil; uji pertama gagal (lihat §0). Perbaiki, build ulang, uji lagi, baru bagikan ke semua driver.
 7. ✅ **GA4 purchase**: `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env` API dan API sudah direstart. Bukti berfungsi: event `purchase` di GA4 Realtime saat invoice pertama ditandai PAID.
 
 ## 3. Yang sudah dikerjakan (ringkas)
@@ -47,6 +109,8 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".
 - Langganan VPS diperpanjang: API dan dashboard.haikuy.com tetap di VPS (tidak pindah hosting).
 - Uji upload dokumen pelanggan dan PDF ke Supabase menunggu rencana yang matang, karena menyangkut data pribadi pelanggan (NIK/KTP, UU PDP).
+- Claude boleh menjalankan SQL di Supabase (`execute_sql`) tanpa bertanya lagi (izin penuh dari pemilik, 2 Okt). Tetap laporkan setiap perintah yang dijalankan.
+- Distribusi aplikasi driver nanti lewat Google Play Console (jalur Internal testing); sejak 30 Sep 2026 Android di Indonesia mewajibkan developer terverifikasi untuk APK di luar Play.
 
 ## 5. Sisa yang belum dikerjakan
 
@@ -57,5 +121,5 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 ## 6. Usulan sesi berikutnya
 
 1. Test suite permanen di CI (API dengan Postgres lokal, smoke Playwright untuk dashboard/website) + alur pull request dengan `/code-review` dan `/security-review`.
-2. Hasil uji coba aplikasi driver (push, offline, sinkron latar belakang) dan perbaikannya.
+2. **Kerjakan §0**: perbaikan upload foto + antrean (mobile), daftar tugas + nomor HP ganda (API), rapikan data, build APK, lalu uji ulang dengan §0.5.
 3. Rencana keamanan dan pengujian upload dokumen pelanggan (KTP/SIM/NPWP) dan PDF ke Supabase.
