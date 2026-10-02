@@ -136,6 +136,7 @@ Permintaan pemilik sebelum uji ulang. **Status: kode di branch `claude/funny-pla
 - Bot WhatsApp dihentikan; diganti website + dashboard + aplikasi driver.
 - Kode lead menjadi kode order.
 - Driver hanya bisa ditugaskan setelah order dibayar DP atau lunas (pemilik, 2 Okt malam; belum ada pengecualian).
+- Aplikasi driver hanya untuk driver internal Arasya. Order/hari yang memakai rekanan berjalan lewat dashboard saja (vendor, mobil, nama/HP/plat driver rekanan, konfirmasi WhatsApp, tutup lewat Edit → Selesai); driver rekanan tidak diminta memasang aplikasi (pemilik, 2 Okt malam). Hari rekanan juga tidak terkena aturan DP.
 - Daftar harga resmi ditunda (BACKLOG).
 - Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".
 - Langganan VPS diperpanjang: API dan dashboard.haikuy.com tetap di VPS (tidak pindah hosting).
