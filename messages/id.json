@@ -1863,7 +1863,7 @@
       "REJECTED": "Ditolak"
     },
     "paidBy": {
-      "DRIVER": "Dibayar driver (diganti)",
+      "DRIVER": "Dibayar driver — diganti lewat fee",
       "COMPANY": "Dibayar kantor"
     },
     "fromApp": "dari aplikasi driver",
@@ -1875,9 +1875,11 @@
     "reject": "Tolak",
     "rejected": "Biaya ditolak, driver diberi tahu",
     "rejectPlaceholder": "Alasan (dikirim ke driver)",
-    "billCustomer": "Ditagih ke pelanggan",
+    "billCustomer": "Ditagih ke pelanggan (Invoice Tambahan)",
     "delete": "Hapus",
-    "summary": "Disetujui: diganti ke driver {reimbursed} · ditagih ke pelanggan {billed} · ditanggung Arasya {arasya}",
+    "summaryPaidFirst": "Yang bayar dulu: driver {driver} (diganti lewat fee) · kantor {office}",
+    "summaryBorneBy": "Akhirnya ditanggung: pelanggan {billed} · Arasya {arasya}",
+    "billedDriverHint": "Driver tetap diganti {amount} lewat fee; pelanggan membayar lewat Invoice Tambahan. Kalau dibayar pakai e-toll/kartu kantor, pilih 'Dibayar kantor'.",
     "payable": "Dibayar ke driver: fee {fee} + ganti biaya {reimburse} − uang jalan {advance} = {total}",
     "paid": "Lunas",
     "unpaid": "Belum dibayar"
