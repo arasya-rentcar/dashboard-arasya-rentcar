@@ -45,7 +45,11 @@ Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga rep
 5. Selesai → Utang: tandai dibayar → HP dapat "Fee sudah dibayar" dengan rincian.
 6. Matikan GPS / pakai aplikasi lokasi palsu untuk melihat penanda di dashboard.
 
-### 00.8 Usulan berikutnya untuk aplikasi driver (belum dikerjakan)
+### 00.8 Catatan teknis dari code review
+- Ketiga PR di-review (30 temuan, semua diperbaiki dan dibalas di PR). Yang perlu diawasi: assign/reassign/cancel order menghitung ulang uang per hari dalam satu transaksi (sekitar 6 query per hari); untuk order panjang (lebih dari 7 hari) perhatikan batas waktu transaksi 30 detik.
+- "Biaya Ops" dari dashboard versi lama sekarang diabaikan API (fee hanya lewat `driver_fee`); setelah rilis, muat ulang tab dashboard yang masih terbuka.
+
+### 00.9 Usulan berikutnya untuk aplikasi driver (belum dikerjakan)
 1. **Pendapatan saya**: daftar fee per hari (fee, ganti biaya, uang jalan, status lunas) dan total bulan ini (`GET /driver/payables`). Paling sering ditanyakan driver.
 2. **Wajib odometer awal sebelum Berangkat** dan odometer akhir sebelum Selesai (sekarang hanya pengingat), supaya km per trip selalu ada.
 3. **Checklist kondisi mobil** sebelum berangkat/selesai (foto 4 sisi, BBM, kebersihan) untuk sengketa kerusakan.
@@ -152,9 +156,9 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (02bbf04, aturan DP §0.7) | ✅ Live di https://api.haikuy.com (deploy 2 Okt 20.58 UTC) | Kedua migrasi baru sudah diterapkan. `GA4_MEASUREMENT_ID` + `GA4_API_SECRET` sudah di `.env`. Secret SSH deploy sudah diisi, jadi push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (9fb9bd3 aturan DP §0.7 + handoff ini) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (f0b25dc, repo publik) | ⏳ APK baru (EAS build `0e492789…`) sudah dipasang di HP pemilik | Perbaikan upload foto + antrean sudah di kode (§0.2), belum diuji di HP asli. Uji dengan §0.5. Proyek Expo `rimbalun/arasyarentcar`; kunci FCM V1 sudah diunggah. |
+| **api-arasya-rentcar** | `main` (f5bb7cb, sesi 3 Okt §00; PR arasya-rentcar/api-arasya-rentcar#1) | ✅ Deploy "Deploy API" run #67 (3 Okt) | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (sesi 3 Okt §00 + handoff ini; PR arasya-rentcar/dashboard-arasya-rentcar#3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **Perlu APK baru** (modul native baru: kamera, lokasi, view-shot). Workflow "EAS Build (Android)" profile `preview` | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
