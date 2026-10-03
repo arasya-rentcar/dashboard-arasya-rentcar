@@ -26,7 +26,7 @@ import {
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { dayLockReason, formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
 import WeekTimeline from '@/components/schedule/WeekTimeline';
@@ -434,13 +434,7 @@ function AgendaTab() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditing(line)}
-                    >
-                      {tx('edit')}
-                    </Button>
+                    <EditLineButton line={line} onEdit={() => setEditing(line)} />
                   </TableCell>
                 </TableRow>
               ))
@@ -470,6 +464,29 @@ function AgendaTab() {
         open={!!editing}
         onClose={() => setEditing(null)}
       />
+    </div>
+  );
+}
+
+// "Edit" for one day; locked (with the reason) once the order is DONE/CANCELLED.
+function EditLineButton({ line, onEdit }: { line: ScheduleLine; onEdit: () => void }) {
+  const tx = useTranslations('schedule');
+  const tc = useTranslations('common');
+  const lock = dayLockReason(line.order?.order_status);
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={!!lock}
+        title={lock ? tc(lock) : undefined}
+        onClick={onEdit}
+      >
+        {tx('edit')}
+      </Button>
+      {lock && (
+        <span className="w-28 whitespace-normal text-[10px] leading-tight text-gray-400">{tc(lock)}</span>
+      )}
     </div>
   );
 }

@@ -56,7 +56,6 @@ import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
 import EditOrderForm from "@/components/forms/EditOrderForm";
 import {
   useOrder,
-  useAssignOrder,
   useReassignOrder,
   useUpdateOrder,
   useGenerateInvoice,
@@ -71,6 +70,7 @@ import {
   type CancelOrderResult,
 } from "@/hooks/useOrders";
 import {
+  dayLockReason,
   formatCurrency,
   formatDate,
   formatDateTime,
@@ -109,7 +109,6 @@ export default function OrderDetailPage({
   const t = useTranslations("orderDetail");
   const tt = useTranslations("terms");
   const tc = useTranslations("common");
-  const [assignOpen, setAssignOpen] = useState(false);
   const [reassignOpen, setReassignOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -131,7 +130,6 @@ export default function OrderDetailPage({
   const [adjAmount, setAdjAmount] = useState("");
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
-  const assignMutation = useAssignOrder();
   const reassignMutation = useReassignOrder();
   const cancelMutation = useCancelOrder();
   const finalizeMutation = useFinalizeOrder();
@@ -279,14 +277,16 @@ export default function OrderDetailPage({
   // cancelled order. Mirrors the API guard (assertOrderStructurallyEditable).
   const isStructurallyLocked =
     order?.order_status === "DONE" || order?.order_status === "CANCELLED";
+  // Why the per-day Change/Assign button is disabled (short text under it).
+  const dayLock = dayLockReason(order?.order_status);
   // Rental base = sum of service lines (excludes billable additionals, which the
   // combined invoice adds back explicitly).
   const rentalBase = (order?.service_items ?? []).reduce(
     (sum, item) => sum + Number(item.total_price || 0),
     0,
   );
-  // Merge: the line IS the trip. "Assign for All" applies one driver/car to
-  // every still-unassigned internal line; show it only when such a line exists.
+  // The line IS the trip. Drivers are given per day (the "Assign for All"
+  // button was retired); this only drives the "pay the DP first" hint.
   const hasUnassignedInternalLine = (order?.service_items ?? []).some(
     (item) =>
       !item.is_external &&
@@ -471,16 +471,6 @@ export default function OrderDetailPage({
     // 5) Truly not started yet.
     return { state: "notStarted" as const, current: 0, total: totalDays };
   })();
-
-  async function handleAssign(data: { driver_id: string; car_id: string }) {
-    try {
-      await assignMutation.mutateAsync({ id, data });
-      toast.success(t("okDriverAssigned"));
-      setAssignOpen(false);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  }
 
   async function handleReassign(data: { driver_id: string; car_id: string }) {
     try {
@@ -1003,16 +993,6 @@ export default function OrderDetailPage({
                           : t('singleDay')}
                       </Badge>
                     )}
-                    {!isStructurallyLocked && !awaitingDp && hasUnassignedInternalLine && (
-                      <Button
-                        onClick={() => setAssignOpen(true)}
-                        size="sm"
-                        className="h-7 gap-1 text-xs"
-                      >
-                        <UserPlus className="h-3.5 w-3.5" />
-                        {t('assignForAll')}
-                      </Button>
-                    )}
                     {!isStructurallyLocked && !awaitingDp && hasReassignableLine && (
                       <Button
                         onClick={() => setReassignOpen(true)}
@@ -1299,11 +1279,18 @@ export default function OrderDetailPage({
                                         variant="outline"
                                         size="sm"
                                         className="h-7 gap-1 text-xs"
+                                        disabled={!!dayLock}
+                                        title={dayLock ? tc(dayLock) : undefined}
                                         onClick={() => openDayAssign(item)}
                                       >
                                         <UserCog className="h-3.5 w-3.5" />
                                         {driverLabel ? t('change') : t('assign')}
                                       </Button>
+                                      {dayLock && (
+                                        <p className="max-w-[10rem] text-right text-[10px] leading-tight text-gray-400">
+                                          {tc(dayLock)}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1543,23 +1530,6 @@ export default function OrderDetailPage({
             activeInvoiceTotal={alreadyPaid}
             onSubmit={handleUpdateOrder}
             isLoading={updateOrderMutation.isPending}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Assign-for-All Dialog: applies one driver/car to every unassigned
-          internal service line (the line IS the trip). Per-day overrides are
-          done via the line-level dialog below. */}
-      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('assignForAll')}</DialogTitle>
-            <p className="text-xs text-gray-500">{t('assignForAllHint')}</p>
-          </DialogHeader>
-          <AssignDriverForm
-            onSubmit={handleAssign}
-            isLoading={assignMutation.isPending}
-            serviceDates={assignableServiceDates}
           />
         </DialogContent>
       </Dialog>

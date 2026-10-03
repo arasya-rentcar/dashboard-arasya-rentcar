@@ -38,7 +38,9 @@
     "refresh": "Refresh",
     "loggedInAs": "Logged in as",
     "items": "items",
-    "waOpened": "WhatsApp opened — press send in WhatsApp"
+    "waOpened": "WhatsApp opened — press send in WhatsApp",
+    "dayLockedDone": "This order is finished; its days can no longer be changed.",
+    "dayLockedCancelled": "This order is cancelled; its days can no longer be changed."
   },
   "terms": {
     "order": "Order",
@@ -829,7 +831,6 @@
     "okMarkedPaid": "{number} marked paid — now a receipt",
     "okEnterAmount": "Enter an amount greater than 0",
     "okAdditionalAdded": "Additional charge added",
-    "okDriverAssigned": "Driver assigned successfully",
     "okDriverReassigned": "Driver reassigned on all upcoming days",
     "reassignAll": "Reassign All",
     "reassignAllHint": "Overwrites the driver & car on every service day that hasn't started yet. Days already in progress, done, or cancelled are left untouched.",
@@ -838,8 +839,6 @@
     "okRefundMarked": "Refund marked as paid",
     "okRevisionCreated": "Invoice revision created successfully",
     "okTripAdvanced": "Trip advanced to: {status}",
-    "assignForAll": "Assign for All",
-    "assignForAllHint": "Applies this driver & car to every service line that has no driver yet. Use the per-day Change button to override a single day.",
     "actualStart": "Started",
     "actualFinish": "Finished",
     "driverAccepted": "Accepted by driver",

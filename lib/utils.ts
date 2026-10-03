@@ -126,3 +126,13 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return 'An error occurred';
 }
+
+// Service days of a DONE or CANCELLED order are read-only (the API answers 409).
+// Returns the `common` i18n key with the reason, or null when days can be edited.
+export function dayLockReason(
+  orderStatus?: string | null,
+): 'dayLockedDone' | 'dayLockedCancelled' | null {
+  if (orderStatus === 'DONE') return 'dayLockedDone';
+  if (orderStatus === 'CANCELLED') return 'dayLockedCancelled';
+  return null;
+}

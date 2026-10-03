@@ -29,9 +29,9 @@ import {
 } from '@/hooks/useExternalVendors';
 import { useAssignScheduleLine, useBusyUnits } from '@/hooks/useSchedule';
 import { useDriverFeePresets } from '@/hooks/useTripCosts';
-import { formatCurrency, getErrorMessage, isoToWibDate } from '@/lib/utils';
+import { dayLockReason, formatCurrency, getErrorMessage, isoToWibDate } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Lock } from 'lucide-react';
 
 const num = (v?: string | number | null) =>
   v == null || v === '' ? '' : String(v);
@@ -46,6 +46,7 @@ export default function ScheduleLineDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('scheduleLine');
+  const tc = useTranslations('common');
   const mutation = useAssignScheduleLine();
   const createVendor = useCreateVendor();
   const addVendorCar = useAddVendorCar();
@@ -112,6 +113,8 @@ export default function ScheduleLineDialog({
   // Internal drivers only after a paid DP (API rejects it otherwise). The
   // current driver stays shown so other fields can still be edited.
   const awaitingDp = line.order?.payment_status === 'UNPAID';
+  // Finished / cancelled orders keep their days as they are (API answers 409).
+  const lockReason = dayLockReason(line.order?.order_status);
 
   // Rupiah amounts: digits only ("250.000", "Rp 250,000" → 250000); no
   // digits → empty.
@@ -261,7 +264,13 @@ export default function ScheduleLineDialog({
             {t('editDay')} · {(line.service_date && isoToWibDate(line.service_date)) || '—'}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <fieldset disabled={!!lockReason} className="m-0 min-w-0 space-y-3 border-0 p-0">
+          {lockReason && (
+            <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {tc(lockReason)}
+            </p>
+          )}
           <p className="text-xs text-gray-500">
             {line.order?.customer_name}
             {line.order?.order_code ? ` · ${line.order.order_code}` : ''} ·{' '}
@@ -639,7 +648,7 @@ export default function ScheduleLineDialog({
           >
             {mutation.isPending ? t('saving') : t('saveRecompute')}
           </Button>
-        </div>
+        </fieldset>
       </DialogContent>
     </Dialog>
   );

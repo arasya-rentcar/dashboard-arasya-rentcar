@@ -38,7 +38,9 @@
     "refresh": "Muat ulang",
     "loggedInAs": "Masuk sebagai",
     "items": "item",
-    "waOpened": "WhatsApp dibuka — tekan kirim di WhatsApp"
+    "waOpened": "WhatsApp dibuka — tekan kirim di WhatsApp",
+    "dayLockedDone": "Order sudah selesai; hari tidak bisa diubah.",
+    "dayLockedCancelled": "Order sudah dibatalkan; hari tidak bisa diubah."
   },
   "terms": {
     "order": "Order",
@@ -829,7 +831,6 @@
     "okMarkedPaid": "{number} ditandai terbayar — kini jadi kwitansi",
     "okEnterAmount": "Masukkan jumlah lebih dari 0",
     "okAdditionalAdded": "Biaya tambahan ditambahkan",
-    "okDriverAssigned": "Driver berhasil ditugaskan",
     "okDriverReassigned": "Driver berhasil diganti untuk semua hari mendatang",
     "reassignAll": "Ganti Semua",
     "reassignAllHint": "Menimpa driver & mobil pada setiap hari layanan yang belum dimulai. Hari yang sedang berjalan, selesai, atau dibatalkan tidak diubah.",
@@ -838,8 +839,6 @@
     "okRefundMarked": "Refund ditandai sudah dibayar",
     "okRevisionCreated": "Revisi invoice berhasil dibuat",
     "okTripAdvanced": "Trip dilanjutkan ke: {status}",
-    "assignForAll": "Tetapkan untuk Semua",
-    "assignForAllHint": "Menetapkan driver & mobil ini ke semua baris layanan yang belum punya driver. Gunakan tombol Ubah per-hari untuk mengganti satu hari saja.",
     "actualStart": "Mulai",
     "actualFinish": "Selesai",
     "driverAccepted": "Diterima driver",

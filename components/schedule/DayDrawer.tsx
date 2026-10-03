@@ -34,7 +34,7 @@ import {
 } from '@/hooks/useSchedule';
 import { useDrivers } from '@/hooks/useDrivers';
 import { useCars } from '@/hooks/useCars';
-import { formatDate, getErrorMessage } from '@/lib/utils';
+import { dayLockReason, formatDate, getErrorMessage } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -129,6 +129,8 @@ export default function DayDrawer({
 
 function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
   const t = useTranslations('dayDrawer');
+  const tc = useTranslations('common');
+  const lockReason = dayLockReason(line.order?.order_status);
   const assigned = !!line.driver?.id;
   const started =
     line.line_status === 'IN_PROGRESS' || line.line_status === 'DONE';
@@ -180,10 +182,13 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
           <span className="text-amber-600">{t('unassigned')}</span>
         )}
 
-        {!cancelled && !started && awaitingDp && (
+        {!lockReason && !cancelled && !started && awaitingDp && (
           <span className="shrink-0 text-amber-700">{t('awaitingDp')}</span>
         )}
-        {!cancelled && !started && !awaitingDp && !editing && (
+        {lockReason && (
+          <span className="shrink-0 text-right text-[11px] text-gray-400">{tc(lockReason)}</span>
+        )}
+        {!lockReason && !cancelled && !started && !awaitingDp && !editing && (
           <Button
             variant="outline"
             size="sm"
