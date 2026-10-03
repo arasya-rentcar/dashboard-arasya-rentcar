@@ -9,7 +9,7 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - T4: dua cara penugasan.
 - T5: Edit Hari pada order selesai.
 
-**Status 4 Okt:** T1–T3 diperbaiki dan dirilis. API arasya-rentcar/api-arasya-rentcar#2 dirilis lewat "Deploy API" run #68 (`/health` 200). Dashboard arasya-rentcar/dashboard-arasya-rentcar#4 menyusul setelah merge. Perilaku baru yang perlu diketahui admin:
+**Status 4 Okt:** T1–T3 diperbaiki dan dirilis. API arasya-rentcar/api-arasya-rentcar#2 dirilis lewat "Deploy API" run #68 (`/health` 200). Dashboard arasya-rentcar/dashboard-arasya-rentcar#4 dirilis lewat "Deploy Dashboard" run #65 (VPS) dan "Deploy to Vercel" run #20. Perilaku baru yang perlu diketahui admin:
 - `payment_status` ikut total order: order "Terbayar" kembali menjadi "DP Terbayar" bila ada hari atau biaya tambahan baru.
 - Hari yang sudah punya driver tidak bisa dihapus lewat Edit Order; batalkan lewat Edit Hari.
 - Memindah jam hari milik driver mengirim push "Jadwal tugas diubah" dan meminta konfirmasi dikirim ulang.
@@ -171,7 +171,7 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
 | **api-arasya-rentcar** | `main` (25815c3, perbaikan T1–T3; PR arasya-rentcar/api-arasya-rentcar#2, sebelumnya #1) | ✅ "Deploy API" run #68 sukses 3 Okt 17.22 UTC (4 Okt 00.22 WIB), `/health` 200. Run #67 (3 Okt 08.41 UTC): kedua migrasi tercatat di `_prisma_migrations`, RLS `driver_notifications` menyala | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (Edit Order mengirim id hari + TEST-PLAN; PR arasya-rentcar/dashboard-arasya-rentcar#4, sebelumnya #3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **dashboard-arasya-rentcar** | `main` (Edit Order mengirim id hari + TEST-PLAN; PR arasya-rentcar/dashboard-arasya-rentcar#4, sebelumnya #3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS): "Deploy Dashboard" run #65 dan "Deploy to Vercel" run #20 sukses 3 Okt 20.58 UTC | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **APK baru sedang di-build**: workflow "EAS Build (Android)" run #4 (profile `preview`, dari `main` 6aa3787) → build `d603a395-2d3a-4c25-a12e-fd475c7c7afe` (https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/d603a395-2d3a-4c25-a12e-fd475c7c7afe). Unduh APK dari halaman itu setelah selesai | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
