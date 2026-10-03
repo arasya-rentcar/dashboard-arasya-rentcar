@@ -28,12 +28,21 @@ import {
   useAddVendorCar,
 } from '@/hooks/useExternalVendors';
 import { useAssignScheduleLine, useBusyUnits } from '@/hooks/useSchedule';
-import { formatCurrency, getErrorMessage } from '@/lib/utils';
+import { useDriverFeePresets } from '@/hooks/useTripCosts';
+import { formatCurrency, formatDate, getErrorMessage, isoToWibDate } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
 import { Plus, Loader2 } from 'lucide-react';
 
-const num = (v?: string | number | null) =>
-  v == null || v === '' ? '' : String(v);
+// Rupiah amounts are shown and typed the Indonesian way ("1.500.000").
+const fmtAmount = (v?: string | number | null) =>
+  v == null || v === '' ? '' : Number(v).toLocaleString('id-ID');
+// Digits only, so "1.500.000", "1500000" and "Rp 1.500.000" all read the same.
+const toNum = (s: string) => {
+  const digits = s.replace(/\D/g, '');
+  return digits === '' ? null : Number(digits);
+};
+const shortRp = (n: number) =>
+  n % 1000 === 0 ? `${(n / 1000).toLocaleString('id-ID')}rb` : formatCurrency(n);
 
 export default function ScheduleLineDialog({
   line,
@@ -51,6 +60,7 @@ export default function ScheduleLineDialog({
   const { data: drivers } = useDrivers();
   const { data: cars } = useCars();
   const { data: vendorList } = useExternalVendors({ page: 1, page_size: 100 });
+  const { data: feePresets } = useDriverFeePresets();
 
   // Inline create state
   const [newVendorOpen, setNewVendorOpen] = useState(false);
@@ -66,7 +76,10 @@ export default function ScheduleLineDialog({
   const [vendorId, setVendorId] = useState('');
   const [vendorCarId, setVendorCarId] = useState('');
   const [status, setStatus] = useState('SCHEDULED');
-  const [ops, setOps] = useState('');
+  // Driver pay for this day (internal): fee, how it was built, uang jalan.
+  const [fee, setFee] = useState('');
+  const [feeNote, setFeeNote] = useState('');
+  const [advance, setAdvance] = useState('');
   const [rtr, setRtr] = useState('');
   // Partner (rekanan) driver + plate, kept on the line itself.
   const [partnerDriver, setPartnerDriver] = useState('');
@@ -82,7 +95,7 @@ export default function ScheduleLineDialog({
   // service_date is shown but DISABLED. The line's own current driver/car stays
   // selectable (excludeLineId).
   const lineDate = line?.service_date
-    ? String(line.service_date).slice(0, 10)
+    ? isoToWibDate(String(line.service_date))
     : undefined;
   const { driverBusy, carBusy } = useBusyUnits(lineDate, line?.id);
 
@@ -94,8 +107,10 @@ export default function ScheduleLineDialog({
     setVendorId(line.external_vendor?.id || '');
     setVendorCarId(line.external_car?.id || '');
     setStatus(line.line_status);
-    setOps(num(line.ops_cost));
-    setRtr(num(line.rtr_amount));
+    setFee(fmtAmount(line.driver_fee));
+    setFeeNote(line.driver_fee_note || '');
+    setAdvance(fmtAmount(line.travel_advance));
+    setRtr(fmtAmount(line.rtr_amount));
     setPartnerDriver(line.driver_name_raw || '');
     setPartnerPhone(line.driver_phone_raw || '');
     setPartnerPlate(line.plate_raw || line.external_car?.plate_number || '');
@@ -107,23 +122,55 @@ export default function ScheduleLineDialog({
   // current driver stays shown so other fields can still be edited.
   const awaitingDp = line.order?.payment_status === 'UNPAID';
 
-  const toNum = (s: string) =>
-    s.trim() === '' ? null : Number(s.replace(/[^\d.-]/g, ''));
-
   const revenue = Number(line.total_price ?? 0);
+  // Arasya's share of the approved trip costs (reviewed on the order page).
+  const approvedCosts = Number(line.ops_cost ?? 0);
+  // Extras on the day's payable (bonus, potongan) also come off the margin.
+  const payableExtras = Number(line.payable?.extras_amount ?? 0);
+  const started = !!(line.trip_started_at || line.actual_start_at);
+  // Empty fee + a driver: the API fills it from the fee table on save.
+  const defaultPreset =
+    feePresets?.base.find((p) => p.key === (line.service_kind ?? '').toUpperCase()) ??
+    feePresets?.base.find((p) => p.key === '12H');
+  const feeValue =
+    toNum(fee) ?? (!isExternal && driverId && defaultPreset ? defaultPreset.amount : 0);
   const previewMargin = isExternal
-    ? revenue - Number(toNum(rtr) ?? 0)
-    : revenue - Number(toNum(ops) ?? 0);
+    ? revenue - Number(toNum(rtr) ?? 0) - approvedCosts - payableExtras
+    : revenue - feeValue - approvedCosts - payableExtras;
+
+  function pickBase(amount: number, label: string) {
+    setFee(amount.toLocaleString('id-ID'));
+    setFeeNote(label);
+  }
+  function addOn(amount: number, label: string) {
+    const current = toNum(fee) ?? defaultPreset?.amount ?? 0;
+    setFee((current + amount).toLocaleString('id-ID'));
+    const base = feeNote.trim() || defaultPreset?.label || '';
+    setFeeNote(base ? `${base} + ${label}` : label);
+  }
+  function changeStatus(v: string) {
+    setStatus(v);
+    // Cancelled before departure: nobody earned anything that day.
+    if (v === 'CANCELLED' && !started && !isExternal) {
+      setFee('0');
+      setFeeNote(t('cancelledBeforeStart'));
+    }
+  }
 
   async function save() {
+    const feeNum = toNum(fee);
     try {
       await mutation.mutateAsync({
         id: line!.id,
         data: {
           is_external: isExternal,
           line_status: status,
-          ops_cost: toNum(ops) ?? 0,
           rtr_amount: isExternal ? toNum(rtr) : null,
+          // Empty fee is left out so the API can fill it from the fee table.
+          ...(!isExternal && feeNum != null
+            ? { driver_fee: feeNum, driver_fee_note: feeNote.trim() || null }
+            : {}),
+          ...(!isExternal ? { travel_advance: toNum(advance) } : {}),
           driver_id: isExternal ? null : driverId || null,
           car_id: isExternal ? null : carId || null,
           external_vendor_id: isExternal ? vendorId || null : null,
@@ -207,7 +254,7 @@ export default function ScheduleLineDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {t('editDay')} · {line.service_date?.slice(0, 10) || '—'}
+            {t('editDay')} · {line.service_date ? formatDate(line.service_date) : '—'}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
@@ -297,14 +344,84 @@ export default function ScheduleLineDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t('opsCostDay')}</Label>
+              <div className="rounded-lg border border-blue-100 bg-blue-50/40 p-2.5 space-y-2">
+                <p className="text-xs font-medium text-blue-900">{t('driverPayTitle')}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600">{t('driverFeeDay')}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={fee}
+                    onChange={(e) => setFee(e.target.value)}
+                    placeholder={
+                      defaultPreset ? defaultPreset.amount.toLocaleString('id-ID') : '0'
+                    }
+                  />
+                  {!fee.trim() && driverId && defaultPreset && (
+                    <p className="text-[11px] text-gray-500">
+                      {t('feeAutoHint', {
+                        amount: formatCurrency(defaultPreset.amount),
+                        label: defaultPreset.label,
+                      })}
+                    </p>
+                  )}
+                </div>
+                {feePresets && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {feePresets.base.map((p) => (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => pickBase(p.amount, p.label)}
+                        className="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-[11px] text-blue-800 hover:bg-blue-50"
+                      >
+                        {p.label} · {shortRp(p.amount)}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addOn(
+                          feePresets.addons.overnight.amount,
+                          `${feePresets.addons.overnight.label} 1 ${feePresets.addons.overnight.unit}`,
+                        )
+                      }
+                      className="rounded-full border border-dashed border-blue-300 bg-white px-2 py-0.5 text-[11px] text-blue-800 hover:bg-blue-50"
+                    >
+                      + {feePresets.addons.overnight.label} 1 {feePresets.addons.overnight.unit} ·{' '}
+                      {shortRp(feePresets.addons.overnight.amount)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addOn(
+                          feePresets.addons.overtime.amount,
+                          `${feePresets.addons.overtime.label} 1 ${feePresets.addons.overtime.unit}`,
+                        )
+                      }
+                      className="rounded-full border border-dashed border-blue-300 bg-white px-2 py-0.5 text-[11px] text-blue-800 hover:bg-blue-50"
+                    >
+                      + {feePresets.addons.overtime.label} 1 {feePresets.addons.overtime.unit} ·{' '}
+                      {shortRp(feePresets.addons.overtime.amount)}
+                    </button>
+                  </div>
+                )}
                 <Input
-                  inputMode="numeric"
-                  value={ops}
-                  onChange={(e) => setOps(e.target.value)}
-                  placeholder="0"
+                  value={feeNote}
+                  onChange={(e) => setFeeNote(e.target.value)}
+                  placeholder={t('feeNotePlaceholder')}
+                  className="h-8 text-xs"
                 />
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-600">{t('travelAdvance')}</Label>
+                  <Input
+                    inputMode="numeric"
+                    value={advance}
+                    onChange={(e) => setAdvance(e.target.value)}
+                    placeholder="0"
+                  />
+                  <p className="text-[11px] text-gray-500">{t('travelAdvanceHint')}</p>
+                </div>
+                <p className="text-[11px] text-gray-500">{t('feeIncludesMeals')}</p>
               </div>
             </>
           ) : (
@@ -480,9 +597,19 @@ export default function ScheduleLineDialog({
             </>
           )}
 
+          <div className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+            <span className="text-xs text-gray-500">
+              {t('approvedTripCosts')}
+              <span className="block text-[11px] text-gray-400">{t('tripCostsOnOrderPage')}</span>
+            </span>
+            <span className="text-sm font-medium text-gray-800">
+              {formatCurrency(approvedCosts)}
+            </span>
+          </div>
+
           <div className="space-y-1.5">
             <Label>{t('status')}</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={changeStatus}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -498,7 +625,8 @@ export default function ScheduleLineDialog({
 
           <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
             <span className="text-xs text-gray-500">
-              {t('marginPreview')} ({isExternal ? t('revenueMinusRtr') : t('revenueMinusOps')})
+              {t('marginPreview')} ({isExternal ? t('revenueMinusRtr') : t('revenueMinusFee')}
+              {payableExtras !== 0 ? ` − ${t('extras')}` : ''})
             </span>
             <span
               className={`text-sm font-semibold ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}

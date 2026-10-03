@@ -161,9 +161,16 @@ export interface OrderServiceItem {
   actual_pickup_at?: string | null;
   // When the driver accepted this trip in the driver app (null = not yet).
   driver_accepted_at?: string | null;
+  // Arasya's share of the approved trip costs (derived, not typed).
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
+  // Driver pay: the day's fee, how it was built, uang jalan handed out.
+  driver_fee?: string | number | null;
+  driver_fee_note?: string | null;
+  travel_advance?: string | number | null;
+  expenses?: TripExpense[];
+  payable?: LinePayable | null;
   driver_name_raw?: string | null;
   driver_phone_raw?: string | null;
   plate_raw?: string | null;
@@ -176,6 +183,55 @@ export interface OrderServiceItem {
   } | null;
   external_vendor?: { id: string; name: string } | null;
   external_car?: { id: string; model?: string | null; plate_number?: string | null } | null;
+}
+
+export type TripExpenseType = 'FUEL' | 'TOLL' | 'PARKING' | 'OTHER';
+export type TripExpenseStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type TripExpensePayer = 'DRIVER' | 'COMPANY';
+
+/** A trip cost on one day: from the driver app (waits for review) or added by an admin. */
+export interface TripExpense {
+  id: string;
+  type: TripExpenseType;
+  amount: string | number;
+  note?: string | null;
+  status: TripExpenseStatus;
+  paid_by: TripExpensePayer;
+  bill_to_customer: boolean;
+  adjustment_id?: string | null;
+  created_by?: string | null;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  review_note?: string | null;
+  created_at: string;
+  trip_report?: { id: string; file_url?: string | null; file_mime?: string | null } | null;
+}
+
+/** The payable of one day, as shown on the order page. */
+export interface LinePayable {
+  id: string;
+  kind: PayableKind;
+  status: PayableStatus;
+  base_amount: string | number;
+  reimburse_amount: string | number;
+  advance_amount: string | number;
+  extras_amount: string | number;
+  total_amount: string | number;
+  paid_at?: string | null;
+}
+
+export interface DriverFeePreset {
+  key: string;
+  label: string;
+  amount: number;
+}
+
+export interface DriverFeePresets {
+  base: DriverFeePreset[];
+  addons: {
+    overnight: { label: string; unit: string; amount: number };
+    overtime: { label: string; unit: string; amount: number };
+  };
 }
 
 export interface OrderCustomer {
@@ -299,6 +355,13 @@ export interface ScheduleLine {
   ops_cost: string | number;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
+  driver_fee?: string | number | null;
+  driver_fee_note?: string | null;
+  travel_advance?: string | number | null;
+  trip_started_at?: string | null;
+  actual_start_at?: string | null;
+  service_package?: string | null;
+  payable?: { status: PayableStatus; extras_amount: string | number } | null;
   is_external: boolean;
   line_status: ScheduleStatus;
   driver_name_raw?: string | null;
@@ -949,6 +1012,9 @@ export interface Payable {
   vendor_id?: string | null;
   service_date?: string | null;
   base_amount: string | number;
+  // DRIVER only: approved costs the driver paid, and uang jalan handed out.
+  reimburse_amount?: string | number;
+  advance_amount?: string | number;
   extras_amount: string | number;
   total_amount: string | number;
   keterangan?: string | null;

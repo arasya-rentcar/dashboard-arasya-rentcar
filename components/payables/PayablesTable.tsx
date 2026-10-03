@@ -67,8 +67,12 @@ export default function PayablesTable({
               <TableHead>{kind === "DRIVER" ? tt('driver') : tt('vendor')}</TableHead>
               <TableHead>{t('colOrder')}</TableHead>
               <TableHead>{t('colTrip')}</TableHead>
-              <TableHead className="text-right">{t('colBase')}</TableHead>
-              <TableHead className="text-right">{t('colOthers')}</TableHead>
+              <TableHead className="text-right">
+                {kind === "DRIVER" ? t('colFee') : t('colRtr')}
+              </TableHead>
+              <TableHead className="text-right">
+                {kind === "DRIVER" ? t('colOthersDriver') : t('colOthers')}
+              </TableHead>
               <TableHead className="text-right">{t('colTotal')}</TableHead>
               <TableHead>{t('colStatus')}</TableHead>
               <TableHead className="text-right">{t('colActions')}</TableHead>
@@ -134,9 +138,20 @@ export default function PayablesTable({
                       {formatCurrency(p.base_amount)}
                     </TableCell>
                     <TableCell className="text-right text-sm text-gray-500">
-                      {Number(p.extras_amount) !== 0
-                        ? formatCurrency(p.extras_amount)
+                      {/* Reimbursed trip costs − uang jalan + extras, i.e. total − fee. */}
+                      {Number(p.total_amount) - Number(p.base_amount) !== 0
+                        ? formatCurrency(Number(p.total_amount) - Number(p.base_amount))
                         : "-"}
+                      {kind === "DRIVER" &&
+                        (Number(p.reimburse_amount ?? 0) !== 0 ||
+                          Number(p.advance_amount ?? 0) !== 0) && (
+                          <span className="block whitespace-nowrap text-[10px] text-gray-400">
+                            {t('othersShort', {
+                              reimburse: Number(p.reimburse_amount ?? 0).toLocaleString('id-ID'),
+                              advance: Number(p.advance_amount ?? 0).toLocaleString('id-ID'),
+                            })}
+                          </span>
+                        )}
                     </TableCell>
                     <TableCell className="text-right text-sm font-semibold">
                       {formatCurrency(p.total_amount)}

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { payablesApi } from "@/lib/api";
+import { invalidateMoney } from "@/hooks/useTripCosts";
 import { parseResponse } from "@/lib/safeParse";
 import { payablesResultSchema } from "@/lib/schemas";
 import {
@@ -63,9 +64,9 @@ export function usePayables(params: PayablesListParams) {
 }
 
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
-  qc.invalidateQueries({ queryKey: ["payables"] });
-  qc.invalidateQueries({ queryKey: ["driver-payables"] });
-  qc.invalidateQueries({ queryKey: ["vendor-payables"] });
+  // Extras and paid status show on the order page, vendor detail and reports too.
+  invalidateMoney(qc);
+  qc.invalidateQueries({ queryKey: ["vendor-detail2"] });
 }
 
 export function useUpdatePayable() {

@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
+import TripCostsCard from "@/components/orders/TripCostsCard";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
@@ -519,6 +520,15 @@ export default function OrderDetailPage({
       ops_cost: item.ops_cost ?? 0,
       rtr_amount: item.rtr_amount ?? null,
       margin_amount: item.margin_amount ?? null,
+      driver_fee: item.driver_fee ?? null,
+      driver_fee_note: item.driver_fee_note ?? null,
+      travel_advance: item.travel_advance ?? null,
+      trip_started_at: item.trip_started_at ?? null,
+      actual_start_at: item.actual_start_at ?? null,
+      service_package: item.service_package ?? null,
+      payable: item.payable
+        ? { status: item.payable.status, extras_amount: item.payable.extras_amount }
+        : null,
       is_external: item.is_external ?? false,
       line_status: (item.line_status as ScheduleStatus) ?? "SCHEDULED",
       driver_name_raw: item.driver_name_raw ?? null,
@@ -1275,6 +1285,12 @@ export default function OrderDetailPage({
                 )}
               </CardContent>
             </Card>
+
+            {/* Driver pay + trip costs per day (review of the driver's receipts) */}
+            <TripCostsCard
+              items={order.service_items ?? []}
+              onEditDay={openDayAssign}
+            />
 
             {/* Additional Charges */}
             <Card className="shadow-none border border-gray-200">

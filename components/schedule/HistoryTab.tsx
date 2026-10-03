@@ -370,11 +370,27 @@ function HistoryRow({
                 </div>
               ) : (
                 <ul className="space-y-1.5 text-sm">
-                  <FinanceRow label={t('opsCost')} value={formatCurrency(row.ops_cost ?? 0)} />
+                  <FinanceRow label={t('tripCostsArasya')} value={formatCurrency(row.ops_cost ?? 0)} />
                   <FinanceRow
-                    label={t('driverFeeBase')}
+                    label={row.payable?.kind === 'VENDOR' ? t('vendorRtr') : t('driverFeeBase')}
                     value={formatCurrency(row.payable?.base_amount ?? 0)}
                   />
+                  {row.payable?.kind === 'DRIVER' &&
+                    Number(row.payable.reimburse_amount ?? 0) !== 0 && (
+                      <FinanceRow
+                        label={`+ ${t('reimburse')}`}
+                        value={formatCurrency(row.payable.reimburse_amount ?? 0)}
+                        muted
+                      />
+                    )}
+                  {row.payable?.kind === 'DRIVER' &&
+                    Number(row.payable.advance_amount ?? 0) !== 0 && (
+                      <FinanceRow
+                        label={`− ${t('advance')}`}
+                        value={formatCurrency(row.payable.advance_amount ?? 0)}
+                        muted
+                      />
+                    )}
                   {(row.payable?.extras ?? []).map((ex) => (
                     <FinanceRow
                       key={ex.id || ex.label}
@@ -384,7 +400,7 @@ function HistoryRow({
                     />
                   ))}
                   <FinanceRow
-                    label={t('driverFeeTotal')}
+                    label={row.payable?.kind === 'VENDOR' ? t('vendorTotal') : t('driverFeeTotal')}
                     value={formatCurrency(row.payable?.total_amount ?? 0)}
                     bold
                   />
