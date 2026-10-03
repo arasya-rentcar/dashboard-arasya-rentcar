@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
+import ArrivalEvidence from "@/components/orders/ArrivalEvidence";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
@@ -294,6 +295,21 @@ export default function OrderDetailPage({
   // Drivers are assigned only once the DP (or full payment) is recorded; the
   // API rejects it otherwise. Partner (external) lines are not affected.
   const awaitingDp = order?.payment_status === "UNPAID";
+  // Owner rule: the trip with the customer begins only when the order is paid
+  // in full (driver app "Mulai perjalanan"); driving to the pickup is allowed.
+  const startPayment = order?.start_payment;
+  const waitsForFullPayment =
+    !!startPayment &&
+    !startPayment.ready &&
+    order?.order_status !== "CANCELLED" &&
+    (order?.service_items ?? []).some(
+      (item) =>
+        !item.is_external &&
+        !!item.driver?.id &&
+        item.line_status !== "DONE" &&
+        item.line_status !== "CANCELLED" &&
+        !item.customer_onboard_at,
+    );
   // "Reassign All" swaps the driver/car on every internal line that is assigned
   // but NOT yet started (line_status === ASSIGNED). Show it only when at least
   // one such line exists, so you can change drivers without editing day-by-day.
@@ -532,6 +548,7 @@ export default function OrderDetailPage({
         customer_name: order.customer_name,
         order_status: order.order_status,
         payment_status: order.payment_status,
+        start_ready: order.start_payment?.ready,
       },
       driver: item.driver ?? null,
       car: item.car
@@ -1001,6 +1018,15 @@ export default function OrderDetailPage({
                     )}
                   </div>
                 </div>
+                {waitsForFullPayment && startPayment && (
+                  <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    {t('notPaidForTrip', {
+                      left: formatCurrency(
+                        Math.max(0, startPayment.rental_total - startPayment.paid_to_date),
+                      ),
+                    })}
+                  </p>
+                )}
                 {!isStructurallyLocked && awaitingDp && hasUnassignedInternalLine && (
                   <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     {t('awaitingDpAssign')}
@@ -1192,7 +1218,21 @@ export default function OrderDetailPage({
                                               {formatDateTime(item.actual_pickup_at)}
                                             </span>
                                           )}
+                                          {item.customer_onboard_at && (
+                                            <span className="inline-flex items-center gap-1 text-emerald-700">
+                                              <UserCheck className="h-3 w-3" />
+                                              {t('actualOnboard')}:{" "}
+                                              {formatDateTime(item.customer_onboard_at)}
+                                            </span>
+                                          )}
                                         </div>
+                                      )}
+                                      {!item.is_external && (
+                                        <ArrivalEvidence
+                                          reports={item.reports}
+                                          pickupLocation={item.pickup_location}
+                                          arrivedAt={item.actual_pickup_at}
+                                        />
                                       )}
                                       {(item.trip_started_at ||
                                         item.trip_finished_at) && (

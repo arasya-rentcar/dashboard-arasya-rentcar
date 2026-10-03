@@ -877,7 +877,9 @@
     "cancelStillOwed": "Pelanggan masih berhutang",
     "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund.",
     "partnerDriver": "Driver rekanan",
-    "awaitingDpAssign": "Driver baru bisa ditugaskan setelah pelanggan membayar DP. Buat invoice Uang Muka (DP), lalu tandai terbayar dengan bukti transfer. Hari yang memakai rekanan tetap bisa diatur."
+    "awaitingDpAssign": "Driver baru bisa ditugaskan setelah pelanggan membayar DP. Buat invoice Uang Muka (DP), lalu tandai terbayar dengan bukti transfer. Hari yang memakai rekanan tetap bisa diatur.",
+    "actualOnboard": "Pelanggan naik",
+    "notPaidForTrip": "Order belum lunas (sisa sewa {left}). Driver tetap bisa berangkat dan menandai sampai di lokasi jemput, tetapi \"Mulai perjalanan\" di aplikasi baru aktif setelah pelunasan tercatat (invoice ditandai terbayar)."
   },
   "invoicesPage": {
     "title": "Invoice",
@@ -1004,7 +1006,8 @@
     "onTrip": "Sedang jalan",
     "cancel": "Batal",
     "save": "Simpan",
-    "awaitingDp": "Menunggu DP"
+    "awaitingDp": "Menunggu DP",
+    "notPaid": "Belum lunas"
   },
   "history": {
     "title": "Riwayat Perjalanan",
@@ -1067,7 +1070,9 @@
       "EXPENSE_SUMMARY": "Ringkasan biaya",
       "ODOMETER": "Odometer",
       "DRIVER REPORT": "Laporan driver",
-      "PHOTO REPORT": "Laporan foto"
+      "PHOTO REPORT": "Laporan foto",
+      "ARRIVAL_PHOTO": "Foto sampai lokasi",
+      "ONBOARD": "Pelanggan naik"
     }
   },
   "agentPage": {
@@ -1485,7 +1490,8 @@
     "partnerDriverPhone": "No. HP driver",
     "partnerPlate": "Plat nomor",
     "partnerHint": "Dipakai untuk konfirmasi ke pelanggan dan driver rekanan lewat WhatsApp.",
-    "awaitingDpNote": "Order ini belum dibayar. Driver baru bisa dipilih setelah DP atau pelunasan tercatat (invoice ditandai terbayar). Mobil dan rekanan tetap bisa diatur."
+    "awaitingDpNote": "Order ini belum dibayar. Driver baru bisa dipilih setelah DP atau pelunasan tercatat (invoice ditandai terbayar). Mobil dan rekanan tetap bisa diatur.",
+    "notPaidNote": "Belum lunas: driver bisa berangkat ke lokasi jemput, tetapi perjalanan dengan pelanggan baru bisa dimulai setelah order lunas."
   },
   "financeCard": {
     "title": "Keuangan & Margin",
@@ -1798,5 +1804,18 @@
     "save": "Simpan",
     "saving": "Menyimpan…",
     "okUpdated": "Vendor diperbarui"
+  },
+  "arrival": {
+    "title": "Bukti sampai lokasi jemput",
+    "mocked": "Lokasi palsu terdeteksi",
+    "noGps": "Tanpa foto/GPS",
+    "noGpsHint": "Driver menandai sampai tanpa foto lokasi (GPS HP tidak dapat lokasi atau aplikasi versi lama). Hubungi driver bila perlu.",
+    "accuracy": "akurasi {m} m",
+    "fixAt": "GPS diambil {at}",
+    "openMap": "Lihat di peta",
+    "route": "Rute ke alamat jemput",
+    "routeHint": "Peta menunjukkan jarak dari titik driver ke alamat jemput",
+    "openPhoto": "Buka foto",
+    "photoAlt": "Foto sampai lokasi jemput dengan cap waktu dan GPS"
   }
 }

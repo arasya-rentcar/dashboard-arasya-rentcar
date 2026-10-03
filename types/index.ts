@@ -161,6 +161,11 @@ export interface OrderServiceItem {
   actual_pickup_at?: string | null;
   // When the driver accepted this trip in the driver app (null = not yet).
   driver_accepted_at?: string | null;
+  // Customer got in, trip with them began ("Mulai perjalanan" in the app).
+  // Needs the order paid in full.
+  customer_onboard_at?: string | null;
+  // Driver app + bot reports for this day (order detail).
+  reports?: TripReportEntry[];
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
@@ -234,6 +239,15 @@ export interface Order {
   notes?: string | null;
   // Website lead this order was created from (null for other orders).
   web_lead?: OrderWebLead | null;
+  // Paid in full = the trip with the customer may begin (driver app "Mulai
+  // perjalanan"). rental_total = price of the non-cancelled days.
+  start_payment?: StartPayment;
+}
+
+export interface StartPayment {
+  rental_total: number;
+  paid_to_date: number;
+  ready: boolean;
 }
 
 export interface OrderWebLead {
@@ -316,6 +330,8 @@ export interface ScheduleLine {
     customer_name: string;
     order_status: OrderStatus;
     payment_status: PaymentStatus;
+    // Paid in full: the driver may begin the trip with the customer.
+    start_ready?: boolean;
   } | null;
   driver?: { id: string; name: string; phone?: string | null } | null;
   car?: { id: string; model: string; plate_number?: string | null } | null;
@@ -387,6 +403,13 @@ export interface TripReportEntry {
   // Cost/odometer value for FUEL/TOLL/PARKING/OTHER_COST etc. (decimal).
   amount?: string | number | null;
   created_at: string;
+  // GPS fix from the phone (arrival photo / "sampai di lokasi jemput").
+  latitude?: number | null;
+  longitude?: number | null;
+  location_accuracy_m?: number | null;
+  location_at?: string | null;
+  // Android reported a mock-location app.
+  location_mocked?: boolean | null;
 }
 
 // One finished (DONE) service line for the Trip History tab. finance_status:
@@ -411,6 +434,7 @@ export interface TripHistoryRow {
   finish_reported_at?: string | null;
   trip_started_at?: string | null;
   driver_accepted_at?: string | null;
+  customer_onboard_at?: string | null;
   // Partner (vendor) driver and plate typed on the line.
   driver_name_raw?: string | null;
   driver_phone_raw?: string | null;

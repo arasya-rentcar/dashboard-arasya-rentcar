@@ -877,7 +877,9 @@
     "cancelStillOwed": "Customer still owes",
     "cancelRefundHint": "The customer overpaid versus the cancellation fee. Process the refund via the Mark Refund flow.",
     "partnerDriver": "Partner driver",
-    "awaitingDpAssign": "A driver can be assigned once the customer pays the DP. Create a Down Payment (DP) invoice, then mark it paid with the transfer proof. Days served by a partner can still be set."
+    "awaitingDpAssign": "A driver can be assigned once the customer pays the DP. Create a Down Payment (DP) invoice, then mark it paid with the transfer proof. Days served by a partner can still be set.",
+    "actualOnboard": "Customer on board",
+    "notPaidForTrip": "Order not paid in full ({left} of the rental left). The driver can still depart and mark the arrival at pickup, but \"Start trip\" in the app unlocks only once the settlement is recorded (invoice marked paid)."
   },
   "invoicesPage": {
     "title": "Invoices",
@@ -1004,7 +1006,8 @@
     "onTrip": "On trip",
     "cancel": "Cancel",
     "save": "Save",
-    "awaitingDp": "Awaiting DP"
+    "awaitingDp": "Awaiting DP",
+    "notPaid": "Not paid in full"
   },
   "history": {
     "title": "Trip History",
@@ -1067,7 +1070,9 @@
       "EXPENSE_SUMMARY": "Expense summary",
       "ODOMETER": "Odometer",
       "DRIVER REPORT": "Driver report",
-      "PHOTO REPORT": "Photo report"
+      "PHOTO REPORT": "Photo report",
+      "ARRIVAL_PHOTO": "Arrival photo",
+      "ONBOARD": "Customer on board"
     }
   },
   "agentPage": {
@@ -1485,7 +1490,8 @@
     "partnerDriverPhone": "Driver phone",
     "partnerPlate": "Plate number",
     "partnerHint": "Used to confirm the trip with the customer and the partner's driver over WhatsApp.",
-    "awaitingDpNote": "This order is unpaid. A driver can be chosen once the DP or full payment is recorded (invoice marked paid). Car and partner can still be set."
+    "awaitingDpNote": "This order is unpaid. A driver can be chosen once the DP or full payment is recorded (invoice marked paid). Car and partner can still be set.",
+    "notPaidNote": "Not paid in full: the driver can drive to the pickup, but the trip with the customer can only begin once the order is paid in full."
   },
   "financeCard": {
     "title": "Finance & Margin",
@@ -1798,5 +1804,18 @@
     "save": "Save",
     "saving": "Saving…",
     "okUpdated": "Vendor updated"
+  },
+  "arrival": {
+    "title": "Proof of arrival at pickup",
+    "mocked": "Fake location detected",
+    "noGps": "No photo/GPS",
+    "noGpsHint": "The driver marked the arrival without a location photo (the phone could not get GPS, or an old app version). Call the driver if needed.",
+    "accuracy": "accuracy {m} m",
+    "fixAt": "GPS taken {at}",
+    "openMap": "View on map",
+    "route": "Route to pickup address",
+    "routeHint": "The map shows the distance from the driver's point to the pickup address",
+    "openPhoto": "Open photo",
+    "photoAlt": "Arrival photo at pickup with time and GPS stamp"
   }
 }

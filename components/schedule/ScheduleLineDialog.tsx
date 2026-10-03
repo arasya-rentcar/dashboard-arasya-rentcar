@@ -248,11 +248,15 @@ export default function ScheduleLineDialog({
 
           {!isExternal ? (
             <>
-              {awaitingDp && (
+              {awaitingDp ? (
                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                   {t('awaitingDpNote')}
                 </p>
-              )}
+              ) : line.order?.start_ready === false ? (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {t('notPaidNote')}
+                </p>
+              ) : null}
               <div className="space-y-1.5">
                 <Label>{t('driver')}</Label>
                 <Select

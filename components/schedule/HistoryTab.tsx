@@ -30,6 +30,7 @@ import { useCars } from '@/hooks/useCars';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { TripHistoryRow } from '@/types';
+import ArrivalEvidence from '@/components/orders/ArrivalEvidence';
 
 const PAGE_SIZE = 20;
 
@@ -416,6 +417,13 @@ function HistoryRow({
               <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500 flex items-center gap-1">
                 <FileText className="h-3.5 w-3.5" /> {t('reports')}
               </h4>
+              {!row.is_external && (
+                <ArrivalEvidence
+                  reports={row.reports}
+                  pickupLocation={row.pickup_location}
+                  arrivedAt={row.actual_pickup_at}
+                />
+              )}
               {(row.reports ?? []).length === 0 ? (
                 <p className="text-xs text-gray-400">{t('noReports')}</p>
               ) : (

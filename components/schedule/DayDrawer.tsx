@@ -152,12 +152,20 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
             {line.pickup_location} → {line.dropoff_location}
           </p>
         </div>
-        <Badge
-          variant="outline"
-          className={`shrink-0 text-[10px] ${STATUS_STYLES[line.line_status] || ''}`}
-        >
-          {line.line_status}
-        </Badge>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <Badge
+            variant="outline"
+            className={`text-[10px] ${STATUS_STYLES[line.line_status] || ''}`}
+          >
+            {line.line_status}
+          </Badge>
+          {/* The trip with the customer waits for full payment (driver app). */}
+          {!cancelled && !line.is_external && line.order?.start_ready === false && line.line_status !== 'DONE' && (
+            <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">
+              {t('notPaid')}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Assignment row */}
