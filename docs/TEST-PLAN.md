@@ -12,6 +12,17 @@ Tanda:
 - **Harapkan** = hasil yang benar menurut aturan bisnis.
 - 🐞 = dari pembacaan kode diperkirakan **bug**. Tetap jalankan, catat apa yang terlihat; jangan berhenti.
 - ⏰ = langkah yang terikat jam.
+- 💰 = memakai aturan **bayaran driver baru** (keputusan pemilik 3 Okt, lihat bagian di bawah). Jalankan **setelah rilis API + dashboard "driver pay"**; sebelum rilis, lewati langkah ini.
+
+### Aturan bayaran driver baru (3 Okt)
+
+- Tiap hari internal punya **Fee driver** sendiri (Edit Hari). Terisi otomatis dari tabel fee saat driver pertama ditugaskan: Drop 100rb, 12 jam 200rb, Full day 250rb; tombol cepat Luar kota 250/300rb, Semarang PP 400rb, + Menginap 150rb/malam, + Overtime 30rb/jam. Bisa diubah.
+- **Uang jalan** (diberikan sebelum berangkat) diisi di Edit Hari dan dipotong dari tagihan driver.
+- **Biaya perjalanan** (Bensin/Tol/Parkir/Biaya lain) dari aplikasi masuk ke kartu baru **Fee driver & biaya perjalanan** di detail order dengan status **Menunggu cek**. Admin **Setujui/Tolak**, memilih **Dibayar driver / Dibayar kantor**, dan **Tagih ke pelanggan** (otomatis tercentang untuk paket X Parkir = parkir, X Ops = bensin/tol/parkir). Admin juga bisa **Tambah biaya** sendiri (mis. e-toll kantor).
+- **Tagihan driver** per hari = Fee + ganti biaya (disetujui, dibayar driver) − uang jalan + lainnya. Ikut berubah selama belum dibayar; **terkunci** setelah dibayar (ganti driver di hari yang sudah dibayar ditolak).
+- Biaya yang ditagih ke pelanggan menjadi **Biaya Tambahan** otomatis (masuk Invoice Tambahan) dan tidak mengurangi margin.
+- **Margin** (kartu order, Pendapatan, Dashboard) = pendapatan − fee driver − biaya ditanggung Arasya − RTR rekanan − lainnya di tagihan.
+- Finalisasi ditolak selama masih ada biaya **Menunggu cek**.
 
 ## 0. Persiapan
 
@@ -56,12 +67,12 @@ Order I: 3 hari, Sab 3 Okt 16.00 WIB, Min 4 Okt 08.00, Sen 5 Okt 08.00; Rp 800.0
 
 ### I-D. Penugasan, konfirmasi, push
 
-15. **Tetapkan untuk Semua**: Sutan Arief + F 1000 ARA → Harapkan 3 hari Ditugaskan, push **"3 tugas baru"** di HP, order "Ditugaskan". 🐞 Tidak ada utang driver yang dibuat; tidak ada "Pengingat trip" walau hari 1 = hari ini.
-16. Hari 1 → **Ubah** ("Edit Hari"): Biaya Ops (hari ini) ketik `300.000` → **Simpan & Hitung Ulang** → 🐞 bisa tersimpan Rp 300. Ulangi dengan `300000`. Harapkan pratinjau margin Rp 500.000, utang driver Sutan Rp 300.000 muncul di **Utang**.
+15. **Tetapkan untuk Semua**: Sutan Arief + F 1000 ARA → Harapkan 3 hari Ditugaskan, push **"3 tugas baru"** di HP, order "Ditugaskan". 💰 Tiap hari langsung punya fee Rp 200.000 (12 jam) dan utang driver di **Utang**. 🐞 Tidak ada "Pengingat trip" walau hari 1 = hari ini.
+16. 💰 Hari 1 → **Ubah** ("Edit Hari"): Fee driver terisi 200.000 · "12 jam (Jabodetabek)". Tekan **+ Overtime 1 jam** → 230.000 dan keterangan "… + Overtime 1 jam". Uang jalan ketik `100.000` (format titik diterima) → **Simpan & Hitung Ulang**. Harapkan judul dialog tanggal WIB yang benar, pratinjau margin Rp 570.000, tagihan Sutan hari 1 = 230.000 − 100.000 = Rp 130.000.
 17. **Trip** → Jadwal → hari 1, kolom Konfirmasi: **Kirim ke Customer** → WhatsApp "Data tim bertugas" (Nama / No hp / Nopol / Unit) → **Kirim juga ke driver (WhatsApp)** → pesan "Reminder Jadwal Perjalanan" + push di HP Sutan. Tutup tab tanpa kirim → 🐞 tetap "Terkirim".
-18. Order I → **Ganti Semua** → driver **Iwan** → Harapkan push **"Tugas dialihkan"** di HP Sutan, trip hilang dari tab Tugas; Konfirmasi hari 1 "Berubah, perlu kirim ulang" → **Kirim Perubahan** ("Update tim bertugas … (sebelumnya …)") → **Beri tahu driver lama**. 🐞 Utang hari 1 tetap atas nama Sutan.
-19. **Ganti Semua** kembali ke Sutan → push "tugas baru" lagi.
-20. Hari 2 → **Ubah**: Biaya Ops 300000, Status **Terjadwal** (driver tetap Sutan) → Simpan. Di HP: hari 2 tampil "Tugas baru" dengan tombol **Terima tugas**.
+18. Order I → **Ganti Semua** → driver **Iwan** → Harapkan push **"Tugas dialihkan"** di HP Sutan, trip hilang dari tab Tugas; Konfirmasi hari 1 "Berubah, perlu kirim ulang" → **Kirim Perubahan** ("Update tim bertugas … (sebelumnya …)") → **Beri tahu driver lama**. 💰 Utang hari 1–3 pindah ke Iwan (belum dibayar).
+19. **Ganti Semua** kembali ke Sutan → push "tugas baru" lagi; utang kembali ke Sutan.
+20. Hari 2 → **Ubah**: Status **Terjadwal** (driver tetap Sutan, fee biarkan) → Simpan. Di HP: hari 2 tampil "Tugas baru" dengan tombol **Terima tugas**.
 
 ### I-E. Hari 1 di aplikasi (HP Sutan)
 
@@ -75,7 +86,13 @@ Order I: 3 hari, Sab 3 Okt 16.00 WIB, Min 4 Okt 08.00, Sen 5 Okt 08.00; Rp 800.0
     - **Foto / Catatan**: catatan saja, tanpa foto.
 24. **Foto odometer akhir** → **Selesai** → **Ya, selesai**. Lalu kirim **Parkir** 5000 lagi (struk susulan setelah selesai).
     Harapkan di database: 5 laporan biaya + 5 baris `expenses` (total Rp 220.000), jam = jam tekan.
-25. Dashboard **Trip** → Riwayat → Order I hari 1: "Linimasa Perjalanan" + "Laporan Driver" + "Lihat media". 🐞 Jumlah rupiah dan label *Aplikasi* tidak tampil; detail order tidak menampilkan biaya dari aplikasi sama sekali.
+25. Dashboard **Trip** → Riwayat → Order I hari 1: "Linimasa Perjalanan" + "Laporan Driver" + "Lihat media". 💰 Jumlah rupiah dan label *Aplikasi* tampil.
+25a. 💰 Detail Order I → kartu **Fee driver & biaya perjalanan**: badge "5 biaya menunggu dicek", tiap biaya dengan "Dari aplikasi", jam, "Lihat struk" (yang berfoto).
+    - **Setujui** Bensin, Tol, Parkir 10.000 dan Biaya lain.
+    - Tol → **Dibayar kantor** (anggap e-toll kantor).
+    - **Tolak** Parkir 5.000.
+    - **Tambah biaya**: Tol 20000, catatan `e-toll kantor`, Dibayar kantor → Simpan.
+    Harapkan "Ditanggung Arasya" Rp 235.000 dan tagihan driver hari 1 = Fee 230.000 + ganti biaya 190.000 (Bensin 150rb, Parkir 10rb, Biaya lain 30rb) − uang jalan 100.000 = **Rp 320.000**.
 26. Aplikasi → tab **Riwayat**: hari 1 ada. **Profil**: Versi, Koneksi, Server, tidak ada data tertunda.
 
 ### I-F. ⏰ Pengingat 17.00, hari 2 offline dan latar belakang
@@ -88,22 +105,22 @@ Order I: 3 hari, Sab 3 Okt 16.00 WIB, Min 4 Okt 08.00, Sen 5 Okt 08.00; Rp 800.0
 
 ### I-G. Hari 3 dibatalkan, biaya tambahan, keuangan
 
-32. Hari 3 → **Ubah** → Status **Dibatalkan** → Simpan. Harapkan trip hilang dari HP. 🐞 Tidak ada push pembatalan; 🐞 harga hari 3 mungkin tetap terhitung di total order.
-33. **Tambah Biaya** → Tol 75000 → total order naik Rp 75.000. 🐞 "Total User" di kartu Keuangan belum ikut berubah sampai ada baris yang disimpan.
-34. **Edit Fee Driver & Catatan**: Fee Driver 200000 → catat Margin. Lalu buka hari 1 → **Simpan & Hitung Ulang** tanpa perubahan → 🐞 Margin berubah (rumus ditimpa).
+32. Hari 3 → **Ubah** → Status **Dibatalkan** → Simpan. Harapkan trip hilang dari HP. 💰 Fee hari 3 jadi 0 ("Dibatalkan sebelum berangkat"), utang hari 3 hilang, total order turun Rp 800.000. 🐞 Tidak ada push pembatalan.
+33. **Tambah Biaya** → Tol 75000 → total order naik Rp 75.000. 💰 "Total User" di kartu Keuangan langsung ikut berubah.
+34. 💰 Kartu **Keuangan & Margin**: hanya bisa **Edit Catatan**. Angka = jumlah dari hari-hari: Fee Driver, Biaya Perjalanan, Margin (User − Fee − Biaya). Buka hari 1 → **Simpan & Hitung Ulang** tanpa perubahan → margin **tidak** berubah.
 
 ### I-H. Utang driver
 
-35. **Utang** → Tagihan Driver → baris Sutan hari 1 & 2 (Rp 300.000). Edit hari 1: LAINNYA → Tambah `Uang makan` 50000 → TOTAL Rp 350.000 → Simpan.
-36. **Bayar** hari 1 → Terbayar → ↺ **Tandai belum terbayar** → Belum → centang dua baris → **Bayar Terpilih** → keduanya Terbayar.
+35. 💰 **Utang** → Tagihan Driver → baris Sutan: kolom Fee dan Lainnya ("ganti … · jalan −…"). Edit hari 1: Fee, ganti biaya, uang jalan tampil hanya-baca; LAINNYA → Tambah `Bonus` 50000 → TOTAL naik Rp 50.000 → Simpan. Margin hari 1 di kartu order turun Rp 50.000.
+36. **Bayar** hari 1 → Terbayar. 💰 Coba **Ubah** hari 1 → ganti driver ke Iwan → ditolak "Hari ini sudah dibayar ke Sutan Arief…". ↺ **Tandai belum terbayar** → Belum → centang dua baris → **Bayar Terpilih** → keduanya Terbayar.
 
 ### I-I. Pelunasan dan finalisasi
 
 37. **Invoice Tambahan** (Overtime + Tol = Rp 175.000) → **Tandai Terbayar** (bukti apa saja).
 38. **Invoice Sewa** → Pelunasan (Sisa Tagihan) → cek jumlah yang disarankan dan "Jatuh tempo …" → **Buat Invoice** → **Tandai Terbayar** → order "Terbayar", kwitansi bercap LUNAS. Harapkan **tidak ada** event GA4 `purchase` kedua.
 39. **Statement Gabungan (Pilih Invoice)** → pilih semua → PDF.
-40. Order "Menunggu Finalisasi" (daftar Order: bucket "Perlu Finalisasi") → **Finalisasi Pesanan** → Selesai. Cek: "Edit Order" hilang; **Tambah Biaya** ditolak. 🐞 Tombol hari masih bisa mengubah order yang sudah final; 🐞 daftar masih "Belum Final".
-41. **Pendapatan** (Oktober) dan **Dashboard**: catat Bruto, Biaya operasional, Fee driver, Margin bersih, dan "Margin Operasional". Claude menghitung angka yang benar. 🐞 Dashboard mengurangi biaya ops dua kali.
+40. 💰 Sebelum semua biaya hari 2 dicek: **Finalisasi Pesanan** → ditolak "Masih ada … biaya perjalanan … belum dicek". Setujui/tolak dulu. Lalu order "Menunggu Finalisasi" (daftar Order: bucket "Perlu Finalisasi") → **Finalisasi Pesanan** → Selesai. Cek: "Edit Order" hilang; **Tambah Biaya** ditolak. 🐞 Tombol hari masih bisa mengubah order yang sudah final; 🐞 daftar masih "Belum Final".
+41. **Pendapatan** (Oktober) dan **Dashboard**: catat Bruto, Biaya operasional, Fee driver, Margin bersih, dan "Margin Operasional". Claude menghitung angka yang benar. 💰 Ketiganya memakai rumus margin yang sama.
 
 ---
 
@@ -130,7 +147,7 @@ Order E: pelanggan baru `TEST UJI REKANAN` (nomor HP kedua Anda), vendor uji, 3 
    - Baris 2: 4 Okt, Qty / Hari 2, Rp 1.500.000.
    - Biaya Tambahan: Parkir 50000 → **Buat Order**.
    Harapkan kode `ARS-20261003-C67-1` (pelanggan baru C67), 3 hari, semua Eksternal + Alphard.
-8. Order masih **belum dibayar**. Hari 4 Okt → **Ubah**: Nama driver rekanan `Budi Uji`, No. HP (nomor kedua Anda), Plat terisi `B 9999 UJI`, RTR ketik `1.200.000` → Simpan → 🐞 RTR bisa terhapus diam-diam. Ulangi RTR `1200000`, Status **Ditugaskan** → tersimpan walau belum DP (hari rekanan bebas aturan DP). Harapkan pratinjau margin Rp 300.000 dan utang vendor Rp 1.200.000 di **Utang** → Tagihan Vendor.
+8. Order masih **belum dibayar**. Hari 4 Okt → **Ubah**: Nama driver rekanan `Budi Uji`, No. HP (nomor kedua Anda), Plat terisi `B 9999 UJI`, RTR ketik `1.200.000` → 💰 tersimpan Rp 1.200.000 (format titik diterima). Status **Ditugaskan** → tersimpan walau belum DP (hari rekanan bebas aturan DP). Harapkan pratinjau margin Rp 300.000 dan utang vendor Rp 1.200.000 di **Utang** → Tagihan Vendor.
 9. Hari 5 Okt → **Ubah** → Internal → pilih Sutan → Harapkan ditolak "Order belum dibayar…" (hari internal di order rekanan tetap kena aturan DP). Batalkan dialog.
 
 ### E-D. Belum ditutup dan konfirmasi
@@ -147,16 +164,16 @@ Order E: pelanggan baru `TEST UJI REKANAN` (nomor HP kedua Anda), vendor uji, 3 
 
 ### E-F. Hari campuran dan pindah internal ↔ rekanan
 
-16. Hari 5 Okt → Internal → Sutan + F 1443 FBT, Biaya Ops 300000 → Simpan → push "Tugas baru" di HP Sutan; utang **driver** Rp 300.000.
-17. Hari 5 Okt → Eksternal → TEST VENDOR UJI + Alphard, Budi Uji / nomor / `B 9999 UJI`, RTR 1200000, Status Ditugaskan → push **"Tugas dialihkan"** di HP Sutan; utang berubah jadi **vendor** Rp 1.200.000. 🐞 Biaya ops Rp 300.000 hari itu bisa tetap terhitung di total ops.
+16. Hari 5 Okt → Internal → Sutan + F 1443 FBT → Simpan → push "Tugas baru" di HP Sutan; 💰 fee terisi otomatis Rp 200.000, utang **driver** Rp 200.000.
+17. Hari 5 Okt → Eksternal → TEST VENDOR UJI + Alphard, Budi Uji / nomor / `B 9999 UJI`, RTR 1200000, Status Ditugaskan → push **"Tugas dialihkan"** di HP Sutan; utang berubah jadi **vendor** Rp 1.200.000; 💰 fee driver hari itu hilang dari kartu Keuangan.
 18. Pencarian **Order**: ketik `Budi Uji`, lalu `B 9999 UJI`, lalu `TEST VENDOR` → semuanya menemukan Order E.
 
 ### E-G. Penutupan, utang vendor, finalisasi
 
 19. Hari 4 Okt dan 5 Okt → Edit → Status **Berlangsung** → Simpan → lalu **Selesai**. Order "Menunggu Finalisasi".
-20. Kartu **Keuangan & Margin**: badge Eksternal, Harga Jual / RTR, "Margin (User − RTR)" = Rp 4.500.000 − Rp 3.600.000 = **Rp 900.000** (catat bila Parkir ikut dihitung).
-21. **Finalisasi Pesanan** → Selesai. **Trip** → Riwayat: "Driver rekanan: Budi Uji · … · plat". 🐞 Utang vendor bisa tertulis sebagai "Fee driver".
-22. Detail vendor → Tagihan & Trip → Riwayat Pembayaran → **Bayar** hari 1 Okt → 🐞 baris bisa tetap "BELUM" sampai halaman dimuat ulang; klik lagi → 409.
+20. Kartu **Keuangan & Margin**: badge Eksternal, RTR Rp 3.600.000, Margin = Rp 4.500.000 − Rp 3.600.000 + Parkir Rp 50.000 = **Rp 950.000** (💰 Biaya Tambahan Parkir dihitung sebagai pendapatan).
+21. **Finalisasi Pesanan** → Selesai. **Trip** → Riwayat: "Driver rekanan: Budi Uji · … · plat"; 💰 baris uang tertulis "RTR rekanan" / "Tagihan rekanan".
+22. Detail vendor → Tagihan & Trip → Riwayat Pembayaran → **Bayar** hari 1 Okt → 💰 baris langsung "TERBAYAR".
 23. **Utang** → Tagihan Vendor → centang 2 baris lain → **Bayar Terpilih**. Detail vendor: Total Trip 3, Total Tagihan Rp 3.600.000, semua Terbayar.
 24. **Pendapatan** Oktober: hari rekanan margin = pendapatan − RTR.
 
@@ -184,6 +201,12 @@ Pakai pelanggan TEST UJI APLIKASI, **bukan dari lead**.
    🐞 Invoice DP yang sudah dibayar ikut "Dibatalkan", jadi uang yang sudah masuk hilang dari hitungan. 🐞 Utang driver hari itu tidak terhapus.
 8. ⏰ (Opsional, besok) Order Y untuk 4 Okt, batalkan sebelum 10.00 WIB → tier 50%; Order Z hari-H setelah 10.00 → 100%.
 
+### X-E. 💰 Paket X Ops: biaya ditagih ke pelanggan
+
+12. Buat Order XO: hari ini, 1 hari, Paket **X Ops**, Rp 700.000, Sutan + mobil (DP dulu bila perlu).
+13. Aplikasi: Tol 50000 + Parkir 10000. Detail order: keduanya sudah tercentang **Tagih ke pelanggan** → **Setujui** → **Biaya Tambahan** bertambah 2 baris otomatis ("Tol 3 Okt", "Parkir 3 Okt"), total order Rp 760.000, margin tidak berubah, tagihan Sutan bertambah Rp 60.000 (ganti biaya).
+14. **Tolak** Parkir → baris Biaya Tambahan Parkir hilang, total Rp 750.000.
+
 ### X-D. Admin driver, unit, login aplikasi
 
 9. **Driver** → Edit Iwan → ganti nomor HP dengan nomor Sutan ditulis `+62 813…` → Harapkan 409 "Nomor HP 08… sudah dipakai driver lain (Sutan Arief)…". Batal.
@@ -199,7 +222,9 @@ Claude menyiapkan SQL; pemilik menjalankannya di SQL Editor (konektor Claude tid
 - bucket `payment-proofs`: `invoice/<id>/…`, `refunds/<order>/…`, `customer-docs/<id>/…`.
 Lalu hapus schema `backup_20261002` bila uji dianggap selesai.
 
-## Pertanyaan untuk pemilik (menentukan penilaian I-G/I-H)
+## Keputusan pemilik (3 Okt)
 
-1. **Biaya Ops vs Fee Driver.** Sekarang utang driver = Biaya Ops per hari, sedangkan "Fee Driver" di kartu Keuangan tidak terhubung ke utang. Yang dibayar ke driver itu Biaya Ops, Fee Driver, atau keduanya?
-2. **Biaya dari aplikasi** (Bensin/Tol/Parkir/Biaya lain) tidak masuk Biaya Ops, utang, maupun margin, dan tidak tampil di dashboard selain media di Riwayat. Seharusnya masuk ke mana?
+1. Fee driver per hari dari tabel fee sebagai bawaan, bisa diubah per hari.
+2. Biaya di jalan dibayar driver sendiri (diganti), dari uang jalan, atau kartu/e-toll kantor; semuanya didukung.
+3. Paket X Parkir / X Ops: driver membayar di jalan, Arasya menagih pelanggan lewat Invoice Tambahan.
+4. Biaya dari aplikasi wajib dicek admin sebelum dihitung.
