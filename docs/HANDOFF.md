@@ -1,8 +1,61 @@
-# Serah terima — 2 Oktober 2026
+# Serah terima — 3 Oktober 2026
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
-## 0. Mulai di sini: uji coba aplikasi driver (sesi berikutnya)
+## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
+
+Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga repo setelah review (lihat §1 untuk status deploy). Aplikasi driver **perlu APK baru** (ada modul native baru: kamera, lokasi, view-shot).
+
+### 00.1 Aturan baru: perjalanan dimulai setelah lunas
+- Driver **boleh** Terima → Berangkat dari garasi → Sampai di lokasi jemput walau order belum lunas.
+- Langkah baru **"Mulai perjalanan"** (pelanggan naik) sesudah sampai. Langkah ini terkunci sampai order **lunas**: uang yang diterima (`paid_to_date`, hanya bergerak saat invoice ditandai terbayar) ≥ harga sewa semua hari yang tidak dibatalkan. Biaya tambahan dari jalan (overtime, parkir/BBM yang ditagih ke pelanggan pada paket X Parkir/XOPS) ditagih belakangan dan **tidak** menahan hari berikutnya.
+- API: `POST /driver/trips/:id/board` (409 "Order belum lunas…"), kolom `order_service_items.customer_onboard_at`, baris sistem `ONBOARD`. "Selesai" pada trip yang belum pernah "Mulai perjalanan" (APK lama) juga butuh lunas. Edit Hari → IN_PROGRESS oleh admin tidak dikunci.
+- Saat invoice membuat order lunas, driver yang hari-nya belum dimulai dapat notifikasi "Order … sudah lunas".
+- Aplikasi: tombol "Mulai perjalanan (menunggu pelunasan)" + tombol WhatsApp ke admin (0821-2402-4281); kartu tugas "Belum lunas". Dashboard: catatan di halaman order (sisa sewa), badge "Belum lunas" di Jadwal, catatan di Edit Hari.
+
+### 00.2 Foto sampai lokasi dengan GPS (kamera seperti Timemark)
+- "Sampai di lokasi jemput" membuka **kamera GPS**: tampilan langsung dengan cap jam besar, tanggal, kode order, nama driver, GPS ± akurasi, alamat jemput. Cap dibakar ke foto di HP (react-native-view-shot); tombol potret menunggu GPS; hanya kamera (tanpa galeri).
+- Titik GPS (lat/lng, akurasi, waktu, tanda **lokasi palsu**/mock dari Android) disimpan di `trip_reports` untuk langkah sampai dan foto `ARRIVAL_PHOTO`. Foto dari APK lama dicap oleh server (jimp).
+- Bila GPS tidak dapat lokasi: setelah dicoba, driver bisa "Tandai sampai tanpa lokasi"; dashboard menandai "Tanpa foto/GPS".
+- Dashboard (halaman order dan Riwayat Trip): "Bukti sampai lokasi jemput": foto, koordinat, akurasi, "Lihat di peta", **"Rute ke alamat jemput"** (Google Maps menunjukkan jarak titik driver ke alamat), badge merah "Lokasi palsu terdeteksi".
+
+### 00.3 Odometer
+- Dua tombol terpisah. Odometer akhir terkunci sampai odometer awal terkirim/antre; masing-masing hanya sekali; angka akhir tidak boleh lebih kecil dari awal. Server menolak urutan salah (409) dan odometer tanpa foto/km (400).
+
+### 00.4 Notifikasi di aplikasi
+- Menu lonceng + badge belum dibaca. Semua push ke driver juga disimpan (`driver_notifications`, RLS menyala): tugas baru, dialihkan, pengingat, order lunas, **fee sudah dibayar** (dengan rincian fee + ganti biaya − uang jalan), biaya ditolak (dengan alasan). Ketuk → buka tugas atau menu notifikasi.
+- Fee dibayar: tombol "Tandai dibayar" dan "Bayar sekaligus" di Utang (sekali per pembayaran, tidak dobel).
+
+### 00.5 Fee driver per hari (patch dari sesi lain, diperiksa)
+- Patch `api-driver-pay.patch` (2 commit) diterapkan apa adanya lalu diperbaiki: dashboard lama mengirim "Biaya Ops" di setiap simpan, yang oleh patch dianggap fee driver → fee jadi 0 setiap Edit Hari disimpan. Sekarang hanya nilai yang benar-benar diubah yang dipakai; hari yang sudah dibayar terkunci (fee/uang jalan/RTR tidak bisa diubah, 409).
+- Sisi dashboard dibuat: Edit Hari punya **Fee driver** (tombol tabel fee + Menginap/Overtime), rincian, **Uang jalan**; halaman order punya **Biaya perjalanan** per hari (setujui/tolak dengan alasan, dibayar driver/kantor, ditagih ke pelanggan, tambah/hapus biaya admin) dan ringkasan yang dibayar ke driver; kartu Keuangan hanya mengubah catatan; Utang menampilkan ganti biaya dan uang jalan.
+- **Penting:** biaya dari aplikasi menunggu dicek; **Finalisasi menolak** order yang masih punya biaya "Menunggu dicek". Biaya lama (sebelum migrasi) juga menjadi "Menunggu dicek".
+- Migrasi patch memindahkan "Biaya Ops" lama di hari internal ke `driver_fee` (dulu itu memang fee driver).
+
+### 00.6 Uji (lokal, sebelum merge)
+- API (Postgres 16 + API asli + mock storage/push): 25 cek fee driver + 49 cek fitur baru (aturan lunas, board idempoten, odometer, foto GPS, notifikasi, fee dibayar tunggal/sekaligus, biaya ditolak) lolos.
+- Aplikasi: `tsc`, bundle Android, alur lengkap di build web dengan Playwright (kamera palsu + geolokasi): berangkat saat belum lunas → kamera GPS → foto bercap terunggah → "Mulai perjalanan" terkunci → lunas → terbuka. **Belum diuji di HP asli** (kamera, GPS, cap foto di Android).
+- Dashboard: `tsc`, `next build`, tangkapan layar halaman order (bukti sampai, biaya perjalanan, Edit Hari) terhadap API lokal.
+
+### 00.7 Uji di HP (sesudah APK baru terpasang)
+1. Order uji 1 hari, DP saja, tugaskan driver uji. Di HP: Terima → Berangkat (boleh) → Sampai: kamera GPS terbuka, tunggu "GPS siap", potret, kirim. Cek dashboard: bukti sampai + peta + rute.
+2. "Mulai perjalanan" terkunci + tombol WhatsApp admin. Tandai invoice pelunasan terbayar → notifikasi "Order … sudah lunas" → tarik layar → tombol aktif.
+3. Odometer: akhir terkunci sebelum awal; isi akhir lebih kecil → ditolak.
+4. Kirim struk parkir/bensin → dashboard "Biaya perjalanan": setujui satu, tolak satu dengan alasan → HP dapat notifikasi "Biaya ditolak".
+5. Selesai → Utang: tandai dibayar → HP dapat "Fee sudah dibayar" dengan rincian.
+6. Matikan GPS / pakai aplikasi lokasi palsu untuk melihat penanda di dashboard.
+
+### 00.8 Usulan berikutnya untuk aplikasi driver (belum dikerjakan)
+1. **Pendapatan saya**: daftar fee per hari (fee, ganti biaya, uang jalan, status lunas) dan total bulan ini (`GET /driver/payables`). Paling sering ditanyakan driver.
+2. **Wajib odometer awal sebelum Berangkat** dan odometer akhir sebelum Selesai (sekarang hanya pengingat), supaya km per trip selalu ada.
+3. **Checklist kondisi mobil** sebelum berangkat/selesai (foto 4 sisi, BBM, kebersihan) untuk sengketa kerusakan.
+4. **Lembur/overtime dari HP** saat selesai → admin setujui → masuk fee (OT 30rb/jam) dan Invoice Tambahan pelanggan.
+5. **Lokasi langsung selama trip berjalan** (hanya saat IN_PROGRESS, izin lokasi latar belakang) supaya kantor bisa menjawab "drivernya di mana?". Perlu keputusan pemilik soal privasi dan baterai.
+6. **Konfirmasi pelanggan saat selesai** (tanda tangan di HP atau tautan WhatsApp + rating).
+7. **Libur/ketersediaan driver** dari HP, tampil di ketersediaan driver dashboard.
+8. **Paksa update aplikasi** bila versi terlalu lama (API mengirim versi minimum) dan **laporan crash** (mis. Sentry), lalu distribusi lewat Play Console (Internal testing).
+
+## 0. Uji coba aplikasi driver (2 Okt)
 
 Uji coba pertama (2 Okt ±21.00 WIB, HP pemilik, build preview `324ed7a4…`) **gagal**. Login dan push berhasil, tetapi foto tidak pernah terkirim, antrean di HP macet, dan tombol status tercatat ke order yang salah. Status 2 Okt malam: data transaksi sudah dikosongkan (0.3), perbaikan 0.2 nomor 1–4 sudah dirilis (API, dashboard, mobile `main`), dan APK baru (build `0e492789…`) sudah dipasang di HP pemilik. Sebelum uji, pemilik meminta aturan baru: **driver hanya bisa ditugaskan setelah DP atau lunas** (§0.7; sudah dirilis 2 Okt malam). **Berikutnya: uji ulang dengan 0.5.** RLS `public` sudah menyala; schema `arasya_bot` masih terbuka (lihat 0.6).
 
@@ -136,6 +189,9 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 - Bot WhatsApp dihentikan; diganti website + dashboard + aplikasi driver.
 - Kode lead menjadi kode order.
 - Driver hanya bisa ditugaskan setelah order dibayar DP atau lunas (pemilik, 2 Okt malam; belum ada pengecualian).
+- Perjalanan dengan pelanggan ("Mulai perjalanan" di aplikasi) baru boleh dimulai setelah order **lunas**; berangkat dari garasi dan menandai sampai di lokasi jemput boleh sebelum lunas (pemilik, 3 Okt).
+- Foto sampai lokasi jemput memakai kamera GPS dengan cap waktu, nama driver, dan koordinat (seperti aplikasi Timemark) (pemilik, 3 Okt).
+- Selama masih tahap pengembangan, Claude boleh merge ke `main` di semua repo tanpa bertanya, dengan code review di GitHub bila perlu (pemilik, 3 Okt).
 - Aplikasi driver hanya untuk driver internal Arasya. Order/hari yang memakai rekanan berjalan lewat dashboard saja (vendor, mobil, nama/HP/plat driver rekanan, konfirmasi WhatsApp, tutup lewat Edit → Selesai); driver rekanan tidak diminta memasang aplikasi (pemilik, 2 Okt malam). Hari rekanan juga tidak terkena aturan DP.
 - Daftar harga resmi ditunda (BACKLOG).
 - Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".
