@@ -2,6 +2,8 @@
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
+**Uji:** rencana uji lengkap (API, dashboard, aplikasi, skenario ujung ke ujung) ada di `docs/TEST-PLAN.md`, menggantikan daftar §0.5 dan §00.7. Rencana itu memuat 5 bug yang terbukti di uji lokal 3 Okt malam (T1 Edit Order menghapus hari yang berjalan, T2 revisi invoice mengubah status bayar, T3 klik ganda Tandai Terbayar, T4 dua cara penugasan, T5 Edit Hari pada order selesai). T1–T3 perlu diperbaiki dan T4 diputuskan sebelum uji di HP.
+
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
 Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga repo setelah review (lihat §1 untuk status deploy). Aplikasi driver **perlu APK baru** (ada modul native baru: kamera, lokasi, view-shot).
