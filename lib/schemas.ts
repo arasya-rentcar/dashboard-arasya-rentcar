@@ -93,3 +93,45 @@ export const carSchema = z
   .passthrough();
 
 export const carListSchema = z.array(carSchema);
+
+export const notificationItemSchema = z
+  .object({
+    id: z.string(),
+    type: z.string(),
+    title: z.string(),
+    body: z.string().nullable().optional(),
+    link: z.string().nullable().optional(),
+    created_at: z.string(),
+    read: z.boolean().optional(),
+  })
+  .passthrough();
+
+export const notificationListSchema = z
+  .object({
+    items: z.array(notificationItemSchema),
+    unread_count: z.number().optional(),
+  })
+  .passthrough();
+
+export const unreadCountSchema = z
+  .object({
+    unread_count: z.number(),
+    latest_id: nullableStr,
+    latest_at: nullableStr,
+  })
+  .passthrough();
+
+export const driverRequestListSchema = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string(),
+          status: z.string(),
+          created_at: z.string(),
+          driver: z.object({ id: z.string(), name: z.string() }).passthrough().optional(),
+        })
+        .passthrough(),
+    ),
+  })
+  .passthrough();

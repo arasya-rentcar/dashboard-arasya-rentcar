@@ -231,6 +231,24 @@ export const tripCostsApi = {
   remove: (id: string) => api.delete(`/lines/expenses/${id}`),
 };
 
+// ─── Admin notifications (bell) & driver requests (e-toll top-up) ──────────
+
+export const notificationsApi = {
+  list: (params: { limit?: number; before?: string; unread?: 1 } = {}) =>
+    api.get("/notifications", { params }),
+  // Cheap poll (every 15 s): count + id/time of the newest item.
+  unreadCount: () => api.get("/notifications/unread-count"),
+  markRead: (data: { ids?: string[]; all?: boolean }) =>
+    api.post("/notifications/read", data),
+};
+
+export const driverRequestsApi = {
+  list: (params: { status?: "OPEN" | "DONE" | "ALL" } = {}) =>
+    api.get("/driver-requests", { params }),
+  markDone: (id: string, data: { note?: string } = {}) =>
+    api.post(`/driver-requests/${id}/done`, data),
+};
+
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
 
 export const analyticsApi = {

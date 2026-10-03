@@ -1406,3 +1406,61 @@ export interface DashboardV2 {
   outstanding: DashV2Outstanding;
   trend: DashV2TrendPoint[];
 }
+
+// ─── Admin notifications & driver requests ───────────────────────────────────
+
+export type AdminNotificationType =
+  | 'TRIP_ACCEPTED'
+  | 'TRIP_STARTED'
+  | 'TRIP_ARRIVED'
+  | 'TRIP_BOARDED'
+  | 'TRIP_FINISHED'
+  | 'TRIP_REPORT'
+  | 'TRIP_COST'
+  | 'DRIVER_REQUEST';
+
+export interface AdminNotification {
+  id: string;
+  type: AdminNotificationType;
+  title: string;
+  body: string;
+  order_id?: string | null;
+  order_code?: string | null;
+  service_item_id?: string | null;
+  driver_id?: string | null;
+  driver_request_id?: string | null;
+  expense_id?: string | null;
+  // Dashboard path to open, e.g. "/dashboard/orders/<id>".
+  link: string;
+  created_at: string;
+  read: boolean;
+}
+
+export interface AdminNotificationList {
+  items: AdminNotification[];
+  unread_count: number;
+}
+
+export interface NotificationUnreadCount {
+  unread_count: number;
+  latest_id: string | null;
+  latest_at: string | null;
+}
+
+export type DriverRequestStatus = 'OPEN' | 'DONE' | 'CANCELLED';
+
+export interface DriverRequest {
+  id: string;
+  driver_id: string;
+  type: 'ETOLL_TOPUP';
+  card_label?: string | null;
+  // Card balance the driver typed (decimal).
+  balance?: string | number | null;
+  note?: string | null;
+  status: DriverRequestStatus;
+  created_at: string;
+  handled_at?: string | null;
+  handled_by?: string | null;
+  handled_note?: string | null;
+  driver: { id: string; name: string; phone?: string | null };
+}
