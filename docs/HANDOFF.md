@@ -2,7 +2,19 @@
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
-**Uji:** rencana uji lengkap (API, dashboard, aplikasi, skenario ujung ke ujung) ada di `docs/TEST-PLAN.md`, menggantikan daftar §0.5 dan §00.7. Rencana itu memuat 5 bug yang terbukti di uji lokal 3 Okt malam (T1 Edit Order menghapus hari yang berjalan, T2 revisi invoice mengubah status bayar, T3 klik ganda Tandai Terbayar, T4 dua cara penugasan, T5 Edit Hari pada order selesai). T1–T3 perlu diperbaiki dan T4 diputuskan sebelum uji di HP.
+**Uji:** rencana uji lengkap (API, dashboard, aplikasi, skenario ujung ke ujung) ada di `docs/TEST-PLAN.md`, menggantikan daftar §0.5 dan §00.7. Rencana itu memuat 5 bug yang terbukti di uji lokal 3 Okt malam:
+- T1: Edit Order menghapus hari yang berjalan.
+- T2: revisi invoice mengubah status bayar.
+- T3: klik ganda Tandai Terbayar.
+- T4: dua cara penugasan.
+- T5: Edit Hari pada order selesai.
+
+**Status 4 Okt:** T1–T3 diperbaiki dan dirilis. API arasya-rentcar/api-arasya-rentcar#2 dirilis lewat "Deploy API" run #68 (`/health` 200). Dashboard arasya-rentcar/dashboard-arasya-rentcar#4 menyusul setelah merge. Perilaku baru yang perlu diketahui admin:
+- `payment_status` ikut total order: order "Terbayar" kembali menjadi "DP Terbayar" bila ada hari atau biaya tambahan baru.
+- Hari yang sudah punya driver tidak bisa dihapus lewat Edit Order; batalkan lewat Edit Hari.
+- Memindah jam hari milik driver mengirim push "Jadwal tugas diubah" dan meminta konfirmasi dikirim ulang.
+
+Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produksi dicek (SQL baca): tidak ada kerusakan dari T1–T3. **Berikutnya:** keputusan pemilik soal T4 (lihat TEST-PLAN §1), lalu uji HP §7–§8.
 
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
@@ -158,8 +170,8 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (f5bb7cb, sesi 3 Okt §00; PR arasya-rentcar/api-arasya-rentcar#1) | ✅ "Deploy API" run #67 sukses 3 Okt 08.41 UTC; kedua migrasi tercatat di `_prisma_migrations`, RLS `driver_notifications` menyala | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (sesi 3 Okt §00 + handoff ini; PR arasya-rentcar/dashboard-arasya-rentcar#3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **api-arasya-rentcar** | `main` (25815c3, perbaikan T1–T3; PR arasya-rentcar/api-arasya-rentcar#2, sebelumnya #1) | ✅ "Deploy API" run #68 sukses 3 Okt 17.22 UTC (4 Okt 00.22 WIB), `/health` 200. Run #67 (3 Okt 08.41 UTC): kedua migrasi tercatat di `_prisma_migrations`, RLS `driver_notifications` menyala | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (Edit Order mengirim id hari + TEST-PLAN; PR arasya-rentcar/dashboard-arasya-rentcar#4, sebelumnya #3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **APK baru sedang di-build**: workflow "EAS Build (Android)" run #4 (profile `preview`, dari `main` 6aa3787) → build `d603a395-2d3a-4c25-a12e-fd475c7c7afe` (https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/d603a395-2d3a-4c25-a12e-fd475c7c7afe). Unduh APK dari halaman itu setelah selesai | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
@@ -198,6 +210,7 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 - Perjalanan dengan pelanggan ("Mulai perjalanan" di aplikasi) baru boleh dimulai setelah order **lunas**; berangkat dari garasi dan menandai sampai di lokasi jemput boleh sebelum lunas (pemilik, 3 Okt).
 - Foto sampai lokasi jemput memakai kamera GPS dengan cap waktu, nama driver, dan koordinat (seperti aplikasi Timemark) (pemilik, 3 Okt).
 - Selama masih tahap pengembangan, Claude boleh merge ke `main` di semua repo tanpa bertanya, dengan code review di GitHub bila perlu (pemilik, 3 Okt).
+- Claude selalu boleh membuat PR, mereview PR, dan merge PR di semua repo; jangan pernah bertanya soal itu (pemilik, 4 Okt).
 - Aplikasi driver hanya untuk driver internal Arasya. Order/hari yang memakai rekanan berjalan lewat dashboard saja (vendor, mobil, nama/HP/plat driver rekanan, konfirmasi WhatsApp, tutup lewat Edit → Selesai); driver rekanan tidak diminta memasang aplikasi (pemilik, 2 Okt malam). Hari rekanan juga tidak terkena aturan DP.
 - Daftar harga resmi ditunda (BACKLOG).
 - Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".

@@ -2,6 +2,8 @@
 
 Disusun 3 Oktober 2026 dari kode `main` ketiga repo (API `f5bb7cb`, dashboard `fb847e6`, mobile `6aa3787`) dan `docs/HANDOFF.md`. Dokumen ini menggantikan daftar uji pendek di HANDOFF §0.5 dan §00.7; keduanya tercakup di sini.
 
+**Status 4 Okt:** T1–T3 sudah diperbaiki dan dirilis (API arasya-rentcar/api-arasya-rentcar#2, dashboard arasya-rentcar/dashboard-arasya-rentcar#4). Uji API otomatis ada di repo API: `scripts/e2e/run-local.sh` (Postgres lokal + API asli, ±155 cek; hasil terakhir 154 lolos, 0 gagal, 2 "known" = T5). Yang tersisa: keputusan T4, dan T5 (P2).
+
 Isi:
 - [1. Temuan saat menyusun rencana ini](#1-temuan-saat-menyusun-rencana-ini) (5 bug terbukti; T1–T4 harus selesai atau diputuskan sebelum uji di HP)
 - [2. Cara memakai dokumen ini](#2-cara-memakai-dokumen-ini)
@@ -20,7 +22,7 @@ Isi:
 
 Semua di bawah ini **dibuktikan** di lingkungan lokal (Postgres 16 + API asli dari `main` + tiruan storage dan push), 3 Okt 2026 malam: 103 cek lolos dan 11 gagal; ke-11 kegagalan itu berasal dari T1–T4 di bawah. T5 ditemukan saat memeriksa ulang dokumen ini (dua cek tambahan).
 
-### T1. Edit Order menghapus semua hari order yang sudah berjalan (P0, perbaiki dulu)
+### T1. Edit Order menghapus semua hari order yang sudah berjalan (P0) — DIPERBAIKI 4 Okt
 
 - **Gejala.** Tombol **Edit Order** tampil untuk order `CREATED`, `ASSIGNED`, dan `IN_PROGRESS`. Form selalu mengirim `service_items`, dan API (`updateOrder`) menggantinya dengan `deleteMany` + `create`. Mengubah catatan saja pun sudah cukup memicunya.
 - **Terbukti (cek C5–C11, E0):** pada order `IN_PROGRESS` dengan driver yang sudah berangkat, satu struk bensin disetujui, dan fee sudah **dibayar**:
@@ -33,21 +35,32 @@ Semua di bawah ini **dibuktikan** di lingkungan lokal (Postgres 16 + API asli da
   - driver tetap `ON_DUTY` walau tidak punya trip aktif, sehingga "Tetapkan untuk Semua" berikutnya ditolak "Driver is not available".
 - **Juga menurut kode (tidak dijalankan):** hari rekanan menjadi hari internal (`is_external` kembali ke default `false`, vendor dan driver rekanan hilang); status konfirmasi WhatsApp per hari ikut hilang.
 - **Sementara belum diperbaiki:** jangan pakai Edit Order setelah ada driver/rekanan di hari mana pun. Ubah per hari lewat **Edit Hari**.
-- **Usulan perbaikan:** API memperbarui hari yang ada berdasarkan id (tambah atau hapus hanya hari yang memang ditambah atau dihapus, dan tolak menghapus hari yang sudah punya driver, laporan, biaya, atau payable). Dashboard mengirim `service_items` hanya bila bagian layanan diubah.
+- **Perbaikan (dirilis):**
+  - Dashboard mengirim id setiap hari. API memperbarui hari berdasarkan id; hanya isi yang berubah yang ditulis (tanggal dibandingkan per hari WIB).
+  - Hari yang sudah punya driver, mobil, perjalanan, laporan, biaya, uang jalan, tagihan, atau konfirmasi tidak bisa dihapus lewat Edit Order (409 dengan pesan jelas). Hari yang dibatalkan dan menyimpan data tetap tercatat.
+  - Menghapus semua hari yang masih terbuka ditolak (pakai Batalkan Pesanan). Simpan dobel atau tab lain ditolak, bukan membuat hari ganda.
+  - Memindah jam/tanggal/lokasi hari milik driver mengirim push "Jadwal tugas diubah" dan mengosongkan status konfirmasi supaya dikirim ulang.
+  - Alasan perubahan harga diminta tepat saat harga hari diubah.
 
-### T2. Revisi invoice yang belum dibayar mengubah status bayar (P0)
+### T2. Revisi invoice yang belum dibayar mengubah status bayar (P0) — DIPERBAIKI 4 Okt
 
 - `reviseInvoice` menghitung `payment_status` dari total yang **ditagihkan**, bukan uang yang diterima.
 - **Terbukti (A5, A6):** order Rp 1.000.000, invoice DP Rp 200.000 diterbitkan tetapi belum dibayar. Setelah DP direvisi ke Rp 250.000, `payment_status` = `DP_PAID` walau `paid_to_date` = 0, dan driver **bisa ditugaskan** (aturan DP pemilik terlewati).
 - **Juga menurut kode:** revisi invoice FULL yang belum dibayar menjadikan `PAID`. GA4 `purchase` untuk order dari lead ikut terkirim tanpa ada pembayaran.
 - "Mulai perjalanan" tetap aman karena memakai `paid_to_date`.
-- **Usulan perbaikan:** revisi tidak menyentuh `payment_status` (cukup diubah oleh `markInvoicePaid`), atau menghitungnya dari `paid_to_date`.
+- **Perbaikan (dirilis):**
+  - Revisi tidak lagi mengubah `payment_status`, dan `payment_status` tidak bisa diisi lewat `PUT /orders/:id`.
+  - Satu aturan dipakai di semua tempat: status = uang diterima (dikurangi refund) dibanding total order. Akibatnya status ikut berubah saat total naik/turun (lihat N2).
+  - Revisi yang bersamaan dengan pembayaran tidak bisa menimpa invoice yang baru dibayar. `total_billed` pelanggan ikut berubah.
 
-### T3. Klik ganda "Tandai Terbayar" mencatat pembayaran dua kali (P1)
+### T3. Klik ganda "Tandai Terbayar" mencatat pembayaran dua kali (P1) — DIPERBAIKI 4 Okt
 
 - **Terbukti (G1, G2):** dua permintaan bersamaan untuk invoice yang sama menghasilkan **dua kwitansi** (dua nomor) dan `total_paid` pelanggan bertambah dua kali (Rp 400.000 untuk DP Rp 200.000).
 - `paid_to_date` order tetap benar, karena dihitung ulang dari kwitansi invoice lain ditambah pembayaran ini.
-- **Usulan perbaikan:** update bersyarat `status <> 'PAID'` di dalam transaksi, seperti `markPayablePaid`. Kwitansi dan `total_paid` hanya ditulis oleh permintaan yang benar-benar mengubah status.
+- **Perbaikan (dirilis):**
+  - Invoice berubah menjadi PAID secara bersyarat, lalu baris order dikunci. Hanya satu permintaan yang menulis kwitansi (nomor tanpa celah) dan totalnya.
+  - Dua invoice yang dibayar bersamaan dihitung keduanya. Uang pada invoice yang dibatalkan oleh pembatalan order tetap dihitung.
+  - Push "sudah lunas" terkirim sekali. PDF kwitansi dibuat setelah tersimpan.
 
 ### T4. Dua cara menugaskan driver menghasilkan keadaan berbeda (P1, perlu keputusan)
 
@@ -84,7 +97,7 @@ Sampai diputuskan, uji §7 dijalankan untuk **kedua** cara.
 | # | Perilaku | Bukti |
 |---|---|---|
 | N1 | `payment_status` (badge "Terbayar") dihitung dari harga final termasuk biaya tambahan, sedangkan "Mulai perjalanan" hanya butuh uang ≥ harga sewa hari yang tidak dibatalkan. Order bisa "DP Terbayar" di dashboard sementara aplikasi sudah membuka "Mulai perjalanan". | kode `startPayment` |
-| N2 | `payment_status` tidak dihitung ulang bila harga final naik karena biaya tambahan: order tetap "Terbayar" padahal Invoice Tambahan belum dibayar. Lihat sisa di kartu Invoice. | J5 |
+| N2 | (Berubah 4 Okt) `payment_status` sekarang ikut total order: bila total naik karena hari atau biaya tambahan, order "Terbayar" kembali menjadi "DP Terbayar" sampai tambahan dibayar. Order hasil import sheet yang tercatat terbayar tanpa `paid_to_date` tetap statusnya. | e2e A9, J5, G20 |
 | N3 | Melepas driver dari hari (tanpa pengganti) mengirim push berjudul "Tugas dialihkan" dengan teks "dialihkan ke driver lain". | B9 |
 | N4 | Pembatalan tier 2 (50%) berlaku sampai pukul **10.00 lewat 59 detik** (menit 00 masih dihitung) dan hanya melihat `trip_started_at`. Driver yang menandai "Sampai" tanpa "Berangkat" lewat API tidak membuat tier 3; aplikasi selalu mewajibkan Berangkat lebih dulu. | kode `computeCancellationPenalty` |
 | N5 | Tidak ada menu di dashboard untuk membuat **akun login** driver baru. Tambah Driver hanya memilih akun berperan DRIVER yang sudah ada (`POST /users` lewat API atau SQL). | kode `driversPage` |
@@ -98,7 +111,7 @@ Sampai diputuskan, uji §7 dijalankan untuk **kedua** cara.
 
 - **ID kasus:** `API-…` (dijalankan dengan curl/skrip), `DSB-…` (dashboard di browser), `APP-…` (aplikasi di HP), `E2E-…` (lintas sistem).
 - **Prioritas:** **P0** wajib lolos sebelum aplikasi dibagikan; **P1** wajib sebelum dipakai sehari-hari; **P2** bila sempat.
-- **Kolom "Lokal 3 Okt":** ✅ lolos di uji lokal (kode cek dalam kurung); ❌ gagal karena bug T1–T5; kosong = belum dijalankan (kebanyakan karena perlu HP atau tampilan).
+- **Kolom "Lokal 3 Okt":** ✅ lolos di uji lokal (kode cek dalam kurung = id cek di `scripts/e2e/flows.mjs` repo API); ❌ gagal karena bug yang belum diperbaiki (T5); ✅ fix = gagal pada 3 Okt, lolos setelah perbaikan 4 Okt; kosong = belum dijalankan (kebanyakan karena perlu HP atau tampilan).
 - **Hasil yang diharapkan** ditulis menurut kode dan keputusan pemilik di HANDOFF §4. Kasus yang bertentangan dengan keputusan pemilik ditandai.
 - Satu orang mencatat hasil per ID: ✅ / ❌ + tangkapan layar atau baris DB. Kegagalan baru dicatat di HANDOFF.
 
@@ -108,7 +121,7 @@ Sampai diputuskan, uji §7 dijalankan untuk **kedua** cara.
 
 ### 3.1 Lingkungan lokal (untuk API, dan dashboard terhadap data uji)
 
-Resep yang dipakai untuk bukti di §1 (detail ada di `CLAUDE.md` repo API):
+Cara cepat: `scripts/e2e/run-local.sh` di repo API menjalankan semua langkah di bawah dan ±155 cek API (lihat `scripts/e2e/README.md`). Resep manual (detail ada di `CLAUDE.md` repo API):
 
 1. Postgres 16: `initdb` di `/var/tmp`, jalankan di port 5433 (`-k /var/tmp/...`), `createdb arasya`, lalu `prisma migrate deploy`.
 2. API: `npm ci`, `prisma generate`, `npm run build`, lalu jalankan `node dist/src/server.js` dengan:
@@ -137,7 +150,7 @@ Resep yang dipakai untuk bukti di §1 (detail ada di `CLAUDE.md` repo API):
 **Aturan data uji:**
 - Nama pelanggan diawali `TEST`, catatan order "UJI APLIKASI".
 - Jangan memakai Batalkan Pesanan untuk membersihkan data. Itu juga membuat invoice denda; bersihkan di akhir dengan SQL seperti HANDOFF §0.3, termasuk file di bucket `invoices`, `payment-proofs`, `driver-reports`.
-- Selama T1 belum diperbaiki, **jangan tekan Edit Order** pada order uji yang sudah punya driver, kecuali saat menjalankan kasus DSB-24.
+- Edit Order aman dipakai pada order yang sudah punya driver sejak perbaikan T1 (4 Okt).
 
 ### 3.3 Pembagian peran saat uji
 
@@ -245,7 +258,7 @@ Bisa dijalankan dengan curl atau skrip terhadap API lokal (§3.1). Dengan HP, se
 | API-40 | P1 | Hubungkan lead ke order yang sudah ada / yang sudah punya lead lain | kode order tidak berubah / 409 | |
 | API-41 | P0 | GA4: invoice pertama order-dari-lead ditandai terbayar (dengan `ga_client_id`) | satu event `purchase`; `purchase_reported_at` terisi; pembayaran berikutnya tidak mengirim lagi | |
 | API-42 | P1 | GA4 menolak (non-2xx) | klaim dilepas (`purchase_reported_at` null), dicoba di pembayaran berikutnya | |
-| API-43 | P0 | Revisi invoice yang belum dibayar pada order-dari-lead | tidak mengirim `purchase` (**gagal karena T2**) | ❌ T2 |
+| API-43 | P0 | Revisi invoice yang belum dibayar pada order-dari-lead | tidak mengirim `purchase` | ✅ fix (revisi tidak memanggil GA4) |
 
 ### 5.4 Pelanggan dan data pribadi
 
@@ -270,7 +283,11 @@ Bisa dijalankan dengan curl atau skrip terhadap API lokal (§3.1). Dengan HP, se
 | API-62 | P1 | `end_at` < `start_at` | 400 | |
 | API-63 | P1 | Buat order rekanan (`is_external`, vendor, mobil vendor milik vendor lain) | semua hari eksternal / 400 "does not belong to the given vendor" | |
 | API-64 | P0 | Ubah harga final tanpa `change_reason` / lebih kecil dari invoice aktif | 400 / 409 | |
-| API-65 | P0 | **Ubah order yang sudah punya driver / sedang berjalan** | hari, driver, payable, biaya tetap utuh (**gagal: T1**) | ❌ T1 (C5–C11) |
+| API-65 | P0 | **Ubah order yang sudah punya driver / sedang berjalan** | hari, driver, payable, biaya tetap utuh | ✅ fix (C5–C12) |
+| API-65a | P0 | Edit Order: hapus hari berjalan / hari dengan mobil / hari rekanan berisi / hari batal yang menyimpan data / semua hari terbuka | 409 dengan pesan jelas, tidak ada yang berubah | ✅ (C13, C23, C24, C28, C29) |
+| API-65b | P1 | Edit Order: tambah hari (order campuran → hari internal), simpan dobel, id tak dikenal, daftar hari kosong | hari baru `SCHEDULED`; dobel 409; 400; 400 | ✅ (C16, C22, C26, C15, C21) |
+| API-65c | P1 | Edit Order: pindah jam hari milik driver / tanggal yang sama dikirim tengah malam | push "Jadwal tugas diubah" + konfirmasi dikosongkan / tidak dianggap pindah | ✅ (C27, C30) |
+| API-65d | P1 | Edit Order: alasan harga, total basi dengan biaya tambahan, `final_price` saja | alasan wajib bila harga hari diubah; total basi diperbaiki + log SYSTEM; 400 | ✅ (C18, C32, C31) |
 | API-66 | P0 | Ubah / tambah biaya pada order `DONE` atau `CANCELLED` | 409 "read-only" | ✅ (D25) |
 | API-67 | P1 | Tambah biaya tambahan (billable / tidak) | billable: harga final naik, log perubahan; tidak: hanya log | |
 | API-68 | P2 | `PUT /orders/:id/finance` | hanya catatan keuangan yang berlaku (angka dihitung dari hari) | |
@@ -287,10 +304,10 @@ Bisa dijalankan dengan curl atau skrip terhadap API lokal (§3.1). Dengan HP, se
 | API-75 | P0 | Jumlah melebihi sisa (harga final − invoice aktif) | 409 | ✅ (G4) |
 | API-76 | P0 | Tandai terbayar tanpa bukti | 400 | ✅ (G8) |
 | API-77 | P0 | Tandai terbayar DP (bukti) | invoice PAID, kwitansi bernomor, bukti di bucket privat, `paid_to_date`, `DP_PAID` | ✅ (B1, B2) |
-| API-78 | P0 | **Klik ganda** tandai terbayar | satu kwitansi, `total_paid` sekali (**gagal: T3**) | ❌ T3 (G1, G2) |
+| API-78 | P0 | **Klik ganda** tandai terbayar | satu kwitansi, `total_paid` sekali | ✅ fix (G1, G2, G11–G18) |
 | API-79 | P1 | Kelebihan bayar (`amount_received` > invoice) | `PAID`, `paid_to_date` = uang diterima, refund due = kelebihan | ✅ (G7) |
 | API-80 | P0 | Pelunasan dibayar → lunas sewa | push "Order … sudah lunas" ke setiap driver yang harinya belum "Mulai perjalanan" (sekali per driver) | ✅ (D9) |
-| API-81 | P0 | Revisi invoice yang belum dibayar | `payment_status` tetap (**gagal: T2**) | ❌ T2 (A5, A6) |
+| API-81 | P0 | Revisi invoice yang belum dibayar | `payment_status` tetap | ✅ fix (A5–A10, G14, G19) |
 | API-82 | P1 | Revisi invoice PAID / CANCELLED / REVISED | 409 | ✅ (G10) |
 | API-83 | P1 | Kirim invoice WA (mode manual) / status REVISED/CANCELLED / tanpa nomor | `wa_url` + log kirim / 409 / 400 | |
 | API-84 | P1 | Kirim kwitansi sebelum PAID | 409 | |
@@ -442,7 +459,7 @@ Jalankan di dashboard.haikuy.com (atau lokal) dengan data uji. Setiap aksi: cek 
 | DSB-21 | P0 | Buat Order: nomor pelanggan lama (format lain) | petunjuk "Pelanggan lama", tombol "Pakai data ini", KTP/verifikasi tampil |
 | DSB-22 | P1 | Buat Order: 3 hari, biaya tambahan di awal, beberapa PIC | 3 baris hari; tambahan tercatat; PIC utama benar |
 | DSB-23 | P1 | Buat Order rekanan (Pelaksana Order = vendor) | hari eksternal, vendor terpilih |
-| DSB-24 | P0 | **Edit Order** pada order yang sudah punya driver (hanya di lingkungan uji) | hari, driver, payable tetap utuh. **Hari ini gagal (T1).** Setelah perbaikan, ulangi dengan order `IN_PROGRESS`. |
+| DSB-24 | P0 | **Edit Order** pada order yang sudah punya driver / `IN_PROGRESS`: ubah lokasi, ubah harga (alasan muncul), hapus hari berjalan | hari, driver, payable tetap utuh; alasan tercatat; hapus ditolak dengan pesan "Batalkan hari itu lewat Edit Hari". Lolos di browser lokal 4 Okt. |
 | DSB-25 | P1 | Edit Order: ubah harga tanpa alasan / di bawah total invoice | form meminta alasan / pesan error API |
 | DSB-26 | P0 | Order `DONE`/`CANCELLED` | banner hanya-baca; Edit, Tugaskan, Tambah Biaya tidak ada; invoice/bayar/refund masih ada |
 | DSB-27 | P1 | Daftar order: bucket (Aktif, Perlu Finalisasi, Tanpa Invoice, Belum Final, Dibatalkan, Sudah Refund), filter, cari (kode ARS, nama/HP/plat driver rekanan, vendor), preset filter, export | hasil benar; preset tersimpan setelah muat ulang |
@@ -455,8 +472,8 @@ Jalankan di dashboard.haikuy.com (atau lokal) dengan data uji. Setiap aksi: cek 
 |---|---|---|---|
 | DSB-30 | P0 | Invoice Uang Muka: petunjuk minimum 20%, di bawahnya | pesan error API ditampilkan |
 | DSB-31 | P0 | Tandai Terbayar: tanpa file / file 12 MB / GIF / sah | pesan wajib / ukuran / tipe / toast "ditandai terbayar — kini jadi kwitansi" |
-| DSB-32 | P0 | **Klik "Tandai Terbayar" dua kali cepat** | satu kwitansi (**hari ini bisa dua: T3**). Cek tombol dinonaktifkan saat memproses. |
-| DSB-33 | P0 | Revisi invoice yang belum dibayar | badge pembayaran tetap "Belum Terbayar" (**gagal: T2**) |
+| DSB-32 | P0 | **Klik "Tandai Terbayar" dua kali cepat** | satu kwitansi (API diperbaiki 4 Okt). Cek tombol dinonaktifkan saat memproses. |
+| DSB-33 | P0 | Revisi invoice yang belum dibayar | badge pembayaran tetap "Belum Terbayar" (diperbaiki 4 Okt) |
 | DSB-34 | P1 | Pelunasan, Penuh, Tambahan, Gabungan, Statement gabungan (pilih invoice) | aturan sesuai §5.6; PDF terbuka |
 | DSB-35 | P0 | Kirim invoice / kwitansi WhatsApp (mode manual) | tab WhatsApp terbuka dengan pesan terisi ke nomor 62…; riwayat pengiriman bertambah; popup tidak diblokir |
 | DSB-36 | P0 | Isi PDF invoice, kwitansi, denda | rekening BCA PT Ayomi Raya Karsa saja; kode order ARS; kebijakan batal sama dengan website |
@@ -675,7 +692,7 @@ Untuk setiap tier, cek PDF denda dan teks kebijakan.
 
 **E2E-11 (P1) Trip lama belum ditutup.** Hari kemarin lusa dengan driver, belum jalan → hilang dari HP, muncul di "Belum ditutup" → tutup lewat Edit Hari.
 
-**E2E-12 (P0, setelah T1–T3 diperbaiki) Regresi bug.** Ulangi DSB-24, DSB-32, DSB-33, API-43 dan pastikan semuanya lolos.
+**E2E-12 (P0) Regresi bug T1–T3 di produksi.** Ulangi DSB-24, DSB-32, DSB-33, API-43 dengan order uji dan pastikan semuanya lolos (sudah lolos di lokal 4 Okt).
 
 **E2E-13 (P1) Keputusan T4.** Jalankan APP-10 dan APP-11 berdampingan dan tunjukkan ke pemilik untuk memilih perilaku.
 
@@ -685,7 +702,7 @@ Untuk setiap tier, cek PDF denda dan teks kebijakan.
 
 ## 9. Syarat sebelum aplikasi dibagikan ke semua driver
 
-1. T1, T2, T3 diperbaiki dan E2E-12 lolos. T4 diputuskan pemilik dan diterapkan. T5 boleh menyusul, asal admin tahu untuk tidak mengubah hari order yang sudah selesai.
+1. T1, T2, T3 sudah diperbaiki (4 Okt); E2E-12 lolos di produksi. T4 diputuskan pemilik dan diterapkan. T5 boleh menyusul, asal admin tahu untuk tidak mengubah hari order yang sudah selesai.
 2. Semua kasus P0 di §5–§8 lolos di produksi dengan HP asli (minimal dua merek Android berbeda).
 3. E2E-01, E2E-03, E2E-04 lolos dua kali berturut-turut tanpa intervensi.
 4. Data uji dibersihkan (HANDOFF §0.3), termasuk file storage dan schema `backup_20261002` bila sudah tidak dipakai.
