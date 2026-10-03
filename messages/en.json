@@ -1863,7 +1863,7 @@
       "REJECTED": "Rejected"
     },
     "paidBy": {
-      "DRIVER": "Paid by driver (reimbursed)",
+      "DRIVER": "Paid by driver — reimbursed through the fee",
       "COMPANY": "Paid by the office"
     },
     "fromApp": "from the driver app",
@@ -1875,9 +1875,11 @@
     "reject": "Reject",
     "rejected": "Cost rejected, driver notified",
     "rejectPlaceholder": "Reason (sent to the driver)",
-    "billCustomer": "Bill to customer",
+    "billCustomer": "Bill to customer (Additional Invoice)",
     "delete": "Delete",
-    "summary": "Approved: reimbursed to driver {reimbursed} · billed to customer {billed} · Arasya's cost {arasya}",
+    "summaryPaidFirst": "Paid up front by: driver {driver} (reimbursed through the fee) · office {office}",
+    "summaryBorneBy": "Finally borne by: customer {billed} · Arasya {arasya}",
+    "billedDriverHint": "The driver is still reimbursed {amount} through the fee; the customer pays it on the Additional Invoice. If it was paid with the office e-toll/card, choose 'Paid by the office'.",
     "payable": "Paid to driver: fee {fee} + reimbursed {reimburse} − travel advance {advance} = {total}",
     "paid": "Paid",
     "unpaid": "Unpaid"

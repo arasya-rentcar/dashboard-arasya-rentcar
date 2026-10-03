@@ -63,10 +63,14 @@ export default function TripCostsPanel({
   const pending = list.filter((c) => c.status === 'PENDING').length;
   const approved = list.filter((c) => c.status === 'APPROVED');
   const sum = (xs: TripCost[]) => xs.reduce((s, c) => s + Number(c.amount || 0), 0);
-  // Only internal drivers are reimbursed (through their payable).
-  const reimbursed = isExternal ? 0 : sum(approved.filter((c) => c.paid_by === 'DRIVER'));
+  // Who paid first vs. who finally bears the cost (two separate questions: a
+  // cost the driver paid AND billed to the customer is listed on both lines, but
+  // it is counted once on each).
+  // Only internal drivers are reimbursed (through their fee payable).
+  const paidByDriver = isExternal ? 0 : sum(approved.filter((c) => c.paid_by === 'DRIVER'));
+  const paidByOffice = sum(approved) - paidByDriver;
   const billed = sum(approved.filter((c) => c.bill_to_customer));
-  const arasya = sum(approved.filter((c) => !c.bill_to_customer));
+  const arasya = sum(approved) - billed;
   const showPay = !isExternal && payable && payable.kind !== 'VENDOR';
 
   if (!list.length && !showPay && readOnly) return null;
@@ -176,6 +180,11 @@ export default function TripCostsPanel({
                 )}
               </div>
               {c.note && <p className="text-gray-600">{c.note}</p>}
+              {c.status === 'APPROVED' && c.bill_to_customer && c.paid_by === 'DRIVER' && !isExternal && (
+                <p className="mt-0.5 rounded bg-blue-50 px-1.5 py-1 text-blue-800">
+                  {t('billedDriverHint', { amount: formatCurrency(c.amount) })}
+                </p>
+              )}
               {c.status === 'REJECTED' && c.review_note && (
                 <p className="text-red-600">{t('rejectReason', { reason: c.review_note })}</p>
               )}
@@ -233,7 +242,10 @@ export default function TripCostsPanel({
       {(approved.length > 0 || showPay) && (
         <div className="mt-1.5 space-y-0.5 border-t border-gray-100 pt-1.5 text-gray-600">
           {approved.length > 0 && (
-            <p>{t('summary', { reimbursed: formatCurrency(reimbursed), billed: formatCurrency(billed), arasya: formatCurrency(arasya) })}</p>
+            <>
+              <p>{t('summaryPaidFirst', { driver: formatCurrency(paidByDriver), office: formatCurrency(paidByOffice) })}</p>
+              <p>{t('summaryBorneBy', { billed: formatCurrency(billed), arasya: formatCurrency(arasya) })}</p>
+            </>
           )}
           {showPay && payable && (
             <p>
