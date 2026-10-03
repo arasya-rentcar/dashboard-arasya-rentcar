@@ -64,6 +64,7 @@ export function usePayables(params: PayablesListParams) {
 
 function invalidateAll(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["payables"] });
+  qc.invalidateQueries({ queryKey: ["payables-summary"] });
   qc.invalidateQueries({ queryKey: ["driver-payables"] });
   qc.invalidateQueries({ queryKey: ["vendor-payables"] });
 }
