@@ -166,6 +166,14 @@ export interface OrderServiceItem {
   customer_onboard_at?: string | null;
   // Driver app + bot reports for this day (order detail).
   reports?: TripReportEntry[];
+  // Driver pay (per day): fee, how it was built, uang jalan handed out.
+  driver_fee?: string | number | null;
+  driver_fee_note?: string | null;
+  travel_advance?: string | number | null;
+  // Trip costs on this day (driver-app costs wait for review).
+  expenses?: TripCost[];
+  payable?: LinePayable | null;
+  // Arasya's share of the approved trip costs (derived).
   ops_cost?: string | number | null;
   rtr_amount?: string | number | null;
   margin_amount?: string | number | null;
@@ -244,6 +252,50 @@ export interface Order {
   start_payment?: StartPayment;
 }
 
+export interface LinePayable {
+  id?: string;
+  kind?: 'DRIVER' | 'VENDOR';
+  status: 'PAID' | 'UNPAID';
+  base_amount?: string | number;
+  reimburse_amount?: string | number;
+  advance_amount?: string | number;
+  extras_amount?: string | number;
+  total_amount?: string | number;
+  paid_at?: string | null;
+}
+
+export type TripCostStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/** A trip cost on one day (Expense). created_by null = from the driver app. */
+export interface TripCost {
+  id: string;
+  type: 'FUEL' | 'TOLL' | 'PARKING' | 'OTHER';
+  amount: string | number;
+  note?: string | null;
+  status: TripCostStatus;
+  paid_by: 'DRIVER' | 'COMPANY';
+  bill_to_customer: boolean;
+  created_by?: string | null;
+  reviewed_by?: string | null;
+  review_note?: string | null;
+  created_at: string;
+  trip_report?: { id: string; file_url?: string | null; file_mime?: string | null } | null;
+}
+
+export interface DriverFeePreset {
+  key: string;
+  label: string;
+  amount: number;
+}
+
+export interface DriverFeePresets {
+  base: DriverFeePreset[];
+  addons: {
+    overnight: { label: string; unit: string; amount: number };
+    overtime: { label: string; unit: string; amount: number };
+  };
+}
+
 export interface StartPayment {
   rental_total: number;
   paid_to_date: number;
@@ -319,6 +371,11 @@ export interface ScheduleLine {
   driver_phone_raw?: string | null;
   plate_raw?: string | null;
   notes?: string | null;
+  // Driver pay (per day) and the day's payable (extras come off the margin).
+  driver_fee?: string | number | null;
+  driver_fee_note?: string | null;
+  travel_advance?: string | number | null;
+  payable?: { status: 'PAID' | 'UNPAID'; extras_amount?: string | number } | null;
   // #A1/#A2 trip-team confirmation badge state.
   confirmation_state?: ConfirmationState;
   confirmation_sent_at?: string | null;
@@ -974,6 +1031,11 @@ export interface Payable {
   service_date?: string | null;
   base_amount: string | number;
   extras_amount: string | number;
+  // DRIVER only: approved trip costs the driver paid (reimbursed) and the
+  // uang jalan already handed out (deducted).
+  reimburse_amount?: string | number;
+  advance_amount?: string | number;
+  // base + reimburse − advance + extras.
   total_amount: string | number;
   keterangan?: string | null;
   paid_at?: string | null;

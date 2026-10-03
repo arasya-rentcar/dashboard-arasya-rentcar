@@ -134,9 +134,25 @@ export default function PayablesTable({
                       {formatCurrency(p.base_amount)}
                     </TableCell>
                     <TableCell className="text-right text-sm text-gray-500">
-                      {Number(p.extras_amount) !== 0
-                        ? formatCurrency(p.extras_amount)
-                        : "-"}
+                      {Number(p.extras_amount) === 0 &&
+                      !Number(p.reimburse_amount ?? 0) &&
+                      !Number(p.advance_amount ?? 0)
+                        ? "-"
+                        : null}
+                      {Number(p.extras_amount) !== 0 && (
+                        <div>{formatCurrency(p.extras_amount)}</div>
+                      )}
+                      {/* Driver: reimbursed trip costs (+) and uang jalan (−). */}
+                      {Number(p.reimburse_amount ?? 0) !== 0 && (
+                        <div className="text-[11px] text-emerald-700">
+                          + {formatCurrency(p.reimburse_amount ?? 0)} {t('reimburseShort')}
+                        </div>
+                      )}
+                      {Number(p.advance_amount ?? 0) !== 0 && (
+                        <div className="text-[11px] text-amber-700">
+                          − {formatCurrency(p.advance_amount ?? 0)} {t('advanceShort')}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right text-sm font-semibold">
                       {formatCurrency(p.total_amount)}

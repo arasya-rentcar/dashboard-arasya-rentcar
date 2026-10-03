@@ -38,14 +38,12 @@ export default function PayableEditDialog({
   const tt = useTranslations("terms");
   const tc = useTranslations("common");
   const update = useUpdatePayable();
-  const [base, setBase] = useState("0");
   const [keterangan, setKeterangan] = useState("");
   const [extras, setExtras] = useState<ExtraRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (payable) {
-      setBase(String(Number(payable.base_amount ?? 0)));
       setKeterangan(payable.keterangan ?? "");
       setExtras(
         (payable.extras ?? []).map((e) => ({
@@ -57,9 +55,13 @@ export default function PayableEditDialog({
     }
   }, [payable]);
 
-  const baseNum = Number(base) || 0;
+  // Fee / RTR come from the day (Edit Hari) and reimbursements from approved
+  // trip costs; only extras and the note are edited here.
+  const baseNum = Number(payable?.base_amount ?? 0);
+  const reimburse = Number(payable?.reimburse_amount ?? 0);
+  const advance = Number(payable?.advance_amount ?? 0);
   const extrasSum = extras.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const total = baseNum + extrasSum;
+  const total = baseNum + reimburse - advance + extrasSum;
   const isPaid = payable?.status === "PAID";
 
   function addExtra() {
@@ -79,7 +81,6 @@ export default function PayableEditDialog({
       await update.mutateAsync({
         id: payable.id,
         data: {
-          base_amount: baseNum,
           keterangan: keterangan || null,
           extras: extras
             .filter((e) => e.label.trim())
@@ -120,15 +121,26 @@ export default function PayableEditDialog({
               </p>
             )}
 
-            <div className="space-y-1.5">
-              <Label>
-                {payable.kind === "DRIVER" ? t('feeBase') : t('priceBase')}
-              </Label>
-              <Input
-                type="number"
-                value={base}
-                onChange={(e) => setBase(e.target.value)}
-              />
+            <div className="space-y-1 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">
+                  {payable.kind === "DRIVER" ? t('feeBase') : t('priceBase')}
+                </span>
+                <span className="font-medium">{formatCurrency(baseNum)}</span>
+              </div>
+              {payable.kind === "DRIVER" && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('reimburseLabel')}</span>
+                    <span className="font-medium">{formatCurrency(reimburse)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">{t('advanceLabel')}</span>
+                    <span className="font-medium">−{formatCurrency(advance)}</span>
+                  </div>
+                </>
+              )}
+              <p className="text-[11px] text-gray-400">{t('baseFromDayHint')}</p>
             </div>
 
             <div className="space-y-2">
@@ -200,7 +212,7 @@ export default function PayableEditDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={update.isPending}>
+          <Button onClick={handleSave} disabled={update.isPending || isPaid}>
             {update.isPending ? t('savingBtn') : t('saveBtn')}
           </Button>
         </DialogFooter>

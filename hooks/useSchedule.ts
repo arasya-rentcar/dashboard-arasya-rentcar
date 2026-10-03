@@ -232,6 +232,10 @@ export function useAssignScheduleLine() {
       queryClient.invalidateQueries({ queryKey: ['schedule-stock'] });
       queryClient.invalidateQueries({ queryKey: ['driver-availability'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      // The day's fee / uang jalan drive its driver payable.
+      queryClient.invalidateQueries({ queryKey: ['payables'] });
+      queryClient.invalidateQueries({ queryKey: ['driver-payables'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-payables'] });
     },
   });
 }

@@ -1216,7 +1216,7 @@
     "noHistory": "Belum ada tagihan.",
     "baseOthers": "Base {base} · Lainnya {others}",
     "editTitle": "Edit Tagihan {kind}",
-    "alreadyPaidNote": "Tagihan ini sudah TERBAYAR. Mengubah jumlah tidak mengubah status terbayar.",
+    "alreadyPaidNote": "Tagihan ini sudah TERBAYAR dan tidak bisa diubah. Tandai belum terbayar dulu bila perlu dikoreksi.",
     "feeBase": "FEE (base)",
     "priceBase": "HARGA (base)",
     "extrasLabel": "LAINNYA (extras)",
@@ -1227,7 +1227,12 @@
     "notePlaceholder": "Catatan tambahan...",
     "totalCaps": "TOTAL",
     "savingBtn": "Menyimpan...",
-    "saveBtn": "Simpan"
+    "saveBtn": "Simpan",
+    "reimburseLabel": "Ganti biaya (struk disetujui)",
+    "advanceLabel": "Uang jalan (dipotong)",
+    "baseFromDayHint": "Fee/harga dan uang jalan diubah di Edit Hari (Jadwal); ganti biaya dari biaya perjalanan yang disetujui di halaman order.",
+    "reimburseShort": "ganti biaya",
+    "advanceShort": "uang jalan"
   },
   "invoiceSection": {
     "typeDP": "DP",
@@ -1491,7 +1496,15 @@
     "partnerPlate": "Plat nomor",
     "partnerHint": "Dipakai untuk konfirmasi ke pelanggan dan driver rekanan lewat WhatsApp.",
     "awaitingDpNote": "Order ini belum dibayar. Driver baru bisa dipilih setelah DP atau pelunasan tercatat (invoice ditandai terbayar). Mobil dan rekanan tetap bisa diatur.",
-    "notPaidNote": "Belum lunas: driver bisa berangkat ke lokasi jemput, tetapi perjalanan dengan pelanggan baru bisa dimulai setelah order lunas."
+    "notPaidNote": "Belum lunas: driver bisa berangkat ke lokasi jemput, tetapi perjalanan dengan pelanggan baru bisa dimulai setelah order lunas.",
+    "driverFeeDay": "Fee driver (hari ini)",
+    "driverFeeAuto": "Kosong = otomatis dari tabel fee",
+    "driverFeeNote": "Rincian fee, mis. 12 jam + OT 2 jam",
+    "travelAdvance": "Uang jalan yang sudah diberikan",
+    "travelAdvanceHint": "Dipotong dari pembayaran fee driver. Biaya yang driver bayar (struk disetujui) diganti.",
+    "payLockedNote": "Fee hari ini sudah dibayar ke driver. Tandai belum terbayar dulu di menu Utang bila fee atau uang jalan berubah.",
+    "revenueMinusFee": "Pendapatan − Fee driver",
+    "marginCostsNote": "Juga dikurangi biaya perjalanan Arasya & tambahan utang: {costs}"
   },
   "financeCard": {
     "title": "Keuangan & Margin",
@@ -1499,7 +1512,7 @@
     "external": "Eksternal",
     "internal": "Internal",
     "editFinance": "Edit Keuangan",
-    "editDriverNote": "Edit Fee Driver & Catatan",
+    "editDriverNote": "Catatan keuangan",
     "driverFee": "Fee Driver",
     "driverFeeOptional": "Fee Driver",
     "driverFeeRefTitle": "Acuan fee driver (ketuk untuk lihat)",
@@ -1509,17 +1522,17 @@
     "driverFeeRefSemarang": "Semarang pulang-pergi (1 hari): 400rb",
     "driverFeeRefOvertime": "Overtime: +30rb/jam (semua region)",
     "driverFeeRefNote": "Semua sudah include makan.",
-    "lineManaged": "Total User, Biaya Ops, RTR, dan Margin dihitung otomatis dari baris Jadwal order ini. Untuk mengubahnya, edit hari-hari order di menu Jadwal.",
+    "lineManaged": "Semua angka di sini dihitung dari hari-hari order: fee driver dan uang jalan di Edit Hari, biaya perjalanan di bagian \"Biaya perjalanan\" tiap hari (disetujui/ditolak).",
     "costsReadOnlyHint": "Diambil dari Jadwal · hanya-baca",
     "vendor": "Vendor",
     "totalUser": "Total User",
     "sellPrice": "Harga Jual",
     "rtr": "RTR",
-    "opsCost": "Biaya Ops",
+    "opsCost": "Biaya perjalanan (Arasya)",
     "driverCost": "Biaya Driver",
     "margin": "Margin",
     "userMinusRtr": "User − RTR",
-    "userMinusOps": "User − (Ops + Fee Driver)",
+    "userMinusOps": "User − (Biaya perjalanan + Fee Driver)",
     "notSet": "Belum diatur",
     "totalUserAmount": "Total Jumlah User",
     "sellPriceField": "Harga Jual — cadangan jika Total User kosong",
@@ -1530,7 +1543,8 @@
     "marginReadOnlyHint": "Dari baris Jadwal",
     "saving": "Menyimpan…",
     "saveRecompute": "Simpan",
-    "savedToast": "Tersimpan"
+    "savedToast": "Tersimpan",
+    "driverFeePerDayHint": "Jumlah fee semua hari · diatur per hari di Edit Hari"
   },
   "markPaid": {
     "title": "Tandai Terbayar — {invoice}",
@@ -1817,5 +1831,47 @@
     "routeHint": "Peta menunjukkan jarak dari titik driver ke alamat jemput",
     "openPhoto": "Buka foto",
     "photoAlt": "Foto sampai lokasi jemput dengan cap waktu dan GPS"
+  },
+  "tripCosts": {
+    "title": "Biaya perjalanan",
+    "pendingCount": "{n} menunggu dicek",
+    "add": "Tambah biaya",
+    "none": "Belum ada biaya untuk hari ini.",
+    "amount": "Jumlah (Rp)",
+    "note": "Keterangan",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "amountRequired": "Isi jumlah biaya.",
+    "added": "Biaya ditambahkan",
+    "type": {
+      "FUEL": "Bensin",
+      "TOLL": "Tol",
+      "PARKING": "Parkir",
+      "OTHER": "Biaya lain"
+    },
+    "status": {
+      "PENDING": "Menunggu dicek",
+      "APPROVED": "Disetujui",
+      "REJECTED": "Ditolak"
+    },
+    "paidBy": {
+      "DRIVER": "Dibayar driver (diganti)",
+      "COMPANY": "Dibayar kantor"
+    },
+    "fromApp": "dari aplikasi driver",
+    "fromAdmin": "ditambah admin",
+    "receipt": "Struk",
+    "rejectReason": "Alasan ditolak: {reason}",
+    "approve": "Setujui",
+    "approved": "Biaya disetujui",
+    "reject": "Tolak",
+    "rejected": "Biaya ditolak, driver diberi tahu",
+    "rejectPlaceholder": "Alasan (dikirim ke driver)",
+    "billCustomer": "Ditagih ke pelanggan",
+    "delete": "Hapus",
+    "summary": "Disetujui: diganti ke driver {reimbursed} · ditagih ke pelanggan {billed} · ditanggung Arasya {arasya}",
+    "payable": "Dibayar ke driver: fee {fee} + ganti biaya {reimburse} − uang jalan {advance} = {total}",
+    "paid": "Lunas",
+    "unpaid": "Belum dibayar"
   }
 }

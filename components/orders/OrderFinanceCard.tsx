@@ -20,9 +20,6 @@ import { useUpdateOrderFinance } from '@/hooks/useOrders';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import { Order } from '@/types';
 
-const num = (v?: string | number | null) =>
-  v == null || v === '' ? '' : String(v);
-
 export default function OrderFinanceCard({ order }: { order: Order }) {
   const t = useTranslations('financeCard');
   const fin = order.final_finance;
@@ -44,35 +41,22 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
   const [open, setOpen] = useState(false);
   const mutation = useUpdateOrderFinance();
 
-  const [form, setForm] = useState({
-    total_driver_amount: num(fin?.total_driver_amount),
-    finance_note: fin?.finance_note ?? '',
-  });
+  const [form, setForm] = useState({ finance_note: fin?.finance_note ?? '' });
 
   function openEditor() {
-    setForm({
-      total_driver_amount: num(fin?.total_driver_amount),
-      finance_note: fin?.finance_note ?? '',
-    });
+    setForm({ finance_note: fin?.finance_note ?? '' });
     setOpen(true);
   }
 
-  const toNum = (s: string) =>
-    s.trim() === '' ? null : Number(s.replace(/[^\d.-]/g, ''));
-
-  // Total User / Ops Cost / RTR / Margin are owned by the Schedule lines and
-  // recomputed by rollupOrderFinance — editing them here would be silently
-  // overwritten and would never reach the analytics dashboard. So this card
-  // only edits the two fields the rollup explicitly preserves: Driver Cost
-  // (a manual override) and the finance note.
+  // Every amount on this card (Total User, trip costs, driver fees, RTR,
+  // margin) is computed from the days: driver fee and uang jalan per day in
+  // Edit Hari, trip costs in each day's "Biaya perjalanan". Only the finance
+  // note is edited here.
   async function save() {
     try {
       await mutation.mutateAsync({
         id: order.id,
-        data: {
-          total_driver_amount: toNum(form.total_driver_amount),
-          finance_note: form.finance_note.trim() || null,
-        },
+        data: { finance_note: form.finance_note.trim() || null },
       });
       toast.success(t('savedToast'));
       setOpen(false);
@@ -205,11 +189,9 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
                 <li className="italic text-gray-400">{t('driverFeeRefNote')}</li>
               </ul>
             </details>
-            <Field
-              label={t('driverFeeOptional')}
-              value={form.total_driver_amount}
-              onChange={(v) => setForm({ ...form, total_driver_amount: v })}
-            />
+            {!isExternal && (
+              <ReadOnlyStat label={t('driverFee')} value={fin?.total_driver_amount} hint={t('driverFeePerDayHint')} />
+            )}
             <div className="space-y-1.5">
               <Label>{t('noteOptional')}</Label>
               <Textarea
@@ -288,28 +270,6 @@ function ReadOnlyStat({
         {value == null || value === '' ? '-' : formatCurrency(value)}
       </p>
       <p className="text-[10px] text-gray-400 mt-0.5">{hint}</p>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <Input
-        inputMode="numeric"
-        placeholder="0"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
     </div>
   );
 }

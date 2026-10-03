@@ -231,7 +231,6 @@ function AssignInline({
         data: {
           is_external: false,
           line_status: line.line_status,
-          ops_cost: Number(line.ops_cost) || 0,
           driver_id: driverId || null,
           car_id: carId || null,
         },

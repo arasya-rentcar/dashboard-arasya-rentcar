@@ -44,6 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import ArrivalEvidence from "@/components/orders/ArrivalEvidence";
+import TripCostsPanel from "@/components/orders/TripCostsPanel";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
 import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
@@ -338,7 +339,8 @@ export default function OrderDetailPage({
             item.line_status !== "DONE" &&
             !!item.service_date,
         )
-        .map((item) => String(item.service_date).slice(0, 10)),
+        // WIB calendar day (service_date is WIB midnight = 17:00Z the day before).
+        .map((item) => isoToWibDate(String(item.service_date))),
     ),
   );
   const serviceStart = order?.service_start_at;
@@ -534,6 +536,12 @@ export default function OrderDetailPage({
       total_price: item.total_price,
       ops_cost: item.ops_cost ?? 0,
       rtr_amount: item.rtr_amount ?? null,
+      driver_fee: item.driver_fee ?? null,
+      driver_fee_note: item.driver_fee_note ?? null,
+      travel_advance: item.travel_advance ?? null,
+      payable: item.payable
+        ? { status: item.payable.status, extras_amount: item.payable.extras_amount }
+        : null,
       margin_amount: item.margin_amount ?? null,
       is_external: item.is_external ?? false,
       line_status: (item.line_status as ScheduleStatus) ?? "SCHEDULED",
@@ -1232,6 +1240,15 @@ export default function OrderDetailPage({
                                           reports={item.reports}
                                           pickupLocation={item.pickup_location}
                                           arrivedAt={item.actual_pickup_at}
+                                        />
+                                      )}
+                                      {item.id && (
+                                        <TripCostsPanel
+                                          lineId={item.id}
+                                          costs={item.expenses}
+                                          payable={item.payable}
+                                          isExternal={item.is_external}
+                                          readOnly={order.order_status === "DONE"}
                                         />
                                       )}
                                       {(item.trip_started_at ||

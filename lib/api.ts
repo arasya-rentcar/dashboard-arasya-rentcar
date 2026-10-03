@@ -219,6 +219,16 @@ export const scheduleApi = {
   // #A1/#A2 trip-team confirmation (customer + driver). force=re-send.
   sendConfirmation: (id: string, data: { include_driver?: boolean; force?: boolean } = {}) =>
     api.post(`/schedule/lines/${id}/send-confirmation`, data),
+  // Driver fee table (quick buttons in Edit Hari).
+  driverFeePresets: () => api.get("/schedule/driver-fee-presets"),
+};
+
+// ─── Trip costs (expenses on a day; driver-app costs wait for review) ───────
+
+export const tripCostsApi = {
+  create: (lineId: string, data: object) => api.post(`/lines/${lineId}/expenses`, data),
+  update: (id: string, data: object) => api.patch(`/lines/expenses/${id}`, data),
+  remove: (id: string) => api.delete(`/lines/expenses/${id}`),
 };
 
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
