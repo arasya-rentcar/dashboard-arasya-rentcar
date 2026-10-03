@@ -37,6 +37,11 @@ export default function ArrivalEvidence({
   if (!photo && step?.source !== 'API') return null;
   if (!arrivedAt && !photo) return null;
 
+  // Place name looked up on the phone; shown above the coordinates (fallback).
+  const locationName =
+    withFix?.location_name?.trim() ||
+    [photo, step].find((r) => r?.location_name?.trim())?.location_name?.trim() ||
+    null;
   const lat = withFix?.latitude ?? null;
   const lng = withFix?.longitude ?? null;
   const point = lat != null && lng != null ? `${lat.toFixed(6)},${lng.toFixed(6)}` : null;
@@ -70,6 +75,9 @@ export default function ArrivalEvidence({
           </a>
         )}
         <div className="min-w-0 space-y-0.5 text-gray-600">
+          {locationName && (
+            <p className="font-medium text-gray-800 break-words">{locationName}</p>
+          )}
           {point ? (
             <>
               <p className="tabular-nums">

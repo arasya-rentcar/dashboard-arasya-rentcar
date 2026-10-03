@@ -31,6 +31,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { TripHistoryRow } from '@/types';
 import ArrivalEvidence from '@/components/orders/ArrivalEvidence';
+import ReportLocation from '@/components/orders/ReportLocation';
 
 const PAGE_SIZE = 20;
 
@@ -479,6 +480,9 @@ function HistoryRow({
                       {r.notes && (
                         <p className="text-gray-600 mt-1 break-words">{r.notes}</p>
                       )}
+                      {/* Arrival reports are shown in the evidence box above. */}
+                      {r.report_type !== 'ARRIVAL_PHOTO' &&
+                        r.report_type !== 'ARRIVE_CUSTOMER' && <ReportLocation report={r} />}
                       {r.file_url && (
                         <Link
                           href={r.file_url}
