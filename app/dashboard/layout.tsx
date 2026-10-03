@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
+import NotificationWatcher from '@/components/notifications/NotificationWatcher';
 import { isAuthenticated } from '@/lib/auth';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="hidden md:flex md:shrink-0">
         <Sidebar />
       </div>
+      {/* Polls for new driver activity; toasts + live refresh + tab title. */}
+      <NotificationWatcher />
       {/* Main content */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {children}

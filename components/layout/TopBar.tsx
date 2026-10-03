@@ -11,6 +11,7 @@ import {
 import Sidebar from './Sidebar';
 import WibClock from './WibClock';
 import LanguageToggle from './LanguageToggle';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 interface TopBarProps {
   title: string;
@@ -41,8 +42,9 @@ export default function TopBar({ title }: TopBarProps) {
         <WibClock />
       </div>
 
-      {/* Language toggle pinned to the right. */}
-      <div className="ml-auto">
+      {/* Notification bell + language toggle pinned to the right. */}
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationBell />
         <LanguageToggle />
       </div>
     </header>
