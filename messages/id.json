@@ -282,7 +282,10 @@
     "status": "Status",
     "saveChanges": "Simpan Perubahan",
     "okCreated": "Driver berhasil dibuat",
-    "okUpdated": "Driver berhasil diperbarui"
+    "okUpdated": "Driver berhasil diperbarui",
+    "etollCard": "Kartu e-toll",
+    "etollPlaceholder": "mis. Mandiri 6032 ••••1234",
+    "etollHint": "Opsional. Tampil di aplikasi driver dan di permintaan top-up."
   },
   "driverDetail": {
     "title": "Driver",
@@ -303,7 +306,8 @@
     "appPasswordMismatch": "Konfirmasi password tidak sama",
     "appPasswordSave": "Simpan password",
     "appPasswordSaving": "Menyimpan…",
-    "appPasswordSaved": "Password aplikasi driver berhasil disimpan"
+    "appPasswordSaved": "Password aplikasi driver berhasil disimpan",
+    "etollCard": "Kartu e-toll"
   },
   "carsPage": {
     "title": "Mobil",

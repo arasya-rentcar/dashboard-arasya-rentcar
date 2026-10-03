@@ -282,7 +282,10 @@
     "status": "Status",
     "saveChanges": "Save Changes",
     "okCreated": "Driver created successfully",
-    "okUpdated": "Driver updated successfully"
+    "okUpdated": "Driver updated successfully",
+    "etollCard": "E-toll card",
+    "etollPlaceholder": "e.g. Mandiri 6032 ••••1234",
+    "etollHint": "Optional. Shown in the driver app and on top-up requests."
   },
   "driverDetail": {
     "title": "Driver",
@@ -303,7 +306,8 @@
     "appPasswordMismatch": "Passwords do not match",
     "appPasswordSave": "Save password",
     "appPasswordSaving": "Saving…",
-    "appPasswordSaved": "Driver app password saved"
+    "appPasswordSaved": "Driver app password saved",
+    "etollCard": "E-toll card"
   },
   "carsPage": {
     "title": "Cars",

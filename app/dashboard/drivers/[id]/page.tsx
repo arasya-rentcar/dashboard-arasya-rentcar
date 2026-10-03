@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, Phone, Mail, MapPin } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MapPin, CreditCard } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +76,11 @@ export default function DriverDetailPage() {
                 {d.location && (
                   <span className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" /> {d.location}
+                  </span>
+                )}
+                {d.etoll_card && (
+                  <span className="flex items-center gap-1.5" title={t('etollCard')}>
+                    <CreditCard className="h-3.5 w-3.5" /> {t('etollCard')}: {d.etoll_card}
                   </span>
                 )}
               </div>

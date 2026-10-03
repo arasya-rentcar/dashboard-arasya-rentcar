@@ -55,6 +55,8 @@ export interface Driver {
   phone: string;
   email?: string;
   location?: string;
+  // E-toll card the driver uses, e.g. "Mandiri 6032 ••••1234" (≤ 60 chars).
+  etoll_card?: string | null;
   type: FleetType;
   status: DriverStatus;
   user?: {
@@ -467,6 +469,9 @@ export interface TripReportEntry {
   location_at?: string | null;
   // Android reported a mock-location app.
   location_mocked?: boolean | null;
+  // Place name looked up on the phone (e.g. "Jl. Pajajaran, Bogor"); the
+  // coordinates stay as the fallback when it is missing.
+  location_name?: string | null;
 }
 
 // One finished (DONE) service line for the Trip History tab. finance_status:
@@ -871,6 +876,7 @@ export interface CreateDriverInput {
   user_id: string;
   name: string;
   phone: string;
+  etoll_card?: string | null;
 }
 
 export interface CreateCarInput {
