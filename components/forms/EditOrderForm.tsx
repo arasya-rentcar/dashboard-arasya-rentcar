@@ -145,9 +145,24 @@ export default function EditOrderForm({
   });
   const customers = watch("customers");
   const items = watch("service_items");
+  const original = new Map(
+    (order.service_items ?? []).map((l) => [l.id, l] as const),
+  );
+  // One row per day. An id stays only on the first row carrying one of this
+  // order's days; a copied row is a new day (the API refuses repeated ids).
+  function toDays(rows: FormValues["service_items"]) {
+    const seen = new Set<string>();
+    return expandServiceItemsByDays(rows).map((d) => {
+      if (d.id && original.has(d.id) && !seen.has(d.id)) {
+        seen.add(d.id);
+        return d;
+      }
+      return { ...d, id: undefined, line_status: undefined };
+    });
+  }
   // The total as the API keeps it: days that are not cancelled + billable
   // charges (Biaya Tambahan, billed trip costs).
-  const days = expandServiceItemsByDays(items);
+  const days = toDays(items);
   const charges = (order.adjustments ?? [])
     .filter((a) => a.is_billable)
     .reduce((sum, a) => sum + Number(a.amount || 0) * (a.quantity ?? 1), 0);
@@ -157,9 +172,6 @@ export default function EditOrderForm({
       .reduce((sum, d) => sum + Number(d.unit_price || 0), 0) + charges;
   // A reason is asked exactly when a price was edited (as the API checks): a
   // day's price changed, a priced day added, or a priced open day removed.
-  const original = new Map(
-    (order.service_items ?? []).map((l) => [l.id, l] as const),
-  );
   const sentIds = new Set(days.map((d) => d.id).filter(Boolean));
   const priceChanged =
     days.some((d) => {
@@ -201,7 +213,7 @@ export default function EditOrderForm({
       service_end_at: iso(values.service_items[0]?.end_at),
       final_price: newPrice,
       change_reason: priceChanged ? values.change_reason : undefined,
-      service_items: expandServiceItemsByDays(values.service_items).map(
+      service_items: toDays(values.service_items).map(
         (item, index) => ({
           // Existing days are sent back with their id so the API keeps their
           // driver, status, costs and payable (only the content changes).
