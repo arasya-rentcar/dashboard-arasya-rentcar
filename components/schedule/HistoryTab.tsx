@@ -376,6 +376,20 @@ function HistoryRow({
                     label={t('driverFeeBase')}
                     value={formatCurrency(row.payable?.base_amount ?? 0)}
                   />
+                  {Number(row.payable?.reimburse_amount ?? 0) !== 0 && (
+                    <FinanceRow
+                      label={`+ ${t('reimbursed')}`}
+                      value={formatCurrency(row.payable?.reimburse_amount ?? 0)}
+                      muted
+                    />
+                  )}
+                  {Number(row.payable?.advance_amount ?? 0) !== 0 && (
+                    <FinanceRow
+                      label={`− ${t('travelAdvance')}`}
+                      value={formatCurrency(row.payable?.advance_amount ?? 0)}
+                      muted
+                    />
+                  )}
                   {(row.payable?.extras ?? []).map((ex) => (
                     <FinanceRow
                       key={ex.id || ex.label}

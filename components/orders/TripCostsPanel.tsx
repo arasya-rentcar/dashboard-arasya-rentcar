@@ -55,24 +55,31 @@ export default function TripCostsPanel({
   const [newAmount, setNewAmount] = useState('');
   const [newNote, setNewNote] = useState('');
   const [newPaidBy, setNewPaidBy] = useState<TripCost['paid_by']>('COMPANY');
+  // Idempotency key for the add form: a resend after a lost answer is a no-op.
+  const [newRef, setNewRef] = useState(() => crypto.randomUUID());
+  const busy = update.isPending;
 
   const list = costs ?? [];
   const pending = list.filter((c) => c.status === 'PENDING').length;
   const approved = list.filter((c) => c.status === 'APPROVED');
   const sum = (xs: TripCost[]) => xs.reduce((s, c) => s + Number(c.amount || 0), 0);
-  const reimbursed = sum(approved.filter((c) => c.paid_by === 'DRIVER'));
+  // Only internal drivers are reimbursed (through their payable).
+  const reimbursed = isExternal ? 0 : sum(approved.filter((c) => c.paid_by === 'DRIVER'));
   const billed = sum(approved.filter((c) => c.bill_to_customer));
   const arasya = sum(approved.filter((c) => !c.bill_to_customer));
   const showPay = !isExternal && payable && payable.kind !== 'VENDOR';
 
   if (!list.length && !showPay && readOnly) return null;
 
-  async function patch(c: TripCost, data: object, okMsg?: string) {
+  /** Saves one change; true when it went through (the reject box stays open otherwise). */
+  async function patch(c: TripCost, data: object, okMsg?: string): Promise<boolean> {
     try {
       await update.mutateAsync({ id: c.id, data });
       if (okMsg) toast.success(okMsg);
+      return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
+      return false;
     }
   }
 
@@ -82,8 +89,16 @@ export default function TripCostsPanel({
     try {
       await create.mutateAsync({
         lineId,
-        data: { type: newType, amount, note: newNote.trim() || undefined, paid_by: newPaidBy },
+        data: {
+          type: newType,
+          amount,
+          note: newNote.trim() || undefined,
+          // Partner days have no driver payable to reimburse through.
+          paid_by: isExternal ? 'COMPANY' : newPaidBy,
+          client_ref: newRef,
+        },
       });
+      setNewRef(crypto.randomUUID());
       setAdding(false);
       setNewAmount('');
       setNewNote('');
@@ -122,13 +137,17 @@ export default function TripCostsPanel({
             </SelectContent>
           </Select>
           <Input className="h-7 text-xs" inputMode="numeric" placeholder={t('amount')} value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
-          <Select value={newPaidBy} onValueChange={(v) => setNewPaidBy(v as TripCost['paid_by'])}>
-            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
-              <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
-            </SelectContent>
-          </Select>
+          {isExternal ? (
+            <span className="flex h-7 items-center text-xs text-gray-500">{t('paidBy.COMPANY')}</span>
+          ) : (
+            <Select value={newPaidBy} onValueChange={(v) => setNewPaidBy(v as TripCost['paid_by'])}>
+              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
+                <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
           <Input className="h-7 text-xs" placeholder={t('note')} value={newNote} onChange={(e) => setNewNote(e.target.value)} />
           <div className="col-span-2 flex gap-1.5 sm:col-span-4">
             <Button size="sm" className="h-7 text-xs" onClick={addCost} disabled={create.isPending}>{t('save')}</Button>
@@ -178,21 +197,24 @@ export default function TripCostsPanel({
                     <span className="flex items-center gap-1">
                       <Input className="h-6 w-48 text-[11px]" placeholder={t('rejectPlaceholder')} value={reason} onChange={(e) => setReason(e.target.value)} />
                       <Button size="sm" className="h-6 px-2 text-[11px]" variant="destructive"
-                        onClick={async () => { await patch(c, { status: 'REJECTED', review_note: reason.trim() || null }, t('rejected')); setRejecting(null); }}>
+                        disabled={busy}
+                        onClick={async () => { if (await patch(c, { status: 'REJECTED', review_note: reason.trim() || null }, t('rejected'))) setRejecting(null); }}>
                         {t('reject')}
                       </Button>
                       <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setRejecting(null)}>{t('cancel')}</Button>
                     </span>
                   )}
-                  <Select value={c.paid_by} onValueChange={(v) => patch(c, { paid_by: v })}>
-                    <SelectTrigger className="h-6 w-auto gap-1 px-2 text-[11px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
-                      <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {!isExternal && (
+                    <Select value={c.paid_by} disabled={busy} onValueChange={(v) => patch(c, { paid_by: v })}>
+                      <SelectTrigger className="h-6 w-auto gap-1 px-2 text-[11px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
+                        <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <label className="inline-flex items-center gap-1 text-gray-600">
-                    <input type="checkbox" checked={c.bill_to_customer} onChange={(e) => patch(c, { bill_to_customer: e.target.checked })} />
+                    <input type="checkbox" disabled={busy} checked={c.bill_to_customer} onChange={(e) => patch(c, { bill_to_customer: e.target.checked })} />
                     {t('billCustomer')}
                   </label>
                   {c.created_by && (

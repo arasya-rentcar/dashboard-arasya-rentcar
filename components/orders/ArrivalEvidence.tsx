@@ -32,6 +32,9 @@ export default function ArrivalEvidence({
   const withFix = [photo, step].find((r) => r?.latitude != null && r?.longitude != null);
   const mocked = [photo, step].some((r) => r?.location_mocked);
 
+  // Only arrivals recorded in the driver app carry (or should carry) GPS; a
+  // bot report or an arrival set by the admin shows nothing here.
+  if (!photo && step?.source !== 'API') return null;
   if (!arrivedAt && !photo) return null;
 
   const lat = withFix?.latitude ?? null;

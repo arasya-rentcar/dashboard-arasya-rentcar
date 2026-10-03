@@ -1073,7 +1073,9 @@
       "PHOTO REPORT": "Photo report",
       "ARRIVAL_PHOTO": "Arrival photo",
       "ONBOARD": "Customer on board"
-    }
+    },
+    "reimbursed": "Reimbursed costs",
+    "travelAdvance": "Travel advance"
   },
   "agentPage": {
     "title": "Bot Agent",
@@ -1504,7 +1506,8 @@
     "travelAdvanceHint": "Deducted from the driver fee payment. Costs the driver paid (approved receipts) are reimbursed.",
     "payLockedNote": "This day is already paid to the driver. Mark it unpaid in Payables first if the fee or travel advance changes.",
     "revenueMinusFee": "Revenue − Driver fee",
-    "marginCostsNote": "Also minus Arasya's trip costs & payable extras: {costs}"
+    "marginCostsNote": "Also minus Arasya's trip costs & payable extras: {costs}",
+    "thousandShort": "{n}k"
   },
   "financeCard": {
     "title": "Finance & Margin",

@@ -1073,7 +1073,9 @@
       "PHOTO REPORT": "Laporan foto",
       "ARRIVAL_PHOTO": "Foto sampai lokasi",
       "ONBOARD": "Pelanggan naik"
-    }
+    },
+    "reimbursed": "Ganti biaya",
+    "travelAdvance": "Uang jalan"
   },
   "agentPage": {
     "title": "Bot Agent",
@@ -1504,7 +1506,8 @@
     "travelAdvanceHint": "Dipotong dari pembayaran fee driver. Biaya yang driver bayar (struk disetujui) diganti.",
     "payLockedNote": "Fee hari ini sudah dibayar ke driver. Tandai belum terbayar dulu di menu Utang bila fee atau uang jalan berubah.",
     "revenueMinusFee": "Pendapatan − Fee driver",
-    "marginCostsNote": "Juga dikurangi biaya perjalanan Arasya & tambahan utang: {costs}"
+    "marginCostsNote": "Juga dikurangi biaya perjalanan Arasya & tambahan utang: {costs}",
+    "thousandShort": "{n}rb"
   },
   "financeCard": {
     "title": "Keuangan & Margin",

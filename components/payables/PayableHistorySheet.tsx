@@ -144,9 +144,15 @@ export default function PayableHistorySheet({
                         <p className="mt-0.5 truncate text-xs text-gray-500">
                           {route || p.service_item?.description || "-"}
                         </p>
-                        {Number(p.extras_amount) !== 0 && (
+                        {(Number(p.extras_amount) !== 0 ||
+                          Number(p.reimburse_amount ?? 0) !== 0 ||
+                          Number(p.advance_amount ?? 0) !== 0) && (
                           <p className="mt-0.5 text-xs text-gray-400">
                             {t('baseOthers', { base: formatCurrency(p.base_amount), others: formatCurrency(p.extras_amount) })}
+                            {Number(p.reimburse_amount ?? 0) !== 0 &&
+                              ` · + ${formatCurrency(p.reimburse_amount ?? 0)} ${t('reimburseShort')}`}
+                            {Number(p.advance_amount ?? 0) !== 0 &&
+                              ` · − ${formatCurrency(p.advance_amount ?? 0)} ${t('advanceShort')}`}
                           </p>
                         )}
                       </div>

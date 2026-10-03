@@ -11,16 +11,31 @@ export function useDriverFeePresets() {
   });
 }
 
-// A reviewed cost changes the day's margin, the order totals (billed costs
-// become extra charges), the driver payable and the schedule rows.
-function invalidateCostViews(qc: ReturnType<typeof useQueryClient>) {
-  qc.invalidateQueries({ queryKey: ['orders'] });
-  qc.invalidateQueries({ queryKey: ['orders-search'] });
-  qc.invalidateQueries({ queryKey: ['schedule'] });
-  qc.invalidateQueries({ queryKey: ['payables'] });
-  qc.invalidateQueries({ queryKey: ['driver-payables'] });
-  qc.invalidateQueries({ queryKey: ['vendor-payables'] });
+/**
+ * Everything a day's money feeds: order totals (billed costs become extra
+ * charges), margins and reports, the driver/vendor payables, schedule rows.
+ * Also used after Edit Hari (fee / uang jalan).
+ */
+export function invalidateLineMoneyViews(qc: ReturnType<typeof useQueryClient>) {
+  for (const key of [
+    'orders',
+    'orders-search',
+    'final-orders',
+    'schedule',
+    'schedule-week',
+    'trip-history',
+    'payables',
+    'payables-summary',
+    'driver-payables',
+    'vendor-payables',
+    'revenue-report',
+    'dashboard-analytics',
+    'dashboard-v2',
+  ]) {
+    qc.invalidateQueries({ queryKey: [key] });
+  }
 }
+const invalidateCostViews = invalidateLineMoneyViews;
 
 export function useUpdateTripCost() {
   const qc = useQueryClient();

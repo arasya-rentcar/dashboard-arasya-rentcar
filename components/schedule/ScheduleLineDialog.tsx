@@ -113,28 +113,41 @@ export default function ScheduleLineDialog({
   // current driver stays shown so other fields can still be edited.
   const awaitingDp = line.order?.payment_status === 'UNPAID';
 
-  const toNum = (s: string) =>
-    s.trim() === '' ? null : Number(s.replace(/[^\d.-]/g, ''));
+  // Rupiah amounts: digits only ("250.000", "Rp 250,000" → 250000); no
+  // digits → empty.
+  const toNum = (s: string) => {
+    const digits = s.replace(/[^\d]/g, '');
+    return digits === '' ? null : Number(digits);
+  };
 
   const revenue = Number(line.total_price ?? 0);
   // Arasya's share of the approved trip costs and the payable extras (bonus,
   // potongan) also come off the day's margin; both are read-only here.
   const arasyaCosts = Number(line.ops_cost ?? 0);
   const extras = Number(line.payable?.extras_amount ?? 0);
-  const previewMargin =
-    revenue -
-    (isExternal ? Number(toNum(rtr) ?? 0) : Number(toNum(fee) ?? 0)) -
-    arasyaCosts -
-    extras;
   // A day already paid out keeps its amounts (API answers 409 otherwise).
   const payLocked = line.payable?.status === 'PAID';
   const orig = (v?: string | number | null) => (v == null || v === '' ? null : Number(v));
-  // Only what changed is sent: an empty fee on a new assignment lets the API
-  // fill it from the fee table.
+  // The fee table's day fee for this line's duration (as the API picks it).
+  const tablePreset =
+    presets?.base.find((p) => p.key === (line.service_kind ?? '').toUpperCase()) ??
+    presets?.base.find((p) => p.key === '12H');
+  // Empty fee = "from the fee table": on a new assignment nothing is sent
+  // (the API fills it); on a day that had a fee the table amount is sent.
+  // (Without the table loaded, a cleared fee keeps the current one.)
+  const feeToSend =
+    toNum(fee) ??
+    (orig(line.driver_fee) != null ? (tablePreset?.amount ?? orig(line.driver_fee)) : null);
+  const previewMargin =
+    revenue -
+    (isExternal ? Number(toNum(rtr) ?? 0) : Number(feeToSend ?? tablePreset?.amount ?? 0)) -
+    arasyaCosts -
+    extras;
+  // Only what changed is sent.
   const payFields = isExternal
     ? {}
     : {
-        ...(toNum(fee) !== orig(line.driver_fee) ? { driver_fee: toNum(fee) } : {}),
+        ...(feeToSend !== orig(line.driver_fee) ? { driver_fee: feeToSend } : {}),
         ...((feeNote.trim() || null) !== (line.driver_fee_note || null)
           ? { driver_fee_note: feeNote.trim() || null }
           : {}),
@@ -142,10 +155,15 @@ export default function ScheduleLineDialog({
           ? { travel_advance: toNum(advance) }
           : {}),
       };
-  const fmtK = (n: number) => (n >= 1000 ? `${n / 1000}rb` : String(n));
+  const fmtK = (n: number) => (n >= 1000 ? t('thousandShort', { n: n / 1000 }) : String(n));
+  // An add-on on an empty fee starts from the table's day fee, not from 0.
   const addToFee = (amount: number, label: string) => {
-    setFee(String((Number(toNum(fee) ?? 0) || 0) + amount));
-    setFeeNote((n) => (n.trim() ? `${n.trim()} + ${label}` : label));
+    const base = toNum(fee) ?? tablePreset?.amount ?? 0;
+    setFee(String(base + amount));
+    setFeeNote((n) => {
+      const start = n.trim() || (toNum(fee) == null ? tablePreset?.label ?? '' : '');
+      return start ? `${start} + ${label}` : label;
+    });
   };
 
   async function save() {
