@@ -29,7 +29,7 @@ Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga rep
 ### 00.5 Fee driver per hari (patch dari sesi lain, diperiksa)
 - Patch `api-driver-pay.patch` (2 commit) diterapkan apa adanya lalu diperbaiki: dashboard lama mengirim "Biaya Ops" di setiap simpan, yang oleh patch dianggap fee driver → fee jadi 0 setiap Edit Hari disimpan. Sekarang hanya nilai yang benar-benar diubah yang dipakai; hari yang sudah dibayar terkunci (fee/uang jalan/RTR tidak bisa diubah, 409).
 - Sisi dashboard dibuat: Edit Hari punya **Fee driver** (tombol tabel fee + Menginap/Overtime), rincian, **Uang jalan**; halaman order punya **Biaya perjalanan** per hari (setujui/tolak dengan alasan, dibayar driver/kantor, ditagih ke pelanggan, tambah/hapus biaya admin) dan ringkasan yang dibayar ke driver; kartu Keuangan hanya mengubah catatan; Utang menampilkan ganti biaya dan uang jalan.
-- **Penting:** biaya dari aplikasi menunggu dicek; **Finalisasi menolak** order yang masih punya biaya "Menunggu dicek". Biaya lama (sebelum migrasi) juga menjadi "Menunggu dicek".
+- **Penting:** biaya dari aplikasi menunggu dicek; **Finalisasi menolak** order yang masih punya biaya "Menunggu dicek". Biaya lama (sebelum migrasi) juga menjadi "Menunggu dicek" (di produksi saat rilis: 1 biaya dari uji ulang).
 - Migrasi patch memindahkan "Biaya Ops" lama di hari internal ke `driver_fee` (dulu itu memang fee driver).
 
 ### 00.6 Uji (lokal, sebelum merge)
@@ -156,9 +156,9 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (f5bb7cb, sesi 3 Okt §00; PR arasya-rentcar/api-arasya-rentcar#1) | ✅ Deploy "Deploy API" run #67 (3 Okt) | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
+| **api-arasya-rentcar** | `main` (f5bb7cb, sesi 3 Okt §00; PR arasya-rentcar/api-arasya-rentcar#1) | ✅ "Deploy API" run #67 sukses 3 Okt 08.41 UTC; kedua migrasi tercatat di `_prisma_migrations`, RLS `driver_notifications` menyala | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
 | **dashboard-arasya-rentcar** | `main` (sesi 3 Okt §00 + handoff ini; PR arasya-rentcar/dashboard-arasya-rentcar#3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS) | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **Perlu APK baru** (modul native baru: kamera, lokasi, view-shot). Workflow "EAS Build (Android)" profile `preview` | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **APK baru sedang di-build**: workflow "EAS Build (Android)" run #4 (profile `preview`, dari `main` 6aa3787) → build `d603a395-2d3a-4c25-a12e-fd475c7c7afe` (https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/d603a395-2d3a-4c25-a12e-fd475c7c7afe). Unduh APK dari halaman itu setelah selesai | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
