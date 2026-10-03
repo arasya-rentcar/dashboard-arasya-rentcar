@@ -41,10 +41,10 @@ function shiftDateTimeStr(dt: string, n: number): string {
  * first emitted line is always day D (callers that read service_items[0] for
  * top-level fields keep the same behavior).
  */
-export function expandServiceItemsByDays(
-  items: ServiceItemFormValue[],
-): ServiceItemFormValue[] {
-  const out: ServiceItemFormValue[] = [];
+export function expandServiceItemsByDays<
+  T extends ServiceItemFormValue & { id?: string },
+>(items: T[]): T[] {
+  const out: T[] = [];
   for (const item of items) {
     const qty = Math.max(1, Math.floor(Number(item.quantity || 1)) || 1);
     if (qty <= 1) {
@@ -54,6 +54,9 @@ export function expandServiceItemsByDays(
     for (let k = 0; k < qty; k++) {
       out.push({
         ...item,
+        // Edit Order: an existing day keeps its id on its own date only; the
+        // extra days are new.
+        ...(k > 0 ? { id: undefined, line_status: undefined } : {}),
         service_date: item.service_date
           ? shiftDateStr(item.service_date, k)
           : item.service_date,

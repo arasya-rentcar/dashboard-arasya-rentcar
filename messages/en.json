@@ -1433,7 +1433,8 @@
     "reasonForChange": "Reason for Price Change",
     "reasonPlaceholder": "customer added route / overtime / discount correction",
     "finalPrice": "Final price",
-    "saveChanges": "Save Changes"
+    "saveChanges": "Save Changes",
+    "assignedDaysNote": "Days that already have a driver, car or trip keep them; change their date, time, place or price here. To cancel one day, use Edit Hari in the Trip menu."
   },
   "invoiceHistoryTable": {
     "orderTotal": "Order Total",

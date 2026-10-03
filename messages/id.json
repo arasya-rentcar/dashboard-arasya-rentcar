@@ -1433,7 +1433,8 @@
     "reasonForChange": "Alasan Perubahan Harga",
     "reasonPlaceholder": "pelanggan menambah rute / overtime / koreksi diskon",
     "finalPrice": "Harga final",
-    "saveChanges": "Simpan Perubahan"
+    "saveChanges": "Simpan Perubahan",
+    "assignedDaysNote": "Hari yang sudah punya driver, mobil, atau perjalanan tetap tersimpan bersama datanya; ubah tanggal, jam, lokasi, atau harganya di sini. Untuk membatalkan satu hari, pakai Edit Hari di menu Trip."
   },
   "invoiceHistoryTable": {
     "orderTotal": "Total Order",

@@ -27,6 +27,10 @@ const customerSchema = z.object({
   is_primary: z.boolean().optional(),
 });
 const serviceItemSchema = z.object({
+  // The existing day this row is (kept with its driver, status and costs by
+  // the API); absent for a new row.
+  id: z.string().optional(),
+  line_status: z.string().optional(),
   service_date: z.string().optional(),
   start_at: z.string().optional(),
   end_at: z.string().optional(),
@@ -89,8 +93,10 @@ export default function EditOrderForm({
           is_primary: true,
         },
       ];
-  const initialItems: ServiceItemFormValue[] = order.service_items?.length
+  const initialItems: FormValues["service_items"] = order.service_items?.length
     ? order.service_items.map((item) => ({
+        id: item.id,
+        line_status: item.line_status ?? undefined,
         service_date: toDate(item.service_date),
         start_at: toDateTimeLocal(item.start_at),
         end_at: toDateTimeLocal(item.end_at),
@@ -139,12 +145,38 @@ export default function EditOrderForm({
   });
   const customers = watch("customers");
   const items = watch("service_items");
-  const newPrice = items.reduce(
-    (sum, item) =>
-      sum + Number(item.quantity || 1) * Number(item.unit_price || 0),
-    0,
+  // The total as the API keeps it: days that are not cancelled + billable
+  // charges (Biaya Tambahan, billed trip costs).
+  const days = expandServiceItemsByDays(items);
+  const charges = (order.adjustments ?? [])
+    .filter((a) => a.is_billable)
+    .reduce((sum, a) => sum + Number(a.amount || 0) * (a.quantity ?? 1), 0);
+  const newPrice =
+    days
+      .filter((d) => d.line_status !== "CANCELLED")
+      .reduce((sum, d) => sum + Number(d.unit_price || 0), 0) + charges;
+  // A reason is asked exactly when a price was edited (as the API checks): a
+  // day's price changed, a priced day added, or a priced open day removed.
+  const original = new Map(
+    (order.service_items ?? []).map((l) => [l.id, l] as const),
   );
-  const priceChanged = newPrice !== originalPrice;
+  const sentIds = new Set(days.map((d) => d.id).filter(Boolean));
+  const priceChanged =
+    days.some((d) => {
+      const before = d.id ? original.get(d.id) : undefined;
+      if (!before) return Number(d.unit_price || 0) !== 0;
+      return (
+        before.line_status !== "CANCELLED" &&
+        Number(d.unit_price || 0) !== Number(before.total_price || 0)
+      );
+    }) ||
+    (order.service_items ?? []).some(
+      (l) =>
+        !!l.id &&
+        !sentIds.has(l.id) &&
+        l.line_status !== "CANCELLED" &&
+        Number(l.total_price || 0) !== 0,
+    );
   const belowInvoiceTotal = priceChanged && newPrice < activeInvoiceTotal;
   function setPrimary(index: number) {
     customers.forEach((_, i) =>
@@ -171,6 +203,9 @@ export default function EditOrderForm({
       change_reason: priceChanged ? values.change_reason : undefined,
       service_items: expandServiceItemsByDays(values.service_items).map(
         (item, index) => ({
+          // Existing days are sent back with their id so the API keeps their
+          // driver, status, costs and payable (only the content changes).
+          ...(item.id ? { id: item.id } : {}),
           service_date: dateIso(item.service_date),
           start_at: iso(item.start_at),
           end_at: iso(item.end_at),
@@ -260,8 +295,9 @@ export default function EditOrderForm({
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs leading-5 text-gray-600 shadow-sm">
-          {tEdit("orderDateNote")}
+        <section className="space-y-1 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs leading-5 text-gray-600 shadow-sm">
+          <p>{tEdit("orderDateNote")}</p>
+          <p>{tEdit("assignedDaysNote")}</p>
         </section>
 
         <OrderServiceItemsEditor
