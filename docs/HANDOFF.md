@@ -14,7 +14,14 @@ Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail tekn
 - Hari yang sudah punya driver tidak bisa dihapus lewat Edit Order; batalkan lewat Edit Hari.
 - Memindah jam hari milik driver mengirim push "Jadwal tugas diubah" dan meminta konfirmasi dikirim ulang.
 
-Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produksi dicek (SQL baca): tidak ada kerusakan dari T1–T3. **Berikutnya:** keputusan pemilik soal T4 (lihat TEST-PLAN §1), lalu uji HP §7–§8.
+Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produksi dicek (SQL baca): tidak ada kerusakan dari T1–T3. 
+
+**Status 4 Okt sesi 2:** T4 diputuskan dan diperbaiki, T5 diperbaiki, fitur baru F1–F6 (kasus uji TEST-PLAN §1.1). API arasya-rentcar/api-arasya-rentcar#3 (migrasi `20261004090000_admin_notifications_driver_requests`, e2e 230 lolos); dashboard dan aplikasi menyusul setelah API.
+- Dashboard: lonceng notifikasi (polling 15 detik) + halaman Notifikasi (permintaan top-up e-toll, "Tandai sudah top-up"), field "Kartu e-toll" di Driver, nama tempat di atas koordinat, "Tetapkan untuk Semua" disembunyikan, hari terkunci pada order Selesai/Dibatalkan, panel Biaya perjalanan lebih jelas ("Yang bayar dulu" / "Akhirnya ditanggung").
+- Aplikasi (JS saja, perlu APK baru karena belum ada OTA): "Terima tugas" sampai driver menekannya, foto Checkpoint 1/2/… lewat kamera GPS, nama tempat di cap foto, tombol "Minta top-up e-toll" di Profil.
+- **Pertanyaan terbuka F3 (pemilik):** biaya yang dicentang "Ditagih ke pelanggan" tetap diganti ke driver bila "Dibayar driver" (pelanggan membayar Arasya lewat Invoice Tambahan). Bila pelanggan sering membayar langsung di jalan, perlu pilihan baru "Dibayar pelanggan langsung". Bila dibayar e-toll/kartu kantor: pilih "Dibayar kantor".
+- Belum: memindah jam/tanggal hari yang sudah punya driver tidak dicek bentrok (perlu keputusan); data lama "hari punya driver tapi masih SCHEDULED" tidak diubah otomatis (simpan Edit Hari sekali memperbaikinya).
+**Berikutnya:** uji HP §7–§8 + TEST-PLAN §1.1 dengan APK baru.
 
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
@@ -211,6 +218,8 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 - Foto sampai lokasi jemput memakai kamera GPS dengan cap waktu, nama driver, dan koordinat (seperti aplikasi Timemark) (pemilik, 3 Okt).
 - Selama masih tahap pengembangan, Claude boleh merge ke `main` di semua repo tanpa bertanya, dengan code review di GitHub bila perlu (pemilik, 3 Okt).
 - Claude selalu boleh membuat PR, mereview PR, dan merge PR di semua repo; jangan pernah bertanya soal itu (pemilik, 4 Okt).
+- Satu cara menugaskan (pemilik, 4 Okt): driver ke satu hari → hari `ASSIGNED`; aplikasi meminta "Terima tugas" sampai ditekan; driver `ON_DUTY` hanya pada hari tripnya; "Tetapkan untuk Semua" disembunyikan.
+- Hari pada order Selesai/Dibatalkan tidak bisa diubah (pemilik, 4 Okt).
 - Aplikasi driver hanya untuk driver internal Arasya. Order/hari yang memakai rekanan berjalan lewat dashboard saja (vendor, mobil, nama/HP/plat driver rekanan, konfirmasi WhatsApp, tutup lewat Edit → Selesai); driver rekanan tidak diminta memasang aplikasi (pemilik, 2 Okt malam). Hari rekanan juga tidak terkena aturan DP.
 - Daftar harga resmi ditunda (BACKLOG).
 - Order luar kota **tidak selalu** butuh rekanan: driver Arasya bisa berangkat dari Bogor (mis. ke Bandung) untuk menjemput pelanggan. Sistem tidak punya aturan lokasi → rekanan; badge "Perlu rekanan" di lead hanya berarti unit yang diminta tidak ada di armada, dan admin tetap bebas memilih Internal. Jangan menambah aturan "luar kota = rekanan".

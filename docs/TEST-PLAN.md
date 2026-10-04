@@ -4,6 +4,8 @@ Disusun 3 Oktober 2026 dari kode `main` ketiga repo (API `f5bb7cb`, dashboard `f
 
 **Status 4 Okt:** T1–T3 sudah diperbaiki dan dirilis (API arasya-rentcar/api-arasya-rentcar#2, dashboard arasya-rentcar/dashboard-arasya-rentcar#4). Uji API otomatis ada di repo API: `scripts/e2e/run-local.sh` (Postgres lokal + API asli, ±155 cek; hasil terakhir 154 lolos, 0 gagal, 2 "known" = T5). Yang tersisa: keputusan T4, dan T5 (P2).
 
+**Status 4 Okt (sesi 2):** T4 diputuskan pemilik dan diperbaiki, T5 diperbaiki, plus fitur baru F1–F6 (lihat §1.1). API arasya-rentcar/api-arasya-rentcar#3: `run-local.sh` 230 lolos, 0 gagal, 0 known. Kasus yang menyebut "Tetapkan untuk Semua" (API-93/94, DSB-43/82, APP-11, E2E-1) sekarang usang: tombolnya disembunyikan dan semua cara menugaskan berperilaku sama.
+
 Isi:
 - [1. Temuan saat menyusun rencana ini](#1-temuan-saat-menyusun-rencana-ini) (5 bug terbukti; T1–T4 harus selesai atau diputuskan sebelum uji di HP)
 - [2. Cara memakai dokumen ini](#2-cara-memakai-dokumen-ini)
@@ -62,7 +64,13 @@ Semua di bawah ini **dibuktikan** di lingkungan lokal (Postgres 16 + API asli da
   - Dua invoice yang dibayar bersamaan dihitung keduanya. Uang pada invoice yang dibatalkan oleh pembatalan order tetap dihitung.
   - Push "sudah lunas" terkirim sekali. PDF kwitansi dibuat setelah tersimpan.
 
-### T4. Dua cara menugaskan driver menghasilkan keadaan berbeda (P1, perlu keputusan)
+### T4. Dua cara menugaskan driver menghasilkan keadaan berbeda (P1) — DIPUTUSKAN & DIPERBAIKI 4 Okt
+
+**Keputusan pemilik (4 Okt):** satu cara menugaskan. (1) Memberi driver ke satu hari otomatis membuat hari itu `ASSIGNED`. (2) Aplikasi selalu meminta "Terima tugas" sampai driver menekannya (`driver_accepted_at`). (3) Driver `ON_DUTY` (mobil `IN_USE`) hanya pada hari WIB tripnya atau selama trip berjalan; ketersediaan dicek per tanggal/jam. (4) Tombol "Tetapkan untuk Semua" disembunyikan di dashboard ("Ganti Semua" dan per hari tetap).
+
+**Perbaikan (dirilis):** semua jalur menugaskan sama; penerimaan dihapus bila driver diganti; ketersediaan dicek di dalam transaksi dengan kunci driver/mobil (dua admin tidak bisa memesan driver yang sama); status driver/mobil disegarkan saat start dan tiap 10 menit (`RESOURCE_STATUS_REFRESH_ENABLED`). Driver `OFF` / mobil `MAINTENANCE` tetap ditolak. Hari rekanan tidak ikut aturan ASSIGNED otomatis. Belum: memindah jam/tanggal hari yang sudah punya driver tidak dicek bentrok (perlu keputusan).
+
+Temuan awal (sebelum perbaikan), untuk arsip:
 
 Terbukti (B3–B15):
 
@@ -83,7 +91,11 @@ HANDOFF §0.4 menulis "Edit baris → trip menjadi ASSIGNED", padahal itu hanya 
 
 Sampai diputuskan, uji §7 dijalankan untuk **kedua** cara.
 
-### T5. Edit Hari tidak dikunci pada order Selesai atau Dibatalkan (P2)
+### T5. Edit Hari tidak dikunci pada order Selesai atau Dibatalkan (P2) — DIPERBAIKI 4 Okt
+
+**Perbaikan (dirilis):** semua perubahan hari pada order `DONE`/`CANCELLED` ditolak 409 ("Order ini sudah selesai/dibatalkan…"): Edit Hari, Ganti Semua, Tetapkan untuk Semua, assign lewat bot, Edit Order. Tetap boleh: tinjau biaya perjalanan, bayar driver/rekanan di Utang, invoice, pembayaran, refund, catatan keuangan, kirim konfirmasi. Dashboard menonaktifkan tombol ubah hari dengan alasannya. Impor sheet ulang masih mengganti hari (alat impor, dibiarkan).
+
+Temuan awal:
 
 - Komentar di API sendiri (`assertOrderStructurallyEditable`) menyatakan hari pada order `DONE`/`CANCELLED` tidak boleh diubah, tetapi `PUT /schedule/lines/:id` tidak memeriksanya.
 - **Terbukti:**
@@ -91,6 +103,26 @@ Sampai diputuskan, uji §7 dijalankan untuk **kedua** cara.
   - hari dari order yang dibatalkan bisa kembali ke `SCHEDULED` (order tetap `CANCELLED`).
 - Yang sudah aman: fee, uang jalan, dan driver hari yang sudah dibayar tetap terkunci (409).
 - **Usulan perbaikan:** tolak perubahan hari bila order `DONE`/`CANCELLED`, kecuali perubahan yang memang sah sesudah selesai (bila ada, sebutkan satu per satu).
+
+### 1.1 Fitur baru 4 Okt dan kasus ujinya
+
+Diminta pemilik 4 Okt; dirilis bersama perbaikan T4/T5 (API #3, lalu dashboard dan aplikasi).
+
+| ID | Fitur | Langkah | Hasil yang diharapkan |
+|---|---|---|---|
+| NEW-01 | F1 notifikasi biaya | Driver kirim struk/biaya dari aplikasi | Lonceng dashboard bertambah dalam ±15 detik; item kuning "Biaya perjalanan baru: Tol Rp … — perlu ditinjau", klik membuka order |
+| NEW-02 | F4 notifikasi status | Driver: Terima tugas → Berangkat → Sampai → Mulai perjalanan → Selesai | Tepat satu notifikasi per langkah (kirim ulang/tanpa sinyal tidak menggandakan); halaman order/Trip yang terbuka ikut diperbarui; judul tab "(N) …" |
+| NEW-03 | F4 laporan | Driver kirim Foto/Catatan | Notifikasi "laporan" di lonceng dan halaman Notifikasi |
+| NEW-04 | F4 baca | Klik satu item; "Tandai semua dibaca" | Badge turun; status baca per admin (admin lain tetap belum baca) |
+| NEW-05 | F5 e-toll | Isi "Kartu e-toll" driver di menu Driver; di aplikasi Profil → "Minta top-up e-toll" (saldo + catatan opsional) | Notifikasi "… minta top-up e-toll" dengan kartu dan saldo; halaman Notifikasi → "Permintaan driver" |
+| NEW-06 | F5 ulang | Tekan lagi saat masih menunggu; tanpa sinyal lalu sinyal kembali | Tidak ada permintaan ganda ("Sudah diminta … menunggu admin"); terkirim sekali setelah sinyal kembali |
+| NEW-07 | F5 selesai | Admin "Tandai sudah top-up" (catatan opsional) | Driver dapat push + kotak masuk "Top-up e-toll sudah diproses"; klik kedua ditolak (409) |
+| NEW-08 | F2 checkpoint | Foto/Catatan di beberapa lokasi | Kamera GPS dengan cap waktu, driver, nama tempat, koordinat; label "Checkpoint 1, 2, …" di foto dan daftar laporan |
+| NEW-09 | F6 nama tempat | Foto sampai lokasi dan checkpoint, dengan sinyal | Nama jalan/kelurahan/kota di atas koordinat (di foto, aplikasi, dashboard). Tanpa sinyal: hanya koordinat, tidak error |
+| NEW-10 | F6 cadangan | Foto checkpoint terkirim tanpa cap dari HP | Server memberi cap yang sama seperti foto sampai lokasi |
+| NEW-11 | F3 biaya ditagih | Biaya "Dibayar driver" + centang "Ditagih ke pelanggan (Invoice Tambahan)" | Driver tetap diganti lewat fee; pelanggan ditagih di Invoice Tambahan; ringkasan panel "Yang bayar dulu" / "Akhirnya ditanggung" tidak tampak dobel. Bila dibayar e-toll/kartu kantor pilih "Dibayar kantor" (tidak jadi utang ke driver) |
+| NEW-12 | T4 | Tugaskan driver per hari untuk minggu depan | Hari `ASSIGNED`, order `ASSIGNED`, driver tetap "Tersedia" sampai hari H; aplikasi menampilkan "Terima tugas"; driver yang sama bisa ditugaskan di tanggal lain, ditolak bila jamnya bentrok |
+| NEW-13 | T5 | Order Selesai/Dibatalkan: buka Edit Hari / Trip | Tombol ubah hari nonaktif dengan alasan; API menolak 409 |
 
 ### Catatan lain (bukan bug, tetapi penguji perlu tahu supaya tidak salah lapor)
 
