@@ -22,12 +22,41 @@ Hal-hal yang sengaja belum dikerjakan. Urutan bukan prioritas.
 
 - Ganti data mobil contoh di prisma seed dengan armada Arasya yang asli, supaya badge "Ada di armada" pada lead akurat di lingkungan baru.
 
-## 5. Kartu e-toll: baca saldo lewat NFC (tahap 2)
+## 5. Kartu e-toll: baca saldo dan riwayat lewat NFC (tahap 2, mulai ±10 Okt 2026)
 
-- Tahap 1 (5 Okt) sudah ada: daftar kartu, siapa yang memegang, top-up dengan nominal, cek saldo yang diketik, riwayat, dan layar uji "Tes kartu NFC" di aplikasi.
-- Tahap 2, setelah hasil uji NFC per bank: driver menempelkan kartu saat ambil/kembalikan, saat "Berangkat" dan "Selesai", dan saat minta top-up. Saldo terbaca dicatat sebagai cek saldo `source: NFC`, kartu dikenali tanpa memilih dari daftar.
-- Pemakaian tol per trip = saldo saat berangkat − saldo saat selesai + top-up di antaranya. Bila riwayat di chip terbaca, impor sebagai transaksi TOL (tanpa dobel) dan cocokkan dengan trip menurut waktu. Biaya tol yang dibayar dengan kartu kantor otomatis "Dibayar kantor".
-- Top-up dari m-banking baru masuk ke chip setelah kartu ditempel untuk update; bila saldo terbaca lebih kecil dari perkiraan setelah top-up, aplikasi mengingatkan driver untuk update saldo.
-- Peringatan saldo rendah (mis. di bawah Rp 100.000) di dashboard dan aplikasi.
-- Kolom lama `drivers.etoll_card` (teks bebas) tidak dipakai lagi; bisa dihapus setelah semua driver memakai APK baru.
+Tujuan (owner): saldo dan riwayat transaksi dibaca dari chip kartu lewat HP, dicatat ke database, dan tampil di dashboard. **Siapkan untuk semua bank, bukan hanya Mandiri**: kartu kantor bisa diganti ke bank lain kapan saja.
 
+Sudah ada (tahap 1, 5 Okt): daftar kartu, siapa yang memegang, top-up dengan nominal, cek saldo yang diketik, riwayat, kolom `source` (`MANUAL`/`NFC`) di transaksi dan di endpoint saldo driver, nomor kartu lengkap tersimpan (untuk mencocokkan kartu yang ditempel), dan layar uji "Tes kartu NFC" di aplikasi (modul NFC sudah ada di APK build af651751).
+
+Referensi: [agusibrahim/emoney_reader_demo](https://github.com/agusibrahim/emoney_reader_demo) (ESP32 + PN532, MIT). Hanya Mandiri e-Money, hanya saldo dan nomor kartu, tanpa riwayat:
+- `00A40400080000000000000001` pilih aplikasi e-Money.
+- `00B300003F` info kartu: nomor kartu = 8 byte pertama ditulis hex (16 digit).
+- `00B500000A` saldo = 4 byte pertama, byte terkecil dulu (little-endian).
+- Layar "Tes kartu NFC" sudah mengirim tiga perintah yang sama. Bank lain (Flazz, Brizzi, TapCash, JakCard) hanya ada di versi berbayar penulisnya (hello@agusibrah.im); library "full version" yang ditautkan tidak publik.
+
+Rancangan (semua bank):
+- **Perintah baca diatur server.** `GET /driver/etoll-cards/nfc-script` (berversi, disimpan di HP, ada bawaan di APK untuk offline) berisi profil per bank: perintah pengenal (SELECT) lalu perintah baca. Aplikasi menjalankan profil sampai satu cocok dan mengirim jawaban mentah; **server yang menerjemahkan** (`decoders/<bank>.ts`). Menambah atau mengganti bank = deploy API saja, tanpa APK baru.
+- **Aplikasi hanya mau membaca.** Daftar perintah yang diizinkan tertanam di APK: ISO SELECT, READ BINARY, READ RECORD, GET DATA, GET RESPONSE, Mandiri B3/B5, DESFire GetVersion, GetApplicationIDs, SelectApplication, GetFileIDs, GetFileSettings, ReadData, ReadRecords, GetValue dan lanjutan (AF). Perintah lain ditolak walau diminta server. Menambah perintah baru ke daftar ini perlu APK baru.
+- **Penjelajah untuk kartu yang belum dikenal:** rutin bawaan (isi DESFire yang terbuka tanpa kunci, sapuan READ RECORD) jalan saat tidak ada profil yang cocok, atau saat profil diberi tanda "jelajah". Jawaban mentah selalu disimpan (`etoll_nfc_reads`, JSON) dan bisa diunduh dari dashboard, jadi hasil uji tidak perlu dibagikan manual.
+- **Kartu dikenali dari nomor di chip**, dicocokkan dengan `etoll_cards.card_number`. Kartu yang ditempel tapi belum terdaftar muncul di dashboard dengan tombol "Daftarkan" (bank dan nomor sudah terisi). Bila kartu yang ditempel beda dengan kartu yang dipilih driver, saldo dicatat ke kartu yang benar dan driver diberi tahu.
+- **Saldo terbaca** = cek saldo `source: NFC` (jadi titik awal perkiraan saldo).
+- **Riwayat di chip** (bila bank-nya terbaca) diimpor sebagai TOL / masuk ke chip `source: NFC` dengan `chip_key` unik per kartu (dibaca ulang tidak dobel), dikaitkan ke driver yang memegang kartu saat itu. Tidak ikut hitungan perkiraan saldo (saldo hasil baca sudah jadi titik awal). Isi saldo di chip tampil terpisah dari top-up kantor (m-banking), jadi terlihat kapan driver sudah update saldo.
+- Tambahan data (aditif): tabel `etoll_nfc_reads` (kartu, driver, momen, bank terdeteksi, nomor, saldo, jawaban mentah, versi skrip, `client_ref`), kolom `etoll_transactions.chip_key`, `terminal`, `nfc_read_id`.
+- Momen tempel: saat ambil dan kembalikan kartu, setelah update saldo di aplikasi bank, dan cek saldo kapan saja. Lewat antrean offline seperti aksi lain; saldo tampil setelah server menjawab.
+- Nanti: tempel saat "Berangkat" dan "Selesai" untuk tol per trip = saldo saat berangkat − saldo saat selesai + top-up di antaranya; bila riwayat terbaca, TOL dicocokkan ke trip menurut waktu dan biaya tol dengan kartu kantor otomatis "Dibayar kantor".
+- Bila saldo terbaca lebih kecil dari perkiraan setelah top-up, ingatkan driver untuk update saldo. Peringatan saldo rendah (mis. di bawah Rp 100.000) di dashboard dan aplikasi.
+
+Batasan:
+- Log di chip pendek dan tertimpa; riwayat hanya lengkap bila kartu sering ditempel.
+- Entri chip biasanya hanya nominal, waktu, dan ID terminal, bukan nama gerbang tol.
+- Hanya baca. Update saldo setelah top-up m-banking tetap di aplikasi bank.
+- HP tanpa NFC tetap mengetik saldo. Kartu FeliCa / MIFARE Classic hanya memberi ID chip.
+
+Urutan kerja saat mulai:
+1. APK baru: pembaca berbasis skrip + daftar perintah baca + penjelajah; API: skrip, `etoll_nfc_reads`, decoder Mandiri; dashboard: bacaan NFC di detail kartu, kartu belum terdaftar, unduh data mentah.
+2. Owner menempelkan satu kartu per bank, sekaligus screenshot saldo dan riwayat terakhir di aplikasi bank untuk pembanding.
+3. Decoder bank lain lewat deploy API. Bila bank tertentu terkunci, pertimbangkan versi berbayar penulis referensi.
+
+Bisa dicek sekarang dengan APK yang ada: di "Tes kartu NFC", kartu Mandiri harus menunjukkan "Kemungkinan saldo" yang sama dengan aplikasi bank, dan 16 karakter pertama baris "Info kartu (B3)" sama dengan nomor yang tercetak di kartu. Catat juga berapa kartu per bank.
+
+Kolom lama `drivers.etoll_card` (teks bebas) tidak dipakai lagi; bisa dihapus setelah semua driver memakai APK baru.
