@@ -91,6 +91,7 @@ export default function NotificationItem({
           </span>
           {!n.read && (
             <span
+              role="img"
               className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-600"
               aria-label={t('unreadDot')}
             />

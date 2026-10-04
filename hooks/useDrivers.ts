@@ -69,6 +69,8 @@ export function useUpdateDriver() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
+      // The detail page shows the same fields (e-toll card, phone, ...).
+      queryClient.invalidateQueries({ queryKey: ['driver-detail'] });
     },
   });
 }
