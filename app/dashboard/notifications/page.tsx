@@ -25,7 +25,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { RupiahInput, rupiahValue } from '@/components/etoll/etoll';
+import { useEtollCards } from '@/hooks/useEtollCards';
 import {
   useDriverRequests,
   useMarkDriverRequestDone,
@@ -56,15 +59,40 @@ function DriverRequestsSection() {
   const [showDone, setShowDone] = useState(false);
   const [target, setTarget] = useState<DriverRequest | null>(null);
   const [note, setNote] = useState('');
+  const [cardId, setCardId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [balanceAfter, setBalanceAfter] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
   const open = useDriverRequests('OPEN');
   const done = useDriverRequests('DONE', showDone);
+  const cards = useEtollCards('ACTIVE');
   const markDone = useMarkDriverRequestDone();
   const openItems = open.data ?? [];
+  const activeCards = cards.data ?? [];
+  // Until the office cards are entered, a request can still be closed with a note only.
+  const needsCard = activeCards.length > 0;
+
+  function startDone(r: DriverRequest) {
+    setNote('');
+    setAmount('');
+    setBalanceAfter('');
+    setFormError(null);
+    setCardId(r.card_id ?? '');
+    setTarget(r);
+  }
 
   async function confirmDone() {
     if (!target) return;
+    const a = rupiahValue(amount);
+    if (needsCard && !cardId) return setFormError(t('selectCard'));
+    if (needsCard && !a) return setFormError(t('amountRequired'));
+    setFormError(null);
     try {
-      await markDone.mutateAsync({ id: target.id, note: note.trim() || undefined });
+      await markDone.mutateAsync({
+        id: target.id,
+        note: note.trim() || undefined,
+        ...(needsCard ? { card_id: cardId, amount: a, balance_after: rupiahValue(balanceAfter) } : {}),
+      });
       toast.success(t('reqDoneToast', { name: target.driver.name }));
       setTarget(null);
       setNote('');
@@ -112,10 +140,7 @@ function DriverRequestsSection() {
                 <Button
                   size="sm"
                   className="shrink-0 bg-violet-600 hover:bg-violet-700"
-                  onClick={() => {
-                    setNote('');
-                    setTarget(r);
-                  }}
+                  onClick={() => startDone(r)}
                 >
                   <CheckCircle2 className="h-4 w-4" /> {t('markTopUpDone')}
                 </Button>
@@ -166,12 +191,45 @@ function DriverRequestsSection() {
           </DialogHeader>
           {target && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                {t('confirmIntro', {
-                  name: target.driver.name,
-                  card: target.card_label || t('noCard'),
-                })}
-              </p>
+              <p className="text-sm text-gray-600">{t('confirmIntroCard', { name: target.driver.name })}</p>
+              {needsCard ? (
+                <>
+                  <div className="space-y-1.5">
+                    <Label>{t('topupCard')}</Label>
+                    <Select value={cardId} onValueChange={setCardId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t('selectCard')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activeCards.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!target.card_id && target.card_label && (
+                      <p className="text-xs text-gray-500">{t('driverWrote', { card: target.card_label })}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req_amount">{t('amountLabel')}</Label>
+                    <RupiahInput id="req_amount" value={amount} onChange={setAmount} autoFocus={!!cardId} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="req_after">{t('balanceAfterLabel')}</Label>
+                    <RupiahInput id="req_after" value={balanceAfter} onChange={setBalanceAfter} />
+                    <p className="text-xs text-gray-400">{t('balanceAfterHint')}</p>
+                  </div>
+                </>
+              ) : (
+                <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {t('noCardsYet')}{' '}
+                  <Link href="/dashboard/etoll-cards" className="font-medium underline">
+                    {t('openCards')}
+                  </Link>
+                </p>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="req_note">{t('noteLabel')}</Label>
                 <Textarea
@@ -183,6 +241,7 @@ function DriverRequestsSection() {
                   onChange={(e) => setNote(e.target.value)}
                 />
               </div>
+              {formError && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{formError}</p>}
               <div className="flex justify-end gap-2 pt-1">
                 <Button variant="outline" onClick={() => setTarget(null)} disabled={markDone.isPending}>
                   {t('cancel')}
@@ -230,11 +289,26 @@ function RequestDetails({
           {r.driver.phone && <span className="ml-2 text-xs text-gray-400">{r.driver.phone}</span>}
         </p>
         <p className="text-sm text-gray-700">
-          {t('reqCard')}: <span className="font-medium">{r.card_label || '—'}</span>
+          {t('reqCard')}:{' '}
+          {r.card ? (
+            <Link href={`/dashboard/etoll-cards/${r.card.id}`} className="font-medium hover:underline">
+              {r.card.label}
+            </Link>
+          ) : (
+            <span className="font-medium">{r.card_label || '—'}</span>
+          )}
           <span className="mx-1.5 text-gray-300">·</span>
           {t('reqBalance')}:{' '}
           <span className="font-medium tabular-nums">{hasBalance ? formatCurrency(r.balance) : '—'}</span>
         </p>
+        {r.card && (
+          <p className="font-mono text-xs tabular-nums text-gray-500">
+            {r.card.card_number.replace(/(\d{4})(?=\d)/g, '$1 ')}
+            {r.card.balance != null && (
+              <span className="ml-2 font-sans">{t('cardEstimate', { amount: formatCurrency(r.card.balance) })}</span>
+            )}
+          </p>
+        )}
         {r.note && <p className="text-xs italic text-gray-500">“{r.note}”</p>}
         <p className="text-[11px] text-gray-400">
           {formatDateTime(r.created_at)} · {timeAgo(r.created_at)}

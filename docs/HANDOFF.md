@@ -23,6 +23,12 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 - Belum: memindah jam/tanggal hari yang sudah punya driver tidak dicek bentrok (perlu keputusan); data lama "hari punya driver tapi masih SCHEDULED" tidak diubah otomatis (simpan Edit Hari sekali memperbaikinya).
 **Berikutnya:** uji HP §7–§8 + TEST-PLAN §1.1 dengan APK baru.
 
+**Status 5 Okt: kartu e-toll kantor.** Permintaan pemilik: kartu e-toll (±10, campuran bank) jadi satu daftar bersama, bukan teks bebas per driver. Driver mengambil kartu dari tim operasional saat berangkat dan mengembalikannya hanya bila kembali ke garasi; driver sendiri yang mencatat ambil/kembali di aplikasi, admin melihatnya langsung. Kantor top-up lewat m-banking; saldo baru masuk ke chip setelah driver menempelkan kartu untuk update.
+- API: tabel `etoll_cards`, `etoll_card_handovers`, `etoll_transactions`, `driver_requests.card_id` (migrasi `20261004150000_etoll_cards`), e2e grup N.
+- Dashboard: menu **Kartu E-Toll** (tambah/ubah/nonaktifkan/hapus, riwayat, catat top-up/saldo/tol, serahkan/tandai kembali); "Tandai sudah top-up" meminta kartu + nominal; field teks "Kartu e-toll" di Driver dihapus (kartu yang dipegang tampil di daftar Driver).
+- Aplikasi: Profil → Kartu e-toll (ambil, kembalikan, catat sisa saldo, minta top-up per kartu) + layar "Tes kartu NFC". Perlu APK baru (modul NFC). APK lama tetap jalan: permintaan top-up dari APK lama ditautkan ke kartu yang dipegang driver, atau admin memilih kartunya.
+- **Langkah pemilik/admin:** daftarkan ke-10 kartu di Kartu E-Toll (nomor lengkap + saldo bila tahu); pasang APK baru; uji NFC: tempelkan satu kartu dari tiap bank di "Tes kartu NFC" dan kirim hasilnya (lihat TEST-PLAN §1.2, BACKLOG §5).
+
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
 Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga repo setelah review (lihat §1 untuk status deploy). Aplikasi driver **perlu APK baru** (ada modul native baru: kamera, lokasi, view-shot).

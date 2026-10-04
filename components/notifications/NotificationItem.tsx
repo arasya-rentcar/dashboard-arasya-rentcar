@@ -27,6 +27,7 @@ const TYPE_META: Record<AdminNotificationType, { icon: LucideIcon; tint: string 
   TRIP_REPORT: { icon: Camera, tint: 'bg-sky-100 text-sky-700' },
   TRIP_COST: { icon: Receipt, tint: 'bg-amber-100 text-amber-700' },
   DRIVER_REQUEST: { icon: CreditCard, tint: 'bg-violet-100 text-violet-700' },
+  ETOLL_CARD: { icon: CreditCard, tint: 'bg-fuchsia-100 text-fuchsia-700' },
 };
 
 export function notificationMeta(type: string) {

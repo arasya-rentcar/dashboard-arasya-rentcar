@@ -18,6 +18,7 @@ import {
   Wallet,
   Inbox,
   Bell,
+  CreditCard,
 } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/customers", key: "customers", icon: UserRound },
   { href: "/dashboard/drivers", key: "drivers", icon: Users },
   { href: "/dashboard/cars", key: "cars", icon: Car },
+  { href: "/dashboard/etoll-cards", key: "etollCards", icon: CreditCard },
   { href: "/dashboard/external", key: "external", icon: Handshake },
   { href: "/dashboard/invoices", key: "invoices", icon: FileText },
   { href: "/dashboard/payables", key: "payables", icon: Wallet },

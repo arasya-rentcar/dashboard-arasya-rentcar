@@ -156,13 +156,24 @@ export function useDriverRequests(status: 'OPEN' | 'DONE', enabled = true) {
 export function useMarkDriverRequestDone() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
-      const res = await driverRequestsApi.markDone(id, note ? { note } : {});
+    mutationFn: async ({
+      id,
+      ...data
+    }: {
+      id: string;
+      note?: string;
+      card_id?: string;
+      amount?: number;
+      balance_after?: number;
+    }) => {
+      const res = await driverRequestsApi.markDone(id, data);
       return res.data.data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['driver-requests'] });
       qc.invalidateQueries({ queryKey: ['notifications'] });
+      // The top-up lands in the card's history and balance.
+      qc.invalidateQueries({ queryKey: ['etoll-cards'] });
     },
   });
 }

@@ -7,7 +7,7 @@ Admin dashboard: Next.js 16 (app router, client components), TanStack Query, axi
 - API base: `NEXT_PUBLIC_API_URL` (build-time; production `https://api.haikuy.com/api/v1`). `NEXT_PUBLIC_WA_DELIVERY=bot` only if the old bot is still used (default manual).
 
 ## Layout & patterns
-- Pages in `app/dashboard/*` (leads, orders, orders/[id], schedule, customers, customers/[id], drivers, cars, external (partners), invoices, payables, revenue, guide, agent).
+- Pages in `app/dashboard/*` (leads, orders, orders/[id], schedule, customers, customers/[id], drivers, cars, etoll-cards (+ [id]: office e-toll card pool, history, top-up/balance/toll entries, give/return), notifications (bell feed + driver top-up requests: "Tandai sudah top-up" records card + amount), external (partners), invoices, payables, revenue, guide, agent).
 - API client `lib/api.ts` (one object per resource), hooks in `hooks/use*.ts` (invalidate every related query key), types in `types/index.ts`, response schemas `lib/schemas.ts` (`.passthrough()`).
 - Every UI string goes through next-intl with **both** id and en keys; Indonesian must sound natural (the admin team is Indonesian).
 - Dates: use the WIB helpers in `lib/utils.ts` (`wibDateTimeToIso`, `wibDateToIso`, `isoToWibDateTimeLocal`, `isoToWibDate`, `formatDateTime`). Never `new Date(localString)` or `toISOString().slice(0,10)` for business dates.

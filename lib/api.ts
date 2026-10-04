@@ -245,8 +245,31 @@ export const notificationsApi = {
 export const driverRequestsApi = {
   list: (params: { status?: "OPEN" | "DONE" | "ALL" } = {}) =>
     api.get("/driver-requests", { params }),
-  markDone: (id: string, data: { note?: string } = {}) =>
-    api.post(`/driver-requests/${id}/done`, data),
+  // amount records the top-up on the card (the request's, or card_id).
+  markDone: (
+    id: string,
+    data: { note?: string; card_id?: string; amount?: number; balance_after?: number } = {},
+  ) => api.post(`/driver-requests/${id}/done`, data),
+};
+
+// ─── Office e-toll cards ─────────────────────────────────────────────────────
+
+export const etollCardsApi = {
+  list: (params: { status?: "ACTIVE" | "INACTIVE" | "ALL" } = {}) =>
+    api.get("/etoll-cards", { params }),
+  // The card with its history (transactions + handovers).
+  get: (id: string) => api.get(`/etoll-cards/${id}`),
+  create: (data: object) => api.post("/etoll-cards", data),
+  update: (id: string, data: object) => api.patch(`/etoll-cards/${id}`, data),
+  remove: (id: string) => api.delete(`/etoll-cards/${id}`),
+  addTransaction: (id: string, data: object) =>
+    api.post(`/etoll-cards/${id}/transactions`, data),
+  voidTransaction: (txId: string, data: { reason?: string } = {}) =>
+    api.post(`/etoll-cards/transactions/${txId}/void`, data),
+  give: (id: string, data: { driver_id: string; balance?: number }) =>
+    api.post(`/etoll-cards/${id}/give`, data),
+  returnCard: (id: string, data: { balance?: number } = {}) =>
+    api.post(`/etoll-cards/${id}/return`, data),
 };
 
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────

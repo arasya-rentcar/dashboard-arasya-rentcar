@@ -1423,7 +1423,9 @@ export type AdminNotificationType =
   | 'TRIP_FINISHED'
   | 'TRIP_REPORT'
   | 'TRIP_COST'
-  | 'DRIVER_REQUEST';
+  | 'DRIVER_REQUEST'
+  // A driver took or returned an office e-toll card.
+  | 'ETOLL_CARD';
 
 export interface AdminNotification {
   id: string;
@@ -1459,6 +1461,9 @@ export interface DriverRequest {
   id: string;
   driver_id: string;
   type: 'ETOLL_TOPUP';
+  // The office card it is about; null for requests from older app versions.
+  card_id?: string | null;
+  card?: DriverRequestCard | null;
   card_label?: string | null;
   // Card balance the driver typed (decimal).
   balance?: string | number | null;
@@ -1469,4 +1474,92 @@ export interface DriverRequest {
   handled_by?: string | null;
   handled_note?: string | null;
   driver: { id: string; name: string; phone?: string | null };
+}
+
+// ─── Office e-toll cards (shared pool) ──────────────────────────────────────
+
+export type EtollIssuer = 'MANDIRI' | 'BCA' | 'BRI' | 'BNI' | 'DKI' | 'OTHER';
+export type EtollCardStatus = 'ACTIVE' | 'INACTIVE';
+export type EtollTransactionType = 'TOPUP' | 'TOLL' | 'BALANCE_CHECK';
+
+export interface DriverRequestCard {
+  id: string;
+  issuer: EtollIssuer;
+  name: string;
+  card_number: string;
+  label: string;
+  // Estimate: last known balance ± entries since (null = never read).
+  balance: number | null;
+  balance_at: string | null;
+  status: EtollCardStatus;
+}
+
+export interface EtollCard {
+  id: string;
+  issuer: EtollIssuer;
+  issuer_label: string;
+  name: string;
+  // Digits only; the full number (top-up via m-banking).
+  card_number: string;
+  card_last4: string;
+  // "BCA Flazz · Kartu 3 ••••5678"
+  label: string;
+  balance: number | null;
+  // When the last known balance was read.
+  balance_at: string | null;
+  status: EtollCardStatus;
+  inactive_reason: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+  holder: {
+    handover_id: string;
+    driver: { id: string; name: string; phone: string };
+    taken_at: string;
+    service_item_id: string | null;
+  } | null;
+  open_request: { id: string; driver_id: string; created_at: string } | null;
+}
+
+export interface EtollTransaction {
+  id: string;
+  card_id: string;
+  type: EtollTransactionType;
+  amount: number | null;
+  balance_after: number | null;
+  source: 'MANUAL' | 'NFC';
+  occurred_at: string;
+  driver: { id: string; name: string } | null;
+  request_id: string | null;
+  handover_id: string | null;
+  service_item_id: string | null;
+  note: string | null;
+  // Admin user id; null = the driver app.
+  created_by: string | null;
+  created_at: string;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
+}
+
+export interface EtollHandover {
+  id: string;
+  card_id: string;
+  driver: { id: string; name: string; phone: string } | null;
+  service_item_id: string | null;
+  taken_at: string;
+  // Admin user id; null = the driver in the app.
+  taken_by: string | null;
+  returned_at: string | null;
+  returned_by: string | null;
+  // RETURNED | TAKEN_OVER (another driver took it) | DEACTIVATED
+  return_kind: string | null;
+}
+
+export interface EtollCardHistory {
+  card: EtollCard;
+  transactions: EtollTransaction[];
+  handovers: EtollHandover[];
+  // Admin user id → email, for "dicatat oleh".
+  users: Record<string, string>;
 }

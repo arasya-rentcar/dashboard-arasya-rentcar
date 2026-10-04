@@ -41,6 +41,7 @@ import {
   useUpdateDriver,
 } from "@/hooks/useDrivers";
 import { useUsers } from "@/hooks/useUsers";
+import { useEtollCards } from "@/hooks/useEtollCards";
 import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
 import { Driver, DriverStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
@@ -58,7 +59,6 @@ const createDriverSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   type: z.enum(["INTERNAL", "EXTERNAL"]),
   location: z.string().optional(),
-  etoll_card: z.string().max(60, "Max 60 characters").optional(),
 });
 type CreateDriverForm = z.infer<typeof createDriverSchema>;
 
@@ -67,7 +67,6 @@ const editDriverSchema = z.object({
   phone: z.string().min(1, "Phone is required"),
   type: z.enum(["INTERNAL", "EXTERNAL"]),
   location: z.string().optional(),
-  etoll_card: z.string().max(60, "Max 60 characters").optional(),
   status: z.enum(["AVAILABLE", "ON_DUTY", "OFF"]),
 });
 type EditDriverForm = z.infer<typeof editDriverSchema>;
@@ -83,6 +82,14 @@ export default function DriversPage() {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
   const { data: drivers, isLoading } = useDrivers();
+  // Office e-toll cards a driver holds now ("Flazz 3, e-Money 1").
+  const { data: etollCards } = useEtollCards("ACTIVE");
+  const heldBy = new Map<string, string>();
+  for (const c of etollCards ?? []) {
+    if (!c.holder) continue;
+    const prev = heldBy.get(c.holder.driver.id);
+    heldBy.set(c.holder.driver.id, prev ? `${prev}, ${c.name}` : c.name);
+  }
   const { data: users } = useUsers();
   const createMutation = useCreateDriver();
   const updateMutation = useUpdateDriver();
@@ -93,7 +100,7 @@ export default function DriversPage() {
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.phone.includes(search) ||
       d.location?.toLowerCase().includes(search.toLowerCase()) ||
-      d.etoll_card?.toLowerCase().includes(search.toLowerCase()) ||
+      heldBy.get(d.id)?.toLowerCase().includes(search.toLowerCase()) ||
       d.type.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "ALL" || d.status === statusFilter;
     return matchSearch && matchStatus;
@@ -131,12 +138,7 @@ export default function DriversPage() {
 
   async function onSubmit(data: CreateDriverForm) {
     try {
-      // An empty card is simply not sent.
-      const { etoll_card, ...rest } = data;
-      await createMutation.mutateAsync({
-        ...rest,
-        ...(etoll_card?.trim() ? { etoll_card: etoll_card.trim() } : {}),
-      });
+      await createMutation.mutateAsync(data);
       toast.success(t("okCreated"));
       setCreateOpen(false);
       reset();
@@ -152,7 +154,6 @@ export default function DriversPage() {
       phone: driver.phone,
       type: driver.type,
       location: driver.location || "",
-      etoll_card: driver.etoll_card || "",
       status: driver.status,
     });
   }
@@ -160,11 +161,7 @@ export default function DriversPage() {
   async function onEditSubmit(data: EditDriverForm) {
     if (!editingDriver) return;
     try {
-      // Same convention as "location": an empty string clears the card.
-      await updateMutation.mutateAsync({
-        id: editingDriver.id,
-        data: { ...data, etoll_card: data.etoll_card?.trim() ?? "" },
-      });
+      await updateMutation.mutateAsync({ id: editingDriver.id, data });
       toast.success(t("okUpdated"));
       setEditingDriver(null);
     } catch (err) {
@@ -262,10 +259,13 @@ export default function DriversPage() {
                     </TableCell>
                     <TableCell className="font-medium text-sm text-gray-900">
                       {driver.name}
-                      {driver.etoll_card && (
-                        <span className="mt-0.5 flex items-center gap-1 text-xs font-normal text-gray-400">
+                      {heldBy.get(driver.id) && (
+                        <span
+                          className="mt-0.5 flex items-center gap-1 text-xs font-normal text-violet-700"
+                          title={t('holdsEtoll')}
+                        >
                           <CreditCard className="h-3 w-3 shrink-0" />
-                          {driver.etoll_card}
+                          {heldBy.get(driver.id)}
                         </span>
                       )}
                     </TableCell>
@@ -418,19 +418,6 @@ export default function DriversPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="d_etoll">{t('etollCard')}</Label>
-              <Input
-                id="d_etoll"
-                maxLength={60}
-                placeholder={t('etollPlaceholder')}
-                {...register("etoll_card")}
-              />
-              <p className="text-xs text-gray-400">{t('etollHint')}</p>
-              {errors.etoll_card && (
-                <p className="text-xs text-red-500">{errors.etoll_card.message}</p>
-              )}
-            </div>
 
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={createMutation.isPending}>
@@ -528,19 +515,6 @@ export default function DriversPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="edit_d_etoll">{t('etollCard')}</Label>
-              <Input
-                id="edit_d_etoll"
-                maxLength={60}
-                placeholder={t('etollPlaceholder')}
-                {...registerEdit("etoll_card")}
-              />
-              <p className="text-xs text-gray-400">{t('etollHint')}</p>
-              {editErrors.etoll_card && (
-                <p className="text-xs text-red-500">{editErrors.etoll_card.message}</p>
-              )}
-            </div>
 
             <div className="flex justify-end gap-2 pt-2">
               <Button
