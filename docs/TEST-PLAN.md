@@ -124,6 +124,23 @@ Diminta pemilik 4 Okt; dirilis bersama perbaikan T4/T5 (API #3, lalu dashboard d
 | NEW-12 | T4 | Tugaskan driver per hari untuk minggu depan | Hari `ASSIGNED`, order `ASSIGNED`, driver tetap "Tersedia" sampai hari H; aplikasi menampilkan "Terima tugas"; driver yang sama bisa ditugaskan di tanggal lain, ditolak bila jamnya bentrok |
 | NEW-13 | T5 | Order Selesai/Dibatalkan: buka Edit Hari / Trip | Tombol ubah hari nonaktif dengan alasan; API menolak 409 |
 
+### 1.2 Kartu e-toll kantor (5 Okt) dan kasus ujinya
+
+Kartu e-toll kantor sekarang satu daftar bersama (±10 kartu, campuran bank). Driver mengambil kartu saat berangkat dan mengembalikannya saat kembali ke garasi. Uji API otomatis: grup N di `scripts/e2e/run-local.sh`.
+
+| ID | Langkah | Hasil yang diharapkan |
+|---|---|---|
+| ETL-01 | Dashboard → Kartu E-Toll → Tambah kartu (bank, nama, nomor 16 angka, saldo sekarang) | Kartu tampil "Di kantor" dengan perkiraan saldo; nomor sama dua kali ditolak "Nomor kartu sudah terdaftar" |
+| ETL-02 | Aplikasi (APK baru): Profil → Kartu e-toll → "Ambil kartu", pilih kartu, saldo opsional | Dashboard: kartu "Dipegang <driver> sejak …", notifikasi "… mengambil kartu e-toll …"; aplikasi hanya menampilkan 4 angka terakhir |
+| ETL-03 | Driver lain mengambil kartu yang sama | Kartu pindah; riwayat "Lepas dari … : diambil driver lain"; notifikasi menyebut "sebelumnya dipegang …" |
+| ETL-04 | Driver: "Minta top-up" untuk kartu yang dipegang (sisa saldo opsional) | Permintaan tercatat dengan kartu; saldo yang diketik jadi "Cek saldo" di riwayat; driver lain yang meminta kartu yang sama mendapat "masih menunggu admin" |
+| ETL-05 | Admin: Notifikasi → "Tandai sudah top-up", isi nominal (dan saldo sesudahnya bila tahu) | Riwayat kartu "Top-up +Rp …", perkiraan saldo naik; driver dapat push "… sudah diisi Rp …" + pengingat update saldo kartu (tempel kartu) |
+| ETL-06 | Permintaan dari APK lama tanpa kartu | Dialog meminta memilih kartu; nominal wajib |
+| ETL-07 | Admin: Catat saldo / Catat tol / Batalkan catatan | Perkiraan saldo dihitung ulang; catatan yang dibatalkan tetap terlihat dicoret |
+| ETL-08 | Driver: "Kembalikan kartu" (saldo opsional) | Kartu "Di kantor"; tanpa sinyal: terkirim sekali saat sinyal kembali |
+| ETL-09 | Admin: Nonaktifkan kartu yang sedang dipegang (alasan "Hilang") | Kartu lepas dari driver, permintaan top-up yang menunggu dibatalkan, kartu hilang dari daftar di aplikasi; Hapus hanya untuk kartu tanpa riwayat |
+| ETL-10 | Aplikasi: Profil → "Tes kartu NFC" (HP dengan NFC) | Menampilkan apa yang terbaca dari kartu (nomor, saldo, data mentah) dan tombol Bagikan; tidak menulis apa pun ke kartu |
+
 ### Catatan lain (bukan bug, tetapi penguji perlu tahu supaya tidak salah lapor)
 
 | # | Perilaku | Bukti |

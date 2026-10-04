@@ -135,3 +135,30 @@ export const driverRequestListSchema = z
     ),
   })
   .passthrough();
+
+const etollCardSchema = z
+  .object({
+    id: z.string(),
+    issuer: z.string(),
+    name: z.string(),
+    card_number: z.string(),
+    label: z.string(),
+    balance: z.number().nullable(),
+    balance_at: nullableStr,
+    status: z.string(),
+    holder: z.object({ driver: z.object({ id: z.string(), name: z.string() }).passthrough() }).passthrough().nullable(),
+  })
+  .passthrough();
+
+export const etollCardListSchema = z.object({ items: z.array(etollCardSchema) }).passthrough();
+
+export const etollCardHistorySchema = z
+  .object({
+    card: etollCardSchema,
+    transactions: z.array(
+      z.object({ id: z.string(), type: z.string(), occurred_at: z.string() }).passthrough(),
+    ),
+    handovers: z.array(z.object({ id: z.string(), taken_at: z.string() }).passthrough()),
+    users: z.record(z.string(), z.string()),
+  })
+  .passthrough();

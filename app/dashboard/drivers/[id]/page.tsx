@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import PartnerDetailView from "@/components/partners/PartnerDetailView";
 import DriverAppAccessCard from "@/components/drivers/DriverAppAccessCard";
 import { useDriverDetail } from "@/hooks/useDrivers";
+import { useEtollCards } from "@/hooks/useEtollCards";
 
 export default function DriverDetailPage() {
   const params = useParams();
@@ -17,6 +18,8 @@ export default function DriverDetailPage() {
   const t = useTranslations("driverDetail");
   const tt = useTranslations("terms");
   const { data, isLoading } = useDriverDetail(id);
+  const { data: etollCards } = useEtollCards("ACTIVE");
+  const held = (etollCards ?? []).filter((c) => c.holder?.driver.id === id);
 
   if (isLoading) {
     return (
@@ -78,11 +81,16 @@ export default function DriverDetailPage() {
                     <MapPin className="h-3.5 w-3.5" /> {d.location}
                   </span>
                 )}
-                {d.etoll_card && (
-                  <span className="flex items-center gap-1.5" title={t('etollCard')}>
-                    <CreditCard className="h-3.5 w-3.5" /> {t('etollCard')}: {d.etoll_card}
-                  </span>
-                )}
+                {held.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/dashboard/etoll-cards/${c.id}`}
+                    className="flex items-center gap-1.5 text-violet-700 hover:underline"
+                    title={t('etollHeld')}
+                  >
+                    <CreditCard className="h-3.5 w-3.5" /> {t('etollHeld')}: {c.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </CardContent>
