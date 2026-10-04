@@ -24,6 +24,7 @@ function refreshLiveViews(qc: QueryClient) {
     'drivers',
     'driver-detail',
     'driver-availability',
+    'schedule-stock',
     'driver-requests',
   ]) {
     qc.invalidateQueries({ queryKey: [key] });
@@ -43,7 +44,8 @@ export default function NotificationWatcher() {
   const qc = useQueryClient();
   const router = useRouter();
   const t = useTranslations('notifications');
-  const { data } = useUnreadCount();
+  // The only poller (15 s); the sidebar badge and the bell share its cache entry.
+  const { data } = useUnreadCount({ poll: true });
 
   // `undefined` = first answer not seen yet (never toast for what was already there).
   const seenId = useRef<string | null | undefined>(undefined);

@@ -42,19 +42,24 @@ export async function fetchNotifications(params: {
 }
 
 /**
- * Unread count + id of the newest item. Polled every 15 s, also while the tab is
- * in the background, so a new driver action shows up without touching the page.
+ * Unread count + id of the newest item. TanStack Query gives every observer its
+ * own interval timer, so only ONE caller (the watcher in the dashboard layout)
+ * passes `poll: true` and polls every 15 s (also while the tab is in the
+ * background, so a new driver action shows up without touching the page). The
+ * sidebar badge and the bell just read the same cache entry; polling from each
+ * of them would triple the requests.
  */
-export function useUnreadCount() {
+export function useUnreadCount({ poll = false }: { poll?: boolean } = {}) {
   return useQuery<NotificationUnreadCount>({
     queryKey: unreadCountKey,
     queryFn: async () => {
       const res = await notificationsApi.unreadCount();
       return parseResponse<NotificationUnreadCount>(unreadCountSchema, res.data.data, 'unread-count');
     },
-    refetchInterval: NOTIFICATION_POLL_MS,
-    refetchIntervalInBackground: true,
-    staleTime: 0,
+    refetchInterval: poll ? NOTIFICATION_POLL_MS : false,
+    refetchIntervalInBackground: poll,
+    // A page change remounts the bell; do not refetch for that.
+    staleTime: poll ? 0 : NOTIFICATION_POLL_MS / 2,
     retry: false,
   });
 }
@@ -113,7 +118,11 @@ export function useMarkNotificationsRead() {
       const res = await notificationsApi.markRead(data);
       return res.data.data as { unread_count: number };
     },
-    onMutate: (data) => markReadInCache(qc, data),
+    onMutate: async (data) => {
+      // A poll that started before this click must not bring the old count back.
+      await qc.cancelQueries({ queryKey: unreadCountKey });
+      markReadInCache(qc, data);
+    },
     onSuccess: (res) => {
       qc.setQueryData<NotificationUnreadCount>(unreadCountKey, (old) =>
         old ? { ...old, unread_count: res.unread_count } : old,
