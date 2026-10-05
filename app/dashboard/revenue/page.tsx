@@ -382,6 +382,34 @@ export default function RevenuePage() {
               </CardContent>
             </Card>
 
+            {/* ── Order-level income (not per unit) ─────────────────── */}
+            {data?.order_level && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {t("orderLevelTitle")}
+                  </CardTitle>
+                  <p className="text-xs text-gray-500">{t("orderLevelNote")}</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid max-w-xl grid-cols-[1fr_auto] gap-x-6 gap-y-2 text-sm">
+                    <span className="text-gray-600">{t("orderLevelCharges")}</span>
+                    <span className="text-right tabular-nums text-gray-900">
+                      {formatCurrency(data.order_level.extra_charges)}
+                    </span>
+                    <span className="text-gray-600">{t("orderLevelCancellation")}</span>
+                    <span className="text-right tabular-nums text-gray-900">
+                      {formatCurrency(data.order_level.cancellation_income)}
+                    </span>
+                    <span className="text-xs text-gray-400">{t("orderLevelPassThrough")}</span>
+                    <span className="text-right text-xs tabular-nums text-gray-400">
+                      {formatCurrency(data.order_level.pass_through)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* ── Section C — Driver Fee Report ─────────────────────── */}
             <Card>
               <CardHeader>

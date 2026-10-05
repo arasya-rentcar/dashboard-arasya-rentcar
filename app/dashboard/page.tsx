@@ -32,7 +32,11 @@ import type { DashboardV2, DashV2OverdueAR, DashV2OverdueAP } from '@/types';
 // Dashboard v2 — single-page owner + finance view.
 //
 // Accounting basis (LOCKED — must match analytics.service.ts dashboardV2):
-//   • Accrual rows (Revenue, Margin, Channel) use OrderServiceItem.service_date.
+//   • Accrual rows (Revenue, Margin, Channel): day prices and day costs by
+//     OrderServiceItem.service_date (a cancelled day keeps its costs, earns
+//     nothing); extra charges by the date they were added; cancellation fees
+//     by the cancellation date. Trip costs billed back at cost (pass-through)
+//     are neither revenue nor cost.
 //   • Cash rows (Collected, Paid out, Net cash) use Receipt.payment_date and
 //     Payable.paid_at. Each card explicitly labels its basis.
 //   • Outstanding + Overdue are a NOW snapshot (not period-scoped); overdue
@@ -114,6 +118,16 @@ function HealthRow({ data }: { data: DashboardV2 }) {
   const a = data.accrual;
   const c = data.cash;
   const o = data.outstanding;
+  // Say what the revenue figure holds besides day prices.
+  const revenueSub = [
+    t('tripsCount', { count: a.trips }),
+    a.extra_charges ? t('revenueCharges', { amount: formatCurrency(a.extra_charges) }) : null,
+    a.cancellation_income
+      ? t('revenueCancellation', { amount: formatCurrency(a.cancellation_income) })
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <section>
       <SectionTitle
@@ -139,7 +153,7 @@ function HealthRow({ data }: { data: DashboardV2 }) {
           label={t('revenue')}
           basis={t('basisAccrual')}
           value={formatCurrency(a.revenue)}
-          sub={t('tripsCount', { count: a.trips })}
+          sub={revenueSub}
           delta={a.delta.revenue}
         />
         <KPI

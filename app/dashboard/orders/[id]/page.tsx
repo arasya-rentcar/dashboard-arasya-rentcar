@@ -275,8 +275,14 @@ export default function OrderDetailPage({
   // driver assignment, price adjustments). Billing/closure (invoices, payment,
   // receipt, refund) stays available because it happens after DONE / on a
   // cancelled order. Mirrors the API guard (assertOrderStructurallyEditable).
+  // A cancel after some days were done leaves the order open (it closes through
+  // finalize) but its total is the cancellation fee, so it is locked the same.
+  const isPartlyCancelled =
+    order?.cancellation_fee != null && order.order_status !== "CANCELLED";
   const isStructurallyLocked =
-    order?.order_status === "DONE" || order?.order_status === "CANCELLED";
+    order?.order_status === "DONE" ||
+    order?.order_status === "CANCELLED" ||
+    isPartlyCancelled;
   // Why the per-day Change/Assign button is disabled (short text under it).
   const dayLock = dayLockReason(order?.order_status);
   // Rental base = sum of service lines (excludes billable additionals, which the
@@ -735,8 +741,11 @@ export default function OrderDetailPage({
                 {t('finalizeOrder')}
               </Button>
             )}
+            {/* Nothing left to cancel once every day is done: finalize instead. */}
             {order.order_status !== "DONE" &&
-              order.order_status !== "CANCELLED" && (
+              order.order_status !== "CANCELLED" &&
+              !isPartlyCancelled &&
+              !order.awaiting_finalization && (
                 <Button
                   onClick={() => {
                     setCancelResult(null);
@@ -761,9 +770,19 @@ export default function OrderDetailPage({
               <p className="font-medium">
                 {order.order_status === "CANCELLED"
                   ? t('readOnlyCancelledTitle')
-                  : t('readOnlyDoneTitle')}
+                  : isPartlyCancelled
+                    ? t('partialCancelTitle')
+                    : t('readOnlyDoneTitle')}
               </p>
-              <p className="text-xs mt-1">{t('readOnlyDesc')}</p>
+              <p className="text-xs mt-1">
+                {isPartlyCancelled
+                  ? t('partialCancelDesc', {
+                      date: order.cancelled_at ? formatDateTime(order.cancelled_at) : '—',
+                      fee: formatCurrency(Number(order.cancellation_fee)),
+                      reason: order.cancellation_reason || '—',
+                    })
+                  : t('readOnlyDesc')}
+              </p>
             </div>
           </div>
         )}
@@ -1708,6 +1727,17 @@ export default function OrderDetailPage({
                 <p className="text-xs text-amber-700">
                   {t('cancelRefundHint')}
                 </p>
+              )}
+              {cancelResult.stillOwed > 0 && cancelResult.cancellationInvoiceNumber && (
+                <p className="text-xs text-gray-600">
+                  {t('cancelInvoiceIssued', {
+                    number: cancelResult.cancellationInvoiceNumber,
+                    amount: formatCurrency(cancelResult.stillOwed),
+                  })}
+                </p>
+              )}
+              {cancelResult.stillOwed === 0 && cancelResult.refundDue === 0 && (
+                <p className="text-xs text-gray-600">{t('cancelSettled')}</p>
               )}
               <div className="flex justify-end">
                 <Button onClick={() => setCancelOpen(false)} size="sm">

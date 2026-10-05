@@ -252,6 +252,11 @@ export interface Order {
   // Paid in full = the trip with the customer may begin (driver app "Mulai
   // perjalanan"). rental_total = price of the non-cancelled days.
   start_payment?: StartPayment;
+  // Set by "Batalkan Pesanan". When days were already done the order is not
+  // CANCELLED but closes through finalize; the fee is still the order total.
+  cancelled_at?: string | null;
+  cancellation_fee?: string | number | null;
+  cancellation_reason?: string | null;
 }
 
 export interface LinePayable {
@@ -1329,11 +1334,23 @@ export interface RevenueReport {
       orders: number;
     };
   };
+  // Income that belongs to an order, not to one unit: extra charges (by the
+  // date they were added) and cancellation fees (by cancellation date).
+  order_level?: DashV2OrderLevel;
+}
+
+export interface DashV2OrderLevel {
+  extra_charges: number;
+  cancellation_income: number;
+  // Trip costs billed back to the customer at cost: not income, not margin.
+  pass_through: number;
 }
 
 // ── Dashboard v2 — single-page owner/finance view ────────────────────────────
-export interface DashV2Accrual {
+export interface DashV2Accrual extends Partial<DashV2OrderLevel> {
   revenue: number;
+  // Day prices only; revenue = day_revenue + extra_charges + cancellation_income.
+  day_revenue?: number;
   ops_cost: number;
   driver_cost: number;
   vendor_cost: number;
