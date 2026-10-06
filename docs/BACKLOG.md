@@ -60,3 +60,19 @@ Urutan kerja saat mulai:
 Bisa dicek sekarang dengan APK yang ada: di "Tes kartu NFC", kartu Mandiri harus menunjukkan "Kemungkinan saldo" yang sama dengan aplikasi bank, dan 16 karakter pertama baris "Info kartu (B3)" sama dengan nomor yang tercetak di kartu. Catat juga berapa kartu per bank.
 
 Kolom lama `drivers.etoll_card` (teks bebas) tidak dipakai lagi; bisa dihapus setelah semua driver memakai APK baru.
+
+## 6. Dari rilis 7 Okt (keuangan B + daftar harga)
+
+1. Keuangan (keputusan pemilik sudah ada, lihat HANDOFF "Status 7 Okt" §4)
+   1.1. Denda per hari untuk hari yang dibatalkan (B1.2) dan Batalkan Pesanan dihitung per hari juga; ajukan draf teks kebijakan baru (website, caption, PDF) ke pemilik sebelum rilis.
+   1.2. Saldo lebih di order (kelebihan uang): bawaan mengurangi tagihan berikutnya, admin bisa memilih refund.
+   1.3. Tandai terbayar dengan uang kurang/lebih (B3) + invoice penyesuaian; refund mengurangi kas, piutang, dan cek lunas (B4).
+   1.4. Sisa temuan: B5 (margin hari belum ditugaskan), B6 (halaman order menyuruh menagih uang yang sudah diterima setelah batal), B8 (`client_ref` invoice/biaya tambahan), B9 (urutan lock), B10 (ganti biaya di hari yang sudah dibayar), B11 (tanggal belum WIB), B12 sisa (batas 10:00:59, GA4 untuk invoice denda).
+   1.5. Dashboard: saran DP di form invoice memakai harga hari yang tidak batal (bukan `final_price`), petunjuk DP minimal di revisi invoice dan Tandai terbayar, petunjuk "hari terakhir lewat Batalkan Pesanan" di Edit Hari.
+2. Daftar harga
+   2.1. `client_ref` untuk tambah mobil dan tambah area (sekarang kirim ulang dijawab 409 walau sudah tersimpan).
+   2.2. Penanda tetap tabel milik kota (sekarang dicocokkan dari nama kota di dashboard dan website; mengganti nama kota menghilangkan biaya tambahan areanya).
+   2.3. Satu entri ganda "Daftar Harga" tertinggal di riwayat browser setelah meninggalkan halaman dan membuang isian.
+3. Alur kerja
+   3.1. CI di pull request untuk API (build + e2e dengan Postgres) dan dashboard (`tsc` + `next build`). Sekarang belum ada cek otomatis di PR.
+   3.2. `npm run build` API gagal di Windows (`copy:assets` lewat cmd.exe); buat lintas platform.
