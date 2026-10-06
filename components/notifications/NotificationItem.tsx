@@ -84,7 +84,7 @@ export default function NotificationItem({
         <span className="flex items-start gap-2">
           <span
             className={cn(
-              'text-sm leading-snug text-gray-900',
+              'min-w-0 break-words text-sm leading-snug text-gray-900',
               n.read ? 'font-normal' : 'font-semibold',
             )}
           >
@@ -98,7 +98,7 @@ export default function NotificationItem({
             />
           )}
         </span>
-        {n.body && <span className="mt-0.5 block text-xs leading-snug text-gray-500">{n.body}</span>}
+        {n.body && <span className="mt-0.5 block break-words text-xs leading-snug text-gray-500">{n.body}</span>}
         <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-[11px] text-gray-400">{timeAgo(n.created_at)}</span>
           {needsReview && (

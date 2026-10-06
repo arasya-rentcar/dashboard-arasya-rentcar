@@ -43,16 +43,16 @@ export default function CarsTab({ cars }: { cars: PriceCar[] }) {
               className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-gray-100 px-4 py-3 last:border-b-0 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_3rem_auto]"
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{c.name}</p>
-                <p className="truncate font-mono text-[11px] text-gray-400">{c.slug}</p>
+                <p className="truncate text-sm font-semibold text-gray-900" title={c.name}>{c.name}</p>
+                <p className="truncate font-mono text-[11px] text-gray-400" title={c.slug}>{c.slug}</p>
               </div>
               <Button size="icon" variant="ghost" aria-label={t('edit')} onClick={() => setEditing(c)} className="sm:order-last">
                 <Pencil className="h-4 w-4" />
               </Button>
-              <p className="col-span-2 min-w-0 truncate text-xs text-gray-600 sm:col-span-1">
+              <p className="col-span-2 min-w-0 truncate text-xs text-gray-600 sm:col-span-1" title={c.price_class ?? undefined}>
                 {c.price_class ?? <span className="text-gray-400">{t('noClass')}</span>}
               </p>
-              <p className="col-span-2 min-w-0 truncate text-xs text-gray-500 empty:hidden sm:col-span-1 sm:empty:block">{c.note ?? ''}</p>
+              <p className="col-span-2 min-w-0 truncate text-xs text-gray-500 empty:hidden sm:col-span-1 sm:empty:block" title={c.note ?? undefined}>{c.note ?? ''}</p>
               <p className="col-span-2 text-xs tabular-nums text-gray-400 sm:col-span-1">
                 <span className="sm:hidden">{t('order')} </span>
                 {c.sort_order}

@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, Eye, ArrowUpDown, BadgeCheck } from 'lucide-react';
+import { Search, Eye, ArrowUpDown, BadgeCheck, Loader2 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
+import QueryError from '@/components/dashboard/QueryError';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,18 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 const PAGE_SIZE = 20;
+// Same responsive visibility as the header cells, so the skeleton lines up.
+const SKELETON_CELLS = [
+  'hidden sm:table-cell',
+  '',
+  'hidden sm:table-cell',
+  'hidden md:table-cell',
+  'hidden lg:table-cell',
+  '',
+  'hidden md:table-cell',
+  'hidden lg:table-cell',
+  '',
+];
 
 export default function CustomersPage() {
   const t = useTranslations('customersPage');
@@ -37,7 +50,7 @@ export default function CustomersPage() {
   const [page, setPage] = useState(1);
 
   const debouncedSearch = useDebouncedValue(search.trim());
-  const { data, isLoading, isFetching } = useCustomers({
+  const { data, isLoading, isFetching, isError, refetch } = useCustomers({
     search: debouncedSearch || undefined,
     sort,
     order: sort === 'name' ? 'asc' : 'desc',
@@ -62,18 +75,26 @@ export default function CustomersPage() {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
             <Input
               placeholder={t('searchPlaceholder')}
-              className="pl-9"
+              aria-label={t('searchPlaceholder')}
+              className="pl-9 pr-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {/* Background refetch (search / sort / page): inline, no layout shift. */}
+            {isFetching && !isLoading && (
+              <Loader2
+                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400"
+                aria-label={t('updating')}
+              />
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <ArrowUpDown className="h-4 w-4 text-gray-400" />
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <ArrowUpDown className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
             <Select value={sort} onValueChange={setSort}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-full sm:w-44">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -86,11 +107,14 @@ export default function CustomersPage() {
           </div>
         </div>
 
+        {isError && !data ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <Th className="w-12">{t('colNo')}</Th>
+                <Th className="hidden w-12 sm:table-cell">{t('colNo')}</Th>
                 <Th>{t('colName')}</Th>
                 <Th className="hidden sm:table-cell">{t('colPhone')}</Th>
                 <Th className="hidden md:table-cell">{t('colIdentity')}</Th>
@@ -105,8 +129,8 @@ export default function CustomersPage() {
               {isLoading ? (
                 [...Array(8)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(9)].map((__, j) => (
-                      <TableCell key={j}>
+                    {SKELETON_CELLS.map((cls, j) => (
+                      <TableCell key={j} className={cls}>
                         <div className="h-4 bg-gray-100 rounded animate-pulse" />
                       </TableCell>
                     ))}
@@ -124,10 +148,11 @@ export default function CustomersPage() {
               ) : (
                 rows.map((c, i) => (
                   <TableRow key={c.id} className="hover:bg-gray-50/50">
-                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                    <TableCell className="hidden text-sm text-gray-400 tabular-nums sm:table-cell">
                       {start + i + 1}
                     </TableCell>
-                    <TableCell>
+                    {/* Wraps: a long company name pushed Orders / View off a phone screen. */}
+                    <TableCell className="min-w-[9rem] whitespace-normal break-words">
                       <Link
                         href={`/dashboard/customers/${c.id}`}
                         className="font-medium text-sm text-blue-600 hover:underline"
@@ -135,12 +160,12 @@ export default function CustomersPage() {
                         {c.name}
                       </Link>
                       {c.company_name && (
-                        <p className="text-xs text-gray-400 max-w-56 truncate">
+                        <p className="text-xs text-gray-400 max-w-56 truncate" title={c.company_name}>
                           {c.company_name}
                         </p>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600 hidden sm:table-cell">
+                    <TableCell className="text-sm text-gray-600 hidden sm:table-cell whitespace-nowrap">
                       {c.phone}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -217,8 +242,9 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/customers/${c.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
+                        <Link href={`/dashboard/customers/${c.id}`} aria-label={`${t('view')} ${c.name}`}>
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                          <span className="hidden sm:inline">{t('view')}</span>
                         </Link>
                       </Button>
                     </TableCell>
@@ -228,22 +254,20 @@ export default function CustomersPage() {
             </TableBody>
           </Table>
         </div>
+        )}
 
+        {/* TablePagination lays itself out (stacked on phones); a sibling
+            "updating" label used to squeeze it into a corner. */}
         {pagination && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">
-              {isFetching ? t('updating') : ' '}
-            </span>
-            <TablePagination
-              page={pagination.page}
-              pageCount={pagination.page_count}
-              total={pagination.total}
-              start={start}
-              pageSize={pagination.page_size}
-              onPageChange={setPage}
-              label={t('paginationLabel')}
-            />
-          </div>
+          <TablePagination
+            page={pagination.page}
+            pageCount={pagination.page_count}
+            total={pagination.total}
+            start={start}
+            pageSize={pagination.page_size}
+            onPageChange={setPage}
+            label={t('paginationLabel')}
+          />
         )}
       </div>
     </DashboardShell>

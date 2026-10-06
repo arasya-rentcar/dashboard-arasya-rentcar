@@ -5,6 +5,7 @@ import { Loader2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { resolvePeriod } from "@/lib/revenuePeriod";
+import QueryError from "@/components/dashboard/QueryError";
 import { useRevenuePeriod } from "@/hooks/useRevenuePeriod";
 import { useRevenueReport } from "@/hooks/useAnalytics";
 import PeriodToggle from "./PeriodToggle";
@@ -27,7 +28,7 @@ export default function CarRevenuePanel({
   const tc = useTranslations("common");
   const { period } = useRevenuePeriod("cars");
   const range = useMemo(() => resolvePeriod(period), [period]);
-  const { data, isLoading, isFetching } = useRevenueReport({
+  const { data, isLoading, isFetching, isError, refetch } = useRevenueReport({
     date_from: range.date_from,
     date_to: range.date_to,
   });
@@ -38,7 +39,7 @@ export default function CarRevenuePanel({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-3 py-2">
         <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
           <TrendingUp className="h-3.5 w-3.5" /> {tt("revenue")}
           {isFetching && (
@@ -48,14 +49,16 @@ export default function CarRevenuePanel({
         {showToggle && <PeriodToggle surface="cars" />}
       </div>
       <div className="p-3">
-        {isLoading ? (
+        {isError && !data ? (
+          <QueryError compact onRetry={() => refetch()} />
+        ) : isLoading ? (
           <p className="py-4 text-center text-xs text-gray-400">{tc("loading")}</p>
         ) : !row ? (
           <p className="py-4 text-center text-xs text-gray-400">
             {t("emptyOrders")}
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 text-sm">
             <span className="text-xs text-gray-500">{t("grossFinal")}</span>
             <span className="text-right tabular-nums">
               {formatCurrency(f!.gross)}

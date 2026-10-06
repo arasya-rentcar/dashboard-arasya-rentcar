@@ -95,7 +95,7 @@ export default function PayableEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>
             {t('editTitle', { kind: payable?.kind === "DRIVER" ? tt('driver') : tt('vendor') })}
@@ -109,7 +109,7 @@ export default function PayableEditDialog({
                 {payable.driver?.name || payable.vendor?.name || "-"}
               </span>
               {payable.order?.order_code && (
-                <span className="ml-2 text-gray-400">
+                <span className="ml-2 whitespace-nowrap text-gray-400">
                   #{payable.order.order_code}
                 </span>
               )}
@@ -122,21 +122,21 @@ export default function PayableEditDialog({
             )}
 
             <div className="space-y-1 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <span className="text-gray-500">
                   {payable.kind === "DRIVER" ? t('feeBase') : t('priceBase')}
                 </span>
-                <span className="font-medium">{formatCurrency(baseNum)}</span>
+                <span className="whitespace-nowrap font-medium tabular-nums">{formatCurrency(baseNum)}</span>
               </div>
               {payable.kind === "DRIVER" && (
                 <>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-3">
                     <span className="text-gray-500">{t('reimburseLabel')}</span>
-                    <span className="font-medium">{formatCurrency(reimburse)}</span>
+                    <span className="whitespace-nowrap font-medium tabular-nums">{formatCurrency(reimburse)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-3">
                     <span className="text-gray-500">{t('advanceLabel')}</span>
-                    <span className="font-medium">−{formatCurrency(advance)}</span>
+                    <span className="whitespace-nowrap font-medium tabular-nums">−{formatCurrency(advance)}</span>
                   </div>
                 </>
               )}
@@ -153,7 +153,7 @@ export default function PayableEditDialog({
                   onClick={addExtra}
                   className="h-7 gap-1 text-xs"
                 >
-                  <Plus className="h-3 w-3" /> {t('addExtra')}
+                  <Plus className="h-3 w-3" aria-hidden="true" /> {t('addExtra')}
                 </Button>
               </div>
               {extras.length === 0 && (
@@ -165,16 +165,18 @@ export default function PayableEditDialog({
                 <div key={i} className="flex gap-2">
                   <Input
                     placeholder={t('extraLabelPlaceholder')}
+                    aria-label={t('extraLabelPlaceholder')}
                     value={e.label}
                     onChange={(ev) => setExtra(i, { label: ev.target.value })}
-                    className="flex-1"
+                    className="min-w-0 flex-1"
                   />
                   <Input
                     type="number"
                     placeholder="0"
+                    aria-label={t('extraAmount')}
                     value={e.amount}
                     onChange={(ev) => setExtra(i, { amount: ev.target.value })}
-                    className="w-32"
+                    className="w-28 shrink-0 tabular-nums sm:w-32"
                   />
                   <Button
                     type="button"
@@ -182,8 +184,10 @@ export default function PayableEditDialog({
                     variant="ghost"
                     onClick={() => removeExtra(i)}
                     className="h-9 w-9 shrink-0 text-gray-400 hover:text-red-600"
+                    aria-label={tc('delete')}
+                    title={tc('delete')}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
               ))}
@@ -199,9 +203,9 @@ export default function PayableEditDialog({
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg bg-gray-900 px-4 py-3 text-white">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-900 px-4 py-3 text-white">
               <span className="text-sm font-medium">{t('totalCaps')}</span>
-              <span className="text-lg font-bold">{formatCurrency(total)}</span>
+              <span className="break-words text-right text-lg font-bold tabular-nums">{formatCurrency(total)}</span>
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
@@ -209,10 +213,10 @@ export default function PayableEditDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={update.isPending}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleSave} disabled={update.isPending || isPaid}>
+          <Button type="button" onClick={handleSave} disabled={update.isPending || isPaid}>
             {update.isPending ? t('savingBtn') : t('saveBtn')}
           </Button>
         </DialogFooter>

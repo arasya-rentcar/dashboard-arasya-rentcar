@@ -64,7 +64,7 @@ export default function DriverAppAccessCard({
   }
 
   return (
-    <Card className="border border-gray-200 shadow-none">
+    <Card className="border border-gray-200 py-0 shadow-none">
       <CardContent className="flex flex-wrap items-start justify-between gap-4 p-4">
         <div className="min-w-0 space-y-1">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
@@ -99,7 +99,7 @@ export default function DriverAppAccessCard({
           setOpen(v);
         }}
       >
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t("appPasswordTitle")}</DialogTitle>
           </DialogHeader>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, Suspense, useEffect, useMemo, useState } from 'react';
+import { Fragment, Suspense, useEffect, useId, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import {
   Trash2,
   ChevronRight,
   ChevronDown,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -34,6 +35,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -67,11 +69,16 @@ import {
   formatDate,
   getErrorMessage,
   exportToCsv,
+  isoToWibDate,
 } from '@/lib/utils';
 import { OrderStatus } from '@/types';
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from '@/lib/statusStyles';
 
 const PAGE_SIZE = 20;
+
+// Today's WIB calendar day for export file names (the UTC date is still
+// "yesterday" before 07:00 WIB).
+const wibToday = () => isoToWibDate(new Date().toISOString());
 
 const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
   CREATED: 'statusCreated',
@@ -289,7 +296,7 @@ function OrdersPageInner() {
       return;
     }
     const csvRows = rows.map((o, i) => toCsvRow(o, start + i));
-    exportToCsv(`arasya-orders-${new Date().toISOString().slice(0, 10)}`, csvRows);
+    exportToCsv(`arasya-orders-${wibToday()}`, csvRows);
     toast.success(t('okExportedPage', { count: csvRows.length }));
   }
 
@@ -318,7 +325,7 @@ function OrdersPageInner() {
       }
       const csvRows = all.map((o, i) => toCsvRow(o, i));
       exportToCsv(
-        `arasya-orders-all-${new Date().toISOString().slice(0, 10)}`,
+        `arasya-orders-all-${wibToday()}`,
         csvRows,
       );
       toast.success(t('okExportedAll', { count: csvRows.length }));
@@ -364,19 +371,22 @@ function OrdersPageInner() {
     <DashboardShell title={t('title')}>
       <div className="space-y-4">
         {/* Actions bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="relative w-full sm:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="relative w-full xl:w-96">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
+              type="search"
               placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
               className="pl-9"
               value={filters.search}
               onChange={(e) => setFilter('search', e.target.value)}
             />
           </div>
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Button variant="outline" onClick={handleExport}>
-              <Download className="h-4 w-4 mr-2" /> {t('exportPage')}
+          {/* Phones: "Buat Order" full width on top, the rest in a 2x2 grid. */}
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:w-auto xl:justify-end [&>button]:min-w-0">
+            <Button variant="outline" onClick={handleExport} disabled={!rows.length}>
+              <Download className="h-4 w-4" /> {t('exportPage')}
             </Button>
             <Button
               variant="outline"
@@ -384,35 +394,43 @@ function OrdersPageInner() {
               disabled={exportingAll}
             >
               {exportingAll ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4" />
               )}
               {t('exportAll')}
             </Button>
             <Button
               variant="outline"
               onClick={handlePreview}
-              disabled={previewMutation.isPending}
+              disabled={previewMutation.isPending || importMutation.isPending}
             >
-              <Eye className="h-4 w-4 mr-2" /> {t('previewSheet')}
-            </Button>
-            <Button onClick={handleImport} disabled={importMutation.isPending}>
-              {importMutation.isPending ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              {previewMutation.isPending ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
               ) : (
-                <Upload className="h-4 w-4 mr-2" />
+                <Eye className="h-4 w-4" />
+              )}
+              {t('previewSheet')}
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={importMutation.isPending || previewMutation.isPending}
+            >
+              {importMutation.isPending ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
               )}
               {t('importSheet')}
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" /> {t('createOrder')}
+            <Button className="order-first col-span-2 sm:order-none" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> {t('createOrder')}
             </Button>
           </div>
         </div>
 
         {/* Bucket chips */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('bucketsLabel')}>
           {[
             ['ALL', t('bucketAll')],
             ['ACTIVE', t('bucketActive')],
@@ -424,8 +442,10 @@ function OrdersPageInner() {
           ].map(([val, label]) => (
             <button
               key={val}
+              type="button"
+              aria-pressed={filters.bucket === val}
               onClick={() => setFilter('bucket', val)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+              className={`min-h-8 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
                 filters.bucket === val
                   ? 'bg-gray-900 text-white border-gray-900'
                   : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
@@ -437,7 +457,7 @@ function OrdersPageInner() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+        <div className="grid grid-cols-2 items-end gap-3 rounded-xl border border-gray-200 bg-gray-50/60 p-3 sm:flex sm:flex-wrap">
           <FilterSelect
             label={t('filterStatus')}
             value={filters.order_status}
@@ -487,33 +507,34 @@ function OrdersPageInner() {
             label={t('filterDateField')}
             value={filters.date_field}
             onChange={(v) => setFilter('date_field', v)}
-            width="w-40"
             options={[
               ['order_date', t('fieldOrderDate')],
               ['service_start_at', t('fieldServiceDate')],
             ]}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">{t('from')}</label>
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor="orders-date-from" className="text-xs font-medium text-gray-500">{t('from')}</label>
             <Input
+              id="orders-date-from"
               type="date"
-              className="w-40"
+              className="w-full sm:w-40"
               value={filters.date_from}
               onChange={(e) => setFilter('date_from', e.target.value)}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500">{t('to')}</label>
+          <div className="flex min-w-0 flex-col gap-1">
+            <label htmlFor="orders-date-to" className="text-xs font-medium text-gray-500">{t('to')}</label>
             <Input
+              id="orders-date-to"
               type="date"
-              className="w-40"
+              className="w-full sm:w-40"
               value={filters.date_to}
               onChange={(e) => setFilter('date_to', e.target.value)}
             />
           </div>
           {hasActive && (
-            <Button variant="outline" size="sm" onClick={clear}>
-              <X className="h-3.5 w-3.5 mr-1" /> {t('clear')}
+            <Button variant="outline" onClick={clear} className="col-span-2 sm:col-span-1">
+              <X className="h-3.5 w-3.5" /> {t('clear')}
             </Button>
           )}
         </div>
@@ -527,11 +548,12 @@ function OrdersPageInner() {
           {presets.map((p) => (
             <span
               key={p.name}
-              className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white pl-2.5 pr-1 py-0.5 text-xs"
+              className="inline-flex max-w-full items-center gap-0.5 rounded-full border border-gray-200 bg-white pl-2.5 pr-0.5 text-xs"
             >
               <button
                 type="button"
-                className="font-medium text-gray-700 hover:text-gray-900"
+                title={p.name}
+                className="min-h-7 max-w-48 truncate font-medium text-gray-700 hover:text-gray-900"
                 onClick={() => setFilters({ ...DEFAULT_FILTERS, ...p.filters })}
               >
                 {p.name}
@@ -539,33 +561,42 @@ function OrdersPageInner() {
               <button
                 type="button"
                 onClick={() => deletePreset(p.name)}
-                className="text-gray-300 hover:text-red-500"
+                aria-label={t('deletePreset', { name: p.name })}
+                title={t('deletePreset', { name: p.name })}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-red-50 hover:text-red-500"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
             </span>
           ))}
-          <div className="ml-auto flex items-center gap-1">
+          <form
+            className="flex w-full items-center gap-1 sm:ml-auto sm:w-auto"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSavePreset();
+            }}
+          >
             <Input
               placeholder={t('saveCurrentAs')}
-              className="h-7 w-44 text-xs"
+              aria-label={t('saveCurrentAs')}
+              className="h-8 min-w-0 flex-1 text-xs sm:w-52 sm:flex-none"
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
             />
-            <Button variant="outline" size="sm" onClick={handleSavePreset}>
-              <Star className="h-3.5 w-3.5 mr-1" /> {t('save')}
+            <Button type="submit" variant="outline" size="sm">
+              <Star className="h-3.5 w-3.5" /> {t('save')}
             </Button>
-          </div>
+          </form>
         </div>
 
         {/* Summary totals */}
         {summary && (
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
             {summaryCards.map((c) => (
-              <Card key={c.label} className="shadow-none border border-gray-200">
+              <Card key={c.label} className="shadow-none border border-gray-200 py-0 gap-0">
                 <CardContent className="p-3">
                   <p className="text-xs text-gray-400">{c.label}</p>
-                  <p className="text-base font-semibold text-gray-900">
+                  <p className="text-sm sm:text-base font-semibold text-gray-900 tabular-nums break-words">
                     {c.value}
                   </p>
                 </CardContent>
@@ -579,8 +610,10 @@ function OrdersPageInner() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <Th className="w-8"></Th>
-                <Th className="w-12">{t('colNo')}</Th>
+                <Th className="w-8">
+                  <span className="sr-only">{t('expandRow')}</span>
+                </Th>
+                <Th className="hidden sm:table-cell w-12">{t('colNo')}</Th>
                 <Th>{t('colCustomer')}</Th>
                 <Th className="hidden lg:table-cell">{t('colRoute')}</Th>
                 <Th className="hidden lg:table-cell">{t('colDate')}</Th>
@@ -594,13 +627,13 @@ function OrdersPageInner() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
+                // One full-width bar per row: per-column cells would ignore the
+                // responsive hidden columns and widen the table on small screens.
                 [...Array(8)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(11)].map((__, j) => (
-                      <TableCell key={j}>
-                        <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                      </TableCell>
-                    ))}
+                    <TableCell colSpan={11}>
+                      <div className="h-8 bg-gray-100 rounded animate-pulse" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : isError ? (
@@ -626,8 +659,10 @@ function OrdersPageInner() {
                       <button
                         type="button"
                         onClick={() => toggleExpand(order.id)}
-                        aria-label={expanded.has(order.id) ? 'Collapse' : 'Expand'}
-                        className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                        aria-expanded={expanded.has(order.id)}
+                        aria-label={expanded.has(order.id) ? t('collapseRow') : t('expandRow')}
+                        title={expanded.has(order.id) ? t('collapseRow') : t('expandRow')}
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-700"
                       >
                         {expanded.has(order.id) ? (
                           <ChevronDown className="h-4 w-4" />
@@ -636,13 +671,13 @@ function OrdersPageInner() {
                         )}
                       </button>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-400 tabular-nums">
+                    <TableCell className="hidden sm:table-cell text-sm text-gray-400 tabular-nums">
                       {start + idx + 1}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-40 whitespace-normal">
                       <Link
                         href={`/dashboard/orders/${order.id}`}
-                        className="font-medium text-sm text-blue-600 hover:underline"
+                        className="font-medium text-sm text-blue-600 hover:underline break-words"
                       >
                         {order.customer_name}
                       </Link>
@@ -673,7 +708,10 @@ function OrdersPageInner() {
                         {order.customer_phone}
                       </p>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600 hidden lg:table-cell max-w-48 truncate">
+                    <TableCell
+                      className="text-sm text-gray-600 hidden lg:table-cell max-w-48 truncate"
+                      title={`${order.pickup_location} → ${order.dropoff_location}`}
+                    >
                       {order.pickup_location} → {order.dropoff_location}
                     </TableCell>
                     <TableCell className="text-sm text-gray-600 hidden lg:table-cell">
@@ -702,10 +740,12 @@ function OrdersPageInner() {
                         <SourceBadge source={order.source} />
                         {order.final_finance && (
                           <span
-                            title="Has imported sheet finance data"
-                            className="inline-flex items-center rounded-full bg-teal-50 px-1.5 py-0.5 text-[10px] font-medium text-teal-700"
+                            title={t('hasSheetFinance')}
+                            aria-label={t('hasSheetFinance')}
+                            role="img"
+                            className="inline-flex items-center rounded-full bg-teal-50 p-1 text-teal-700"
                           >
-                            ₱
+                            <FileSpreadsheet className="h-3 w-3" aria-hidden="true" />
                           </span>
                         )}
                       </div>
@@ -720,15 +760,16 @@ function OrdersPageInner() {
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/orders/${order.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
+                        <Link href={`/dashboard/orders/${order.id}`} aria-label={t('view')} title={t('view')}>
+                          <Eye className="h-4 w-4" />
+                          <span className="hidden sm:inline">{t('view')}</span>
                         </Link>
                       </Button>
                     </TableCell>
                   </TableRow>
                   {expanded.has(order.id) && (
                     <TableRow className="bg-gray-50/60 hover:bg-gray-50/60">
-                      <TableCell colSpan={11} className="p-0">
+                      <TableCell colSpan={11} className="p-0 whitespace-normal">
                         <OrderInvoiceHistory order={order} />
                       </TableCell>
                     </TableRow>
@@ -742,8 +783,8 @@ function OrdersPageInner() {
 
         {/* Pagination */}
         {pagination && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">
+          <div className="flex flex-col-reverse items-center gap-2 sm:flex-row sm:justify-between">
+            <span className="text-xs text-gray-400" aria-live="polite">
               {isFetching ? t('updating') : ' '}
             </span>
             <TablePagination
@@ -767,9 +808,15 @@ function OrdersPageInner() {
           if (!open) clearLeadParam();
         }}
       >
-        <DialogContent className="!w-[96vw] !max-w-[1500px] max-h-[96vh] overflow-hidden p-4 sm:p-5 lg:p-6">
-          <DialogHeader>
+        {/* Fixed height + flex column: the form body scrolls and its submit
+            bar stays visible (dvh so mobile browser bars don't hide it). */}
+        <DialogContent
+          // A stray tap on the backdrop must not throw away a half-filled order.
+          onInteractOutside={(e) => e.preventDefault()}
+          className="!w-[calc(100vw-1rem)] !max-w-[1500px] sm:!w-[96vw] h-[calc(100dvh-1rem)] max-h-none sm:h-[96dvh] flex flex-col gap-3 overflow-hidden p-4 sm:gap-4 sm:p-5 lg:p-6">
+          <DialogHeader className="shrink-0 pr-8 text-left">
             <DialogTitle>{t('createNewOrder')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('createNewOrderDesc')}</DialogDescription>
           </DialogHeader>
           <CreateOrderForm
             key={prefill?.webLeadId ?? 'blank'}
@@ -812,19 +859,18 @@ function FilterSelect({
   value,
   onChange,
   options,
-  width = 'w-36',
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: [string, string][];
-  width?: string;
 }) {
+  const id = useId();
   return (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-gray-500">{label}</label>
+    <div className="flex min-w-0 flex-col gap-1">
+      <label htmlFor={id} className="text-xs font-medium text-gray-500">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className={width}>
+        <SelectTrigger id={id} className="w-full sm:w-44">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

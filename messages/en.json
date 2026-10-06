@@ -97,6 +97,8 @@
     "MAINTENANCE": "Maintenance"
   },
   "nav": {
+    "menu": "Main menu",
+    "openMenu": "Open menu",
     "dashboard": "Dashboard",
     "orders": "Orders",
     "schedule": "Trip",
@@ -152,6 +154,7 @@
     "okCreated": "Vendor created"
   },
   "vendorDetail": {
+    "deleteCarConfirm": "Remove {model} from this vendor's cars?",
     "platePlaceholder": "B 1234 XYZ",
     "title": "Vendor",
     "notFound": "Vendor not found.",
@@ -245,7 +248,9 @@
     "noOrders": "No orders.",
     "ext": "Ext",
     "open": "Open",
-    "paginationLabel": "orders"
+    "paginationLabel": "orders",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag {tag}"
   },
   "driverStatus": {
     "AVAILABLE": "Available",
@@ -253,6 +258,9 @@
     "OFF": "Off"
   },
   "driversPage": {
+    "errUser": "Select a user account",
+    "errName": "Name is required",
+    "errPhone": "Phone is required",
     "title": "Drivers",
     "searchPlaceholder": "Search drivers…",
     "allStatus": "All Status",
@@ -311,6 +319,8 @@
     "etollHeld": "Holds e-toll card"
   },
   "carsPage": {
+    "errPlate": "Plate number is required",
+    "errModel": "Model is required",
     "title": "Cars",
     "searchPlaceholder": "Search cars…",
     "allStatus": "All Status",
@@ -350,6 +360,8 @@
     "okUpdated": "Car updated successfully"
   },
   "login": {
+    "errEmail": "Enter a valid email address",
+    "errPassword": "Password is required",
     "brand": "Arasya RentCar",
     "signInTitle": "Sign in to continue",
     "signInDesc": "Enter your admin credentials below.",
@@ -446,9 +458,17 @@
     "errNoMatchingExport": "No matching orders to export.",
     "okExportedAll": "Exported {count} rows (all filtered).",
     "errPresetName": "Enter a preset name.",
-    "okPresetSaved": "Preset \"{name}\" saved."
+    "okPresetSaved": "Preset \"{name}\" saved.",
+    "bucketsLabel": "Order groups",
+    "deletePreset": "Delete preset \"{name}\"",
+    "expandRow": "Show invoice history",
+    "collapseRow": "Hide invoice history",
+    "hasSheetFinance": "Has finance data imported from the sheet",
+    "createNewOrderDesc": "Fill in the customer, fulfilment and service lines, then save the order."
   },
   "serviceItems": {
+    "removeRow": "Remove row {n}",
+    "fieldRequired": "Required",
     "title": "Service Detail / Invoice Lines",
     "desc": "Use one row per day, route, extra stop, overtime, or separate priced service.",
     "finalPrice": "Final Price",
@@ -510,9 +530,52 @@
     "fromLead": "From website lead {code}. Trip details are filled in; add the customer phone, price and unit, then save.",
     "phoneRequiredFromLead": "Enter the customer's WhatsApp number from the chat",
     "leadReturnHint": "This lead asks for a return / multi-day trip. The service is set to 12 Hours; adjust the number of days, duration and price.",
-    "leadNeedPartnerHint": "This unit is not in Arasya's fleet — choose Vendor/partner under 'Order Fulfilled By'."
+    "leadNeedPartnerHint": "This unit is not in Arasya's fleet — choose Vendor/partner under 'Order Fulfilled By'.",
+    "removePic": "Remove this PIC",
+    "removeAdditional": "Remove this additional charge",
+    "errNameRequired": "Name is required",
+    "errPickupRequired": "Pickup location on the service line is required",
+    "errDropoffRequired": "Drop-off location on the service line is required",
+    "errPriceRequired": "Price on the service line is required",
+    "errCheckForm": "Some details are missing. Please check the form."
   },
   "guide": {
+    "botTemplateMeta": [
+      {
+        "t": "1. Internal driver by short name",
+        "d": "Safest for operations. The bot matches the name against the database."
+      },
+      {
+        "t": "2. Internal driver by WhatsApp tag",
+        "d": "Works when the tagged number matches the driver's phone in the database."
+      },
+      {
+        "t": "3. Multi-day / several routes (driver may differ per day)",
+        "d": "Each number becomes one day in Schedule and one invoice line. Write the Driver on every number; it may differ per day. The total is the sum of all Harga lines."
+      },
+      {
+        "t": "4. Location/time to follow",
+        "d": "Allowed for later days. The first day should be complete."
+      },
+      {
+        "t": "5. External driver",
+        "d": "Name + WhatsApp number + origin/base are required. External drivers need no account or email."
+      },
+      {
+        "t": "6. Several PICs/customers",
+        "d": "The first PIC becomes the primary one. Extra PICs are still saved on the order."
+      }
+    ],
+    "reportExampleLabels": [
+      "Start",
+      "Drop",
+      "Drop 1",
+      "Drop 2",
+      "Extra drop",
+      "Finish",
+      "Photo/PDF/Document"
+    ],
+    "reportCaptionRule": "Photos, PDFs, receipts or documents must have a caption that starts with #start, #drop or #finish.",
     "title": "Guide",
     "heroKicker": "Quick guide for Arasya admins",
     "heroTitle": "How to use Website + WhatsApp Bot",
@@ -732,6 +795,9 @@
     ]
   },
   "orderDetail": {
+    "durDays": "{n}d",
+    "durHours": "{n}h",
+    "durMinutes": "{n}m",
     "title": "Order Detail",
     "notFound": "Order not found.",
     "refundDue": "Refund due",
@@ -827,6 +893,9 @@
     "typeParking": "Parking",
     "typeToll": "Toll",
     "typeAdditional": "Additional",
+    "typeExtraDestination": "Extra destination",
+    "typeFuel": "Fuel",
+    "typeDiscount": "Discount",
     "okNoPhone": "No customer phone number on this order",
     "okInvoiceSent": "Invoice {number} sent via WhatsApp",
     "okReceiptSent": "Kwitansi for {number} sent via WhatsApp",
@@ -887,6 +956,16 @@
     "notPaidForTrip": "Order not paid in full ({left} of the rental left). The driver can still depart and mark the arrival at pickup, but \"Start trip\" in the app unlocks only once the settlement is recorded (invoice marked paid)."
   },
   "invoicesPage": {
+    "expandRow": "Show invoice details",
+    "collapseRow": "Hide invoice details",
+    "viewInvoicePdfAria": "View PDF of invoice {number}",
+    "openOrderAria": "Open the order of invoice {number}",
+    "manualNamePlaceholder": "e.g. Finance / PIC",
+    "deliveryStatus": {
+      "PENDING": "Pending",
+      "SENT": "Sent",
+      "FAILED": "Failed"
+    },
     "title": "Invoices",
     "payUnpaid": "Unpaid",
     "payDp": "DP",
@@ -991,7 +1070,13 @@
     "loading": "Loading…",
     "noResources": "No resources to show.",
     "unassigned": "Unassigned",
-    "today": "Today"
+    "today": "Today",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "openDay": "View & assign this day",
+    "capacityTitle": "{free} free · {trips} trips",
+    "freeShort": "{n} free",
+    "tripsShort": "{n} trips"
   },
   "dayDrawer": {
     "title": "Day",
@@ -1012,7 +1097,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "awaitingDp": "Awaiting DP",
-    "notPaid": "Not paid in full"
+    "notPaid": "Not paid in full",
+    "description": "Free drivers and cars and the trips on this date."
   },
   "history": {
     "title": "Trip History",
@@ -1080,7 +1166,9 @@
       "ONBOARD": "Customer on board"
     },
     "reimbursed": "Reimbursed costs",
-    "travelAdvance": "Travel advance"
+    "travelAdvance": "Travel advance",
+    "feePaid": "Paid",
+    "feeUnpaid": "Unpaid"
   },
   "agentPage": {
     "title": "Bot Agent",
@@ -1239,7 +1327,10 @@
     "advanceLabel": "Travel advance (deducted)",
     "baseFromDayHint": "Fee/price and travel advance are changed in Edit Day (Schedule); reimbursements come from trip costs approved on the order page.",
     "reimburseShort": "reimbursed",
-    "advanceShort": "advance"
+    "advanceShort": "advance",
+    "selectAll": "Select all unpaid payables",
+    "selectRow": "Select payable for {name}",
+    "extraAmount": "Amount"
   },
   "invoiceSection": {
     "typeDP": "DP",
@@ -1259,7 +1350,26 @@
     "invoiceAdditional": "Additional Invoice",
     "invoiceCombined": "Combined Invoice (Rental + Additional)",
     "statementCombinedPick": "Combined Statement (Select Invoices)",
-    "syncHint": "Order total is higher than invoice. Click <b>Sync Current Invoice</b> to create a revised full invoice.",
+    "syncHint": "Order total is higher than the invoice total. Bill the rest with a Rental Invoice (Settlement) or an Additional Invoice, or click <b>Revise</b> on the current invoice to adjust its amount.",
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Issued",
+      "REVISED": "Revised",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
+    "method": {
+      "CASH": "Cash",
+      "BANK_TRANSFER": "Bank Transfer",
+      "QRIS": "QRIS",
+      "OTHER": "Other"
+    },
+    "viewInvoice": "View Invoice",
+    "viewInvoiceAria": "View invoice {number}",
+    "viewReceiptAria": "View receipt {number}",
+    "invoiceTitle": "Invoice {number}",
+    "receiptTitle": "Receipt {number}",
+    "proofTitle": "Payment proof {number}",
     "fullyInvoicedHint": "Fully invoiced. Add charges by editing final price, then sync the invoice.",
     "invoicesLabel": "Invoices",
     "totalCount": "{count} total",
@@ -1295,6 +1405,12 @@
     "openDownload": "Open / Download"
   },
   "generateInvoice": {
+    "errAmountRequired": "Amount is required",
+    "errAmountPositive": "Amount must be more than 0",
+    "methodCash": "Cash",
+    "methodBankTransfer": "Bank Transfer",
+    "methodQris": "QRIS",
+    "methodOther": "Other",
     "typeDP": "Down Payment (DP)",
     "typeSettlement": "Settlement (Remaining Balance)",
     "typeFull": "Full Payment",
@@ -1374,6 +1490,10 @@
     "onTrip": "On trip"
   },
   "reviseInvoice": {
+    "errAmountRequired": "Amount is required",
+    "errAmountPositive": "Amount must be more than 0",
+    "defaultNote": "Revision of {number}",
+    "defaultNoteWith": "Revision of {number}: {note}",
     "currentInvoice": "Current invoice",
     "currentAmount": "Current amount",
     "reviseHint": "This will mark the current invoice as REVISED and create a new current invoice. Use the full latest order amount when syncing a price change.",
@@ -1428,6 +1548,14 @@
     "methodOther": "Other"
   },
   "editOrderForm": {
+    "customerTitle": "Customer / PIC",
+    "customerHint": "The primary PIC is used as the main customer contact.",
+    "addPic": "Add PIC",
+    "primaryPic": "Primary PIC",
+    "setPrimary": "Set as primary",
+    "removePic": "Remove PIC",
+    "nameRequired": "Name is required",
+    "reasonRequired": "A reason is required because the price changed.",
     "name": "Name",
     "phone": "Phone",
     "orderDateNote": "Order Date / Booking Time is kept from the original order creation. Day 1 is the first Service Detail row below. For a 1-day rental, update the first row only.",
@@ -1442,6 +1570,22 @@
     "assignedDaysNote": "Days that already have a driver, car or trip keep them; change their date, time, place or price here. To cancel one day, use Edit Hari in the Trip menu."
   },
   "invoiceHistoryTable": {
+    "docReceipt": "Receipt",
+    "type": {
+      "DP": "DP",
+      "SETTLEMENT": "Settlement",
+      "FULL": "Full",
+      "ADDITIONAL": "Additional",
+      "COMBINED": "Combined",
+      "CANCELLATION_FEE": "Cancellation Fee"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Issued",
+      "REVISED": "Revised",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
     "orderTotal": "Order Total",
     "invoiced": "Invoiced",
     "paid": "Paid",
@@ -1556,6 +1700,12 @@
     "driverFeePerDayHint": "Sum of every day's fee · set per day in Edit Day"
   },
   "markPaid": {
+    "methods": {
+      "CASH": "Cash",
+      "BANK_TRANSFER": "Bank Transfer",
+      "QRIS": "QRIS",
+      "OTHER": "Other"
+    },
     "title": "Mark Paid — {invoice}",
     "intro": "Payment proof is required. For cash payments, upload a photo taken when the money is received.",
     "proofLabel": "Payment Proof",
@@ -1571,6 +1721,7 @@
     "markPaidBtn": "Mark Paid"
   },
   "cars": {
+    "viewPhoto": "View photo",
     "baseNotSet": "Base not set",
     "revenueOfUnit": "Revenue for this unit",
     "changePhoto": "Change photo",
@@ -1756,7 +1907,8 @@
     "inFleet": "In fleet",
     "needPartner": "Partner needed",
     "inFleetTitle": "Fleet units: {cars}",
-    "needPartnerTitle": "This unit is not in Arasya's fleet. Find a partner/vendor."
+    "needPartnerTitle": "This unit is not in Arasya's fleet. Find a partner/vendor.",
+    "linkSearch": "Search orders"
   },
   "customerIdentity": {
     "title": "Identity & documents",
@@ -1804,7 +1956,8 @@
     "okDeleted": "Document deleted",
     "deleteTitle": "Delete document?",
     "deleteConfirm": "The {kind} document will be permanently deleted and cannot be restored.",
-    "privacyNote": "Documents are confidential and only used to verify bookings. Delete them if the customer asks."
+    "privacyNote": "Documents are confidential and only used to verify bookings. Delete them if the customer asks.",
+    "docFile": "Document file"
   },
   "customerLookup": {
     "returning": "Returning customer: {name}",
@@ -1817,6 +1970,7 @@
     "use": "Use this data"
   },
   "vendorFields": {
+    "holderLine": "Account holder: {name}",
     "pic": "PIC / contact",
     "picPlaceholder": "Person in charge",
     "area": "Service area",
@@ -1849,6 +2003,8 @@
     "photoAlt": "Arrival photo at pickup with time and GPS stamp"
   },
   "tripCosts": {
+    "typeLabel": "Cost type",
+    "paidByLabel": "Paid by",
     "title": "Trip costs",
     "pendingCount": "{n} waiting for review",
     "add": "Add cost",
@@ -2217,5 +2373,20 @@
     "amountEmptyHint": "Leave empty when there is no fixed cost; it then shows as \"Ask admin\" (\"Tanya admin\" on the website).",
     "slugPlaceholder": "toyota-avanza",
     "priceClassPlaceholder": "e.g. Avanza sekelas"
+  },
+  "filePreview": {
+    "document": "Document",
+    "photo": "Photo",
+    "counter": "{current} of {total}",
+    "pdfHint": "Document preview",
+    "imageHint": "Tap or click the image to zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "rotate": "Rotate",
+    "openNewTab": "Open in new tab",
+    "previous": "Previous",
+    "next": "Next",
+    "loadFailed": "This file cannot be shown here.",
+    "pdfNotSupported": "This browser cannot show a PDF inside the page. Open it in a new tab to view it."
   }
 }

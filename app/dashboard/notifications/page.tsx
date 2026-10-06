@@ -105,8 +105,8 @@ function DriverRequestsSection() {
   }
 
   return (
-    <Card className="border border-gray-200 shadow-none">
-      <CardHeader className="pb-3">
+    <Card className="gap-4 border border-gray-200 py-4 shadow-none sm:py-6">
+      <CardHeader className="px-4 pb-0 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <CreditCard className="h-4 w-4 text-violet-600" />
@@ -120,7 +120,7 @@ function DriverRequestsSection() {
         </div>
         <p className="text-xs text-gray-500">{t('requestsDesc')}</p>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 px-4 sm:px-6">
         {open.isLoading ? (
           <div className="h-16 animate-pulse rounded-lg bg-gray-100" />
         ) : open.isError ? (
@@ -195,9 +195,9 @@ function DriverRequestsSection() {
               {needsCard ? (
                 <>
                   <div className="space-y-1.5">
-                    <Label>{t('topupCard')}</Label>
+                    <Label htmlFor="req_card">{t('topupCard')}</Label>
                     <Select value={cardId} onValueChange={setCardId}>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger id="req_card" className="w-full">
                         <SelectValue placeholder={t('selectCard')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -279,7 +279,7 @@ function RequestDetails({
         <CreditCard className="h-4 w-4" aria-hidden="true" />
       </span>
       <div className="min-w-0 space-y-0.5">
-        <p className="text-sm">
+        <p className="break-words text-sm">
           <Link
             href={`/dashboard/drivers/${r.driver.id}`}
             className="font-semibold text-gray-900 hover:underline"
@@ -309,7 +309,7 @@ function RequestDetails({
             )}
           </p>
         )}
-        {r.note && <p className="text-xs italic text-gray-500">“{r.note}”</p>}
+        {r.note && <p className="break-words text-xs italic text-gray-500">“{r.note}”</p>}
         <p className="text-[11px] text-gray-400">
           {formatDateTime(r.created_at)} · {timeAgo(r.created_at)}
         </p>
@@ -334,8 +334,8 @@ function FeedSection() {
   }
 
   return (
-    <Card className="border border-gray-200 shadow-none">
-      <CardHeader className="pb-3">
+    <Card className="gap-4 overflow-hidden border border-gray-200 pt-4 pb-0 shadow-none sm:pt-6">
+      <CardHeader className="px-4 pb-0 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Bell className="h-4 w-4 text-gray-500" />
@@ -343,10 +343,10 @@ function FeedSection() {
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-0.5 rounded-lg bg-gray-100 p-0.5">
-              <button type="button" className={segmentClass(!unreadOnly)} onClick={() => setUnreadOnly(false)}>
+              <button type="button" aria-pressed={!unreadOnly} className={segmentClass(!unreadOnly)} onClick={() => setUnreadOnly(false)}>
                 {t('filterAll')}
               </button>
-              <button type="button" className={segmentClass(unreadOnly)} onClick={() => setUnreadOnly(true)}>
+              <button type="button" aria-pressed={unreadOnly} className={segmentClass(unreadOnly)} onClick={() => setUnreadOnly(true)}>
                 {t('filterUnread')}
                 {unread > 0 ? ` (${unread})` : ''}
               </button>

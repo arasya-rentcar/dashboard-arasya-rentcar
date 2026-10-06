@@ -17,14 +17,6 @@ export interface RevenuePeriod {
   date_to?: string;
 }
 
-export const PERIOD_LABELS: Record<PeriodPreset, string> = {
-  THIS_MONTH: "Bulan ini",
-  LAST_MONTH: "Bulan lalu",
-  LAST_30D: "30 hari terakhir",
-  THIS_YEAR: "Tahun ini",
-  CUSTOM: "Custom",
-};
-
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000; // Asia/Jakarta, no DST.
 
 // "Now" expressed as a WIB wall-clock Date (its UTC getters read WIB Y/M/D).
@@ -79,10 +71,11 @@ export function resolvePeriod(p: RevenuePeriod): {
 }
 
 // Human-readable range, e.g. "1 Jun – 20 Jun 2026".
-export function describePeriod(p: RevenuePeriod): string {
+export function describePeriod(p: RevenuePeriod, locale = "id"): string {
   const { date_from, date_to } = resolvePeriod(p);
   const fmt = (s: string) =>
-    new Date(`${s}T00:00:00`).toLocaleDateString("id-ID", {
+    new Date(`${s}T00:00:00+07:00`).toLocaleDateString(locale === "en" ? "en-GB" : "id-ID", {
+      timeZone: "Asia/Jakarta",
       day: "numeric",
       month: "short",
       year: "numeric",

@@ -48,7 +48,14 @@ const NAV_ITEMS = [
   { href: "/dashboard/guide", key: "guide", icon: HelpCircle },
 ] as const;
 
-export default function Sidebar() {
+export default function Sidebar({
+  className,
+  onNavigate,
+}: {
+  className?: string;
+  /** Called when a menu item is clicked (the mobile drawer closes itself). */
+  onNavigate?: () => void;
+} = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("nav");
@@ -73,9 +80,9 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex flex-col h-full w-64 bg-white border-r border-gray-100">
+    <aside className={cn("flex flex-col h-full w-64 bg-white border-r border-gray-100", className)}>
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
+      <div className="shrink-0 px-6 py-5 border-b border-gray-100">
         <span className="text-lg font-semibold tracking-tight text-gray-900">
           Arasya RentCar
         </span>
@@ -83,17 +90,20 @@ export default function Sidebar() {
         {/* Brand line stays untranslated (proper noun). */}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      {/* Navigation: scrolls on its own so the logout button stays reachable on
+          short screens (15 items do not fit a 768px-high laptop). */}
+      <nav aria-label={t("menu")} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-4 space-y-0.5">
         {NAV_ITEMS.map(({ href, key, icon: Icon }) => {
           const isActive =
             href === "/dashboard"
               ? pathname === "/dashboard"
-              : pathname.startsWith(href);
+              : pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
               key={href}
               href={href}
+              onClick={onNavigate}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                 isActive
@@ -101,8 +111,8 @@ export default function Sidebar() {
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
               )}
             >
-              <Icon className="h-4 w-4 shrink-0" />
-              {t(key)}
+              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 truncate">{t(key)}</span>
               {key === "notifications" && unreadNotifications > 0 && (
                 <span
                   className={cn(
@@ -129,11 +139,11 @@ export default function Sidebar() {
       </nav>
 
       {/* User + Logout */}
-      <div className="px-3 pb-4 border-t border-gray-100 pt-4">
+      <div className="shrink-0 px-3 pb-4 border-t border-gray-100 pt-4">
         {user && (
           <div className="px-3 py-2 mb-2">
             <p className="text-xs text-gray-400">{tc("loggedInAs")}</p>
-            <p className="text-sm font-medium text-gray-700 truncate">
+            <p className="text-sm font-medium text-gray-700 truncate" title={user.email}>
               {user.email}
             </p>
           </div>

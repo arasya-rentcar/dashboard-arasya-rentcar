@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -44,6 +45,13 @@ export default function RefundDialog({
   const [fileError, setFileError] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>("");
   const [note, setNote] = useState<string>("");
+  // Clear the form whenever the dialog closes (also when the parent closes it
+  // after a successful submit). A failed submit keeps the picked file.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (!open) reset();
+  }
 
   function reset() {
     setProof(null);
@@ -74,19 +82,19 @@ export default function RefundDialog({
       setFileError(t("proofRequired"));
       return;
     }
+    if (isSubmitting) return;
     await onConfirm({
       proof,
       amount: amount ? Number(amount) : undefined,
       note: note || undefined,
     });
-    reset();
   }
 
   return (
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v) reset();
+        if (!v && isSubmitting) return;
         onOpenChange(v);
       }}
     >
@@ -97,7 +105,7 @@ export default function RefundDialog({
 
         <div className="space-y-4">
           <div className="rounded-lg bg-red-50 border border-red-100 p-3 text-sm">
-            <div className="flex justify-between">
+            <div className="flex flex-wrap justify-between gap-x-3">
               <span className="text-red-700">{t("due")}</span>
               <span className="font-semibold text-red-700">
                 {formatCurrency(refundDue)}
@@ -113,16 +121,17 @@ export default function RefundDialog({
           </p>
 
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="refund_proof">
               {t("proofLabel")} <span className="text-red-600">*</span>
             </Label>
             <Input
+              id="refund_proof"
               type="file"
               accept={ACCEPT}
               onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
             />
             {proof && (
-              <p className="text-xs text-emerald-600">
+              <p className="text-xs text-emerald-600 break-all">
                 {proof.name} ({(proof.size / 1024).toFixed(0)} KB)
               </p>
             )}
@@ -130,9 +139,11 @@ export default function RefundDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("amount")}</Label>
+            <Label htmlFor="refund_amount">{t("amount")}</Label>
             <Input
+              id="refund_amount"
               type="number"
+              min="0"
               inputMode="numeric"
               placeholder={refundDue ? String(refundDue) : "0"}
               value={amount}
@@ -144,8 +155,9 @@ export default function RefundDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("noteLabel")}</Label>
+            <Label htmlFor="refund_note">{t("noteLabel")}</Label>
             <Input
+              id="refund_note"
               placeholder={t("notePlaceholder")}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -155,13 +167,15 @@ export default function RefundDialog({
 
         <DialogFooter>
           <Button
+            type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
             {tc("cancel")}
           </Button>
-          <Button onClick={submit} disabled={!proof || isSubmitting}>
+          <Button type="button" onClick={submit} disabled={!proof || isSubmitting}>
+            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmitting ? t("processing") : t("submitBtn")}
           </Button>
         </DialogFooter>

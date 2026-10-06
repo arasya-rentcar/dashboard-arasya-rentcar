@@ -9,10 +9,10 @@ import {
   Car as CarIcon,
   User as UserIcon,
   Clock,
-  MapPin,
   FileText,
   ExternalLink,
   Smartphone,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import TablePagination from '@/components/dashboard/TablePagination';
+import QueryError from '@/components/dashboard/QueryError';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import { useTripHistory } from '@/hooks/useSchedule';
 import { useDrivers } from '@/hooks/useDrivers';
 import { useCars } from '@/hooks/useCars';
@@ -65,7 +67,7 @@ export default function HistoryTab() {
   const { data: cars } = useCars();
   const debouncedSearch = useDebouncedValue(search.trim());
 
-  const { data, isLoading } = useTripHistory({
+  const { data, isLoading, isError, refetch } = useTripHistory({
     search: debouncedSearch || undefined,
     date_from: dateFrom || undefined,
     date_to: dateTo || undefined,
@@ -98,37 +100,41 @@ export default function HistoryTab() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
-        <div className="flex-1">
-          <label className="text-xs text-gray-400 block mb-1">{t('search')}</label>
+      <div className="grid grid-cols-2 items-end gap-3 md:grid-cols-3 xl:flex">
+        <div className="col-span-2 min-w-0 md:col-span-3 xl:min-w-56 xl:flex-1">
+          <label htmlFor="history-search" className="text-xs text-gray-400 block mb-1">{t('search')}</label>
           <Input
+            id="history-search"
+            type="search"
             placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{t('dateFrom')}</label>
+        <div className="min-w-0">
+          <label htmlFor="history-date-from" className="text-xs text-gray-400 block mb-1">{t('dateFrom')}</label>
           <Input
+            id="history-date-from"
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-40"
+            className="w-full xl:w-40"
           />
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{t('dateTo')}</label>
+        <div className="min-w-0">
+          <label htmlFor="history-date-to" className="text-xs text-gray-400 block mb-1">{t('dateTo')}</label>
           <Input
+            id="history-date-to"
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-40"
+            className="w-full xl:w-40"
           />
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{t('driver')}</label>
+        <div className="min-w-0">
+          <label htmlFor="history-driver" className="text-xs text-gray-400 block mb-1">{t('driver')}</label>
           <Select value={driverId} onValueChange={setDriverId}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger id="history-driver" className="w-full xl:w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -143,10 +149,10 @@ export default function HistoryTab() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{t('car')}</label>
+        <div className="min-w-0">
+          <label htmlFor="history-car" className="text-xs text-gray-400 block mb-1">{t('car')}</label>
           <Select value={carId} onValueChange={setCarId}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger id="history-car" className="w-full xl:w-44">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -159,13 +165,13 @@ export default function HistoryTab() {
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">{t('finance')}</label>
+        <div className="min-w-0">
+          <label htmlFor="history-finance" className="text-xs text-gray-400 block mb-1">{t('finance')}</label>
           <Select
             value={finance}
             onValueChange={(v) => setFinance(v as typeof finance)}
           >
-            <SelectTrigger className="w-44">
+            <SelectTrigger id="history-finance" className="w-full xl:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -180,6 +186,8 @@ export default function HistoryTab() {
       {/* List */}
       {isLoading ? (
         <p className="text-gray-400 text-sm py-10 text-center">{t('loading')}</p>
+      ) : isError ? (
+        <QueryError onRetry={() => refetch()} />
       ) : rows.length === 0 ? (
         <p className="text-gray-400 text-sm py-10 text-center">{t('empty')}</p>
       ) : (
@@ -221,6 +229,7 @@ function HistoryRow({
 }) {
   const t = useTranslations('history');
   const reportLabel = useReportTypeLabel();
+  const { openPreview } = useFilePreview();
   const awaiting = row.finance_status === 'AWAITING';
   // Internal driver set but the trip not yet accepted in the driver app.
   const awaitingAccept =
@@ -263,21 +272,23 @@ function HistoryRow({
     <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
       {/* Summary row */}
       <button
+        type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 px-3 py-3 text-left hover:bg-gray-50 sm:px-4"
       >
-        <span className="text-gray-400">
+        <span className="shrink-0 text-gray-400">
           {open ? (
             <ChevronDown className="h-4 w-4" />
           ) : (
             <ChevronRight className="h-4 w-4" />
           )}
         </span>
-        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-center text-sm">
-          <span className="font-mono font-medium text-gray-900">
+        <div className="min-w-0 flex-1 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 items-center text-sm">
+          <span className="font-mono font-medium text-gray-900 truncate" title={row.order?.order_code || undefined}>
             {row.order?.order_code || '—'}
           </span>
-          <span className="text-gray-700 truncate">
+          <span className="text-gray-700 truncate" title={row.order?.customer_name || undefined}>
             {row.order?.customer_name || '—'}
           </span>
           <span
@@ -419,7 +430,11 @@ function HistoryRow({
                             : 'bg-gray-100 text-gray-600 border-gray-200 text-[10px]'
                         }
                       >
-                        {row.payable.status}
+                        {row.payable.status === 'PAID'
+                          ? t('feePaid')
+                          : row.payable.status === 'UNPAID'
+                            ? t('feeUnpaid')
+                            : row.payable.status}
                       </Badge>
                     </li>
                   )}
@@ -484,14 +499,23 @@ function HistoryRow({
                       {r.report_type !== 'ARRIVAL_PHOTO' &&
                         r.report_type !== 'ARRIVE_CUSTOMER' && <ReportLocation report={r} />}
                       {r.file_url && (
-                        <Link
-                          href={r.file_url}
-                          target="_blank"
-                          className="text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Open as a gallery of every file on this trip, starting here.
+                            const media = (row.reports ?? []).filter((x) => x.file_url);
+                            openPreview(
+                              media.map((x) => ({
+                                url: x.file_url!,
+                                title: `${reportLabel(x.report_type)} · ${formatDateTime(x.created_at)}`,
+                              })),
+                              Math.max(0, media.findIndex((x) => x.id === r.id)),
+                            );
+                          }}
+                          className="mt-1 inline-flex min-h-7 items-center gap-1 text-blue-600 hover:underline"
                         >
-                          <MapPin className="h-3 w-3" /> {t('viewMedia')}
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
+                          <ImageIcon className="h-3 w-3" /> {t('viewMedia')}
+                        </button>
                       )}
                     </li>
                   ))}

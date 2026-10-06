@@ -2,19 +2,13 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { FileText, ReceiptText, ExternalLink } from 'lucide-react';
+import { FileText, ReceiptText, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import { OrderListItem, InvoiceType, InvoiceStatus } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
-const TYPE_LABELS: Record<InvoiceType, string> = {
-  DP: 'DP',
-  SETTLEMENT: 'Settlement',
-  FULL: 'Full',
-  ADDITIONAL: 'Additional',
-  COMBINED: 'Gabungan',
-  CANCELLATION_FEE: 'Cancellation Fee',
-};
+const KNOWN_STATUSES: InvoiceStatus[] = ['DRAFT', 'ISSUED', 'REVISED', 'PAID', 'CANCELLED'];
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
   DP: 'border-blue-200 text-blue-700 bg-blue-50',
@@ -39,6 +33,7 @@ function isActive(status: InvoiceStatus) {
 
 export default function OrderInvoiceHistory({ order }: { order: OrderListItem }) {
   const t = useTranslations('invoiceHistoryTable');
+  const { openPreview } = useFilePreview();
   const invoices = [...(order.invoices ?? [])].sort((a, b) => {
     const ta = new Date(a.issue_date ?? a.created_at ?? 0).getTime();
     const tb = new Date(b.issue_date ?? b.created_at ?? 0).getTime();
@@ -73,8 +68,8 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
           {t('noInvoices')}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+          <table className="w-full min-w-[520px] text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/70 text-xs text-gray-500">
                 <th className="px-3 py-2 text-left font-medium">{t('colInvoice')}</th>
@@ -93,7 +88,7 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
                     key={inv.id}
                     className={`border-b border-gray-50 last:border-0 ${active ? '' : 'opacity-60'}`}
                   >
-                    <td className="px-3 py-2 font-mono text-xs text-gray-700">
+                    <td className="px-3 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {inv.invoice_number}
                       {(inv.revision ?? 0) > 0 && (
                         <span className="ml-1 text-amber-600">R{inv.revision}</span>
@@ -101,47 +96,57 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
-                        {TYPE_LABELS[inv.invoice_type]}
+                        {t(`type.${inv.invoice_type as InvoiceType}`)}
                       </Badge>
                     </td>
                     <td className="px-3 py-2">
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
-                        {inv.status}
+                        {KNOWN_STATUSES.includes(inv.status) ? t(`status.${inv.status}`) : inv.status}
                       </Badge>
                     </td>
-                    <td className="px-3 py-2 text-xs text-gray-500 hidden sm:table-cell">
+                    <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap hidden sm:table-cell">
                       {inv.status === 'PAID' && inv.paid_at
                         ? `${t('paidPrefix')} ${formatDate(inv.paid_at)}`
                         : inv.issue_date
                           ? formatDate(inv.issue_date)
                           : '-'}
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                    <td className="px-3 py-2 text-right font-semibold text-gray-900 whitespace-nowrap tabular-nums">
                       {formatCurrency(inv.amount)}
                     </td>
                     <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         {inv.file_url && (
-                          <a
-                            href={inv.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openPreview({
+                                url: inv.file_url!,
+                                title: `${t('docInvoice')} ${inv.invoice_number}`,
+                                kind: 'pdf',
+                              })
+                            }
+                            className="inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:underline"
                           >
                             <FileText className="h-3.5 w-3.5" />
                             {t('docInvoice')}
-                          </a>
+                          </button>
                         )}
                         {inv.receipt_url && (
-                          <a
-                            href={inv.receipt_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-emerald-700 hover:underline"
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openPreview({
+                                url: inv.receipt_url!,
+                                title: `${t('docReceipt')} ${inv.invoice_number}`,
+                                kind: 'pdf',
+                              })
+                            }
+                            className="inline-flex min-h-8 items-center gap-1 rounded px-1.5 text-xs text-emerald-700 hover:bg-emerald-50 hover:underline"
                           >
                             <ReceiptText className="h-3.5 w-3.5" />
-                            Kwitansi
-                          </a>
+                            {t('docReceipt')}
+                          </button>
                         )}
                         {!inv.file_url && !inv.receipt_url && (
                           <span className="text-xs text-gray-300">—</span>
@@ -159,9 +164,9 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
       <div className="mt-3 flex justify-end">
         <Link
           href={`/dashboard/orders/${order.id}`}
-          className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
+          className="inline-flex min-h-8 items-center gap-1 text-xs font-medium text-blue-600 hover:underline"
         >
-          {t('openFullOrder')} <ExternalLink className="h-3.5 w-3.5" />
+          {t('openFullOrder')} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </div>

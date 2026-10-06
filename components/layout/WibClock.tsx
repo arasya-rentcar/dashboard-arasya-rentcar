@@ -5,6 +5,8 @@ import { Clock } from 'lucide-react';
 
 // Live wall-clock for Asia/Jakarta (WIB). Always rendered in Indonesian
 // long-date style regardless of UI language, e.g. "Minggu, 21 Juni 2026 14:20 WIB".
+// Below xl only the time is shown ("14:20 WIB") so the page title keeps its room
+// next to the sidebar on tablets; the full date is still in the tooltip.
 // This is the single place "WIB" appears in the app.
 const DATE_FMT = new Intl.DateTimeFormat('id-ID', {
   weekday: 'long',
@@ -20,13 +22,13 @@ const TIME_FMT = new Intl.DateTimeFormat('id-ID', {
   timeZone: 'Asia/Jakarta',
 });
 
-function formatNow(d: Date): string {
-  return `${DATE_FMT.format(d)} ${TIME_FMT.format(d)} WIB`;
+function formatNow(d: Date): { date: string; time: string } {
+  return { date: DATE_FMT.format(d), time: `${TIME_FMT.format(d)} WIB` };
 }
 
 export default function WibClock() {
   // Start null to avoid SSR/CSR hydration mismatch; fill in on mount.
-  const [label, setLabel] = useState<string | null>(null);
+  const [label, setLabel] = useState<{ date: string; time: string } | null>(null);
 
   useEffect(() => {
     const tick = () => setLabel(formatNow(new Date()));
@@ -47,11 +49,19 @@ export default function WibClock() {
 
   return (
     <div
-      className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 tabular-nums"
+      className="flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-gray-500 tabular-nums"
+      title={label ? `${label.date} ${label.time}` : undefined}
       suppressHydrationWarning
     >
-      <Clock className="h-3.5 w-3.5 text-gray-400" />
-      <span>{label ?? '—'}</span>
+      <Clock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />
+      {label ? (
+        <span>
+          <span className="hidden xl:inline">{label.date} </span>
+          {label.time}
+        </span>
+      ) : (
+        <span>—</span>
+      )}
     </div>
   );
 }

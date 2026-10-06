@@ -14,9 +14,11 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import QueryError from '@/components/dashboard/QueryError';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,6 +39,14 @@ import { useCars } from '@/hooks/useCars';
 import { dayLockReason, formatDate, getErrorMessage } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
 
+const STATUS_KEYS: Record<string, string> = {
+  SCHEDULED: 'statusScheduled',
+  ASSIGNED: 'statusAssigned',
+  IN_PROGRESS: 'statusInProgress',
+  DONE: 'statusDone',
+  CANCELLED: 'statusCancelled',
+};
+
 const STATUS_STYLES: Record<string, string> = {
   SCHEDULED: 'bg-blue-50 text-blue-700 border-blue-200',
   ASSIGNED: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -56,7 +66,7 @@ export default function DayDrawer({
   const open = !!date;
 
   // Day's lines (internal + external) for the picked WIB date.
-  const { data, isLoading } = useSchedule({
+  const { data, isLoading, isError, refetch } = useSchedule({
     date_from: date || undefined,
     date_to: date || undefined,
     page: 1,
@@ -73,20 +83,25 @@ export default function DayDrawer({
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="right"
-        className="w-full overflow-y-auto sm:max-w-md"
+        className="w-full gap-0 overflow-y-auto sm:max-w-md"
       >
-        <SheetHeader>
+        <SheetHeader className="border-b border-gray-100 pr-12">
           <SheetTitle>
             {date ? `${t('title')} · ${formatDate(date)}` : t('title')}
           </SheetTitle>
+          <SheetDescription className="sr-only">{t('description')}</SheetDescription>
         </SheetHeader>
 
         {isLoading ? (
           <p className="py-10 text-center text-sm text-gray-400">
             {t('loading')}
           </p>
+        ) : isError ? (
+          <div className="p-4">
+            <QueryError onRetry={() => refetch()} compact />
+          </div>
         ) : (
-          <div className="mt-4 space-y-5">
+          <div className="space-y-5 p-4">
             {/* Capacity summary */}
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
@@ -130,6 +145,7 @@ export default function DayDrawer({
 function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
   const t = useTranslations('dayDrawer');
   const tc = useTranslations('common');
+  const ts = useTranslations('schedule');
   const lockReason = dayLockReason(line.order?.order_status);
   const assigned = !!line.driver?.id;
   const started =
@@ -145,12 +161,15 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
         <div className="min-w-0">
           <Link
             href={`/dashboard/orders/${line.order?.id}`}
-            className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
+            className="flex min-w-0 items-center gap-1 text-sm font-medium text-blue-600 hover:underline"
           >
             {line.order?.order_code || line.order?.customer_name || '—'}
             <ExternalLink className="h-3 w-3 shrink-0" />
           </Link>
-          <p className="truncate text-xs text-gray-500">
+          <p
+            className="truncate text-xs text-gray-500"
+            title={`${line.pickup_location} → ${line.dropoff_location}`}
+          >
             {line.pickup_location} → {line.dropoff_location}
           </p>
         </div>
@@ -159,7 +178,7 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
             variant="outline"
             className={`text-[10px] ${STATUS_STYLES[line.line_status] || ''}`}
           >
-            {line.line_status}
+            {STATUS_KEYS[line.line_status] ? ts(STATUS_KEYS[line.line_status]) : line.line_status}
           </Badge>
           {/* The trip with the customer waits for full payment (driver app). */}
           {!cancelled && !line.is_external && line.order?.start_ready === false && line.line_status !== 'DONE' && (
@@ -171,9 +190,9 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
       </div>
 
       {/* Assignment row */}
-      <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         {assigned ? (
-          <span className="text-gray-600">
+          <span className="min-w-0 text-gray-600">
             <Users className="mr-1 inline h-3 w-3 text-gray-400" />
             {line.driver?.name}
             {line.car?.model ? ` · ${line.car.model}` : ''}
@@ -192,7 +211,7 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
           <Button
             variant="outline"
             size="sm"
-            className="h-7 text-xs"
+            className="h-8 text-xs sm:h-7"
             onClick={() => setEditing(true)}
           >
             {assigned ? t('reassign') : t('assign')}
@@ -250,9 +269,9 @@ function AssignInline({
   return (
     <div className="mt-2 space-y-2 rounded-md bg-gray-50 p-2">
       <div className="space-y-1.5">
-        <label className="text-[11px] text-gray-400">{t('driver')}</label>
+        <label htmlFor={`assign-driver-${line.id}`} className="text-[11px] text-gray-500">{t('driver')}</label>
         <Select value={driverId} onValueChange={setDriverId}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger id={`assign-driver-${line.id}`} className="h-8 w-full text-xs">
             <SelectValue placeholder={t('selectDriver')} />
           </SelectTrigger>
           <SelectContent>
@@ -271,9 +290,9 @@ function AssignInline({
         </Select>
       </div>
       <div className="space-y-1.5">
-        <label className="text-[11px] text-gray-400">{t('car')}</label>
+        <label htmlFor={`assign-car-${line.id}`} className="text-[11px] text-gray-500">{t('car')}</label>
         <Select value={carId} onValueChange={setCarId}>
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger id={`assign-car-${line.id}`} className="h-8 w-full text-xs">
             <SelectValue placeholder={t('selectCar')} />
           </SelectTrigger>
           <SelectContent>
@@ -293,7 +312,7 @@ function AssignInline({
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 text-xs"
+          className="h-8 text-xs"
           onClick={onDone}
           disabled={mutation.isPending}
         >
@@ -301,7 +320,7 @@ function AssignInline({
         </Button>
         <Button
           size="sm"
-          className="h-7 text-xs"
+          className="h-8 text-xs"
           onClick={save}
           disabled={mutation.isPending || !driverId}
         >

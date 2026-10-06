@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /** One button of a segmented control (grey track, white active pill): filters and tabs. */
 export const segmentClass = (active: boolean, className?: string) =>
   cn(
-    'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+    'rounded-md px-3 py-2 text-xs font-medium transition-colors sm:py-1.5',
     active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800',
     className,
   );

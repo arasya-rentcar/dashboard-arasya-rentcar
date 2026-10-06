@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   TrendingUp,
   Wallet,
@@ -12,7 +12,6 @@ import {
   Car,
   Handshake,
   Loader2,
-  Banknote,
   Receipt,
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
@@ -47,6 +46,7 @@ import type { DashboardV2, DashV2OverdueAR, DashV2OverdueAP } from '@/types';
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
+  const locale = useLocale();
   const { period } = useRevenuePeriod('dashboard');
   const range = useMemo(() => resolvePeriod(period), [period]);
   const { data, isLoading, isError, isFetching, refetch } = useDashboardV2({
@@ -62,7 +62,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-xs text-gray-500">{t('period')}</p>
             <p className="text-sm font-medium text-gray-800">
-              {describePeriod(period)}
+              {describePeriod(period, locale)}
               {isFetching && (
                 <Loader2 className="ml-2 inline h-3.5 w-3.5 animate-spin text-gray-400" />
               )}
@@ -181,7 +181,7 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Card className="border border-gray-200 shadow-none">
           <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Car className="h-4 w-4" /> {t('internalCars')}
               </div>
@@ -200,7 +200,7 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
             </div>
             <div className="border-t border-gray-100 pt-2">
               <p className="text-[11px] text-gray-500">{t('margin')}</p>
-              <p className="text-xl font-semibold text-emerald-700">
+              <p className="break-words text-xl font-semibold tabular-nums text-emerald-700">
                 {formatCurrency(i.margin)}
                 <span className="ml-2 text-xs font-normal text-gray-500">
                   {i.margin_pct == null
@@ -213,7 +213,7 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
         </Card>
         <Card className="border border-gray-200 shadow-none">
           <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Handshake className="h-4 w-4" /> {t('vendorChannel')}
               </div>
@@ -235,7 +235,7 @@ function ChannelSplit({ data }: { data: DashboardV2 }) {
             </div>
             <div className="border-t border-gray-100 pt-2">
               <p className="text-[11px] text-gray-500">{t('margin')}</p>
-              <p className="text-xl font-semibold text-emerald-700">
+              <p className="break-words text-xl font-semibold tabular-nums text-emerald-700">
                 {formatCurrency(v.margin)}
                 <span className="ml-2 text-xs font-normal text-gray-500">
                   {v.margin_pct == null
@@ -276,14 +276,14 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
                   <th className="pb-1.5">{t('colCustomer')}</th>
-                  <th className="pb-1.5 text-right">{t('colAmount')}</th>
-                  <th className="pb-1.5 text-right">{t('colLate')}</th>
+                  <th className="whitespace-nowrap pb-1.5 pl-2 text-right">{t('colAmount')}</th>
+                  <th className="whitespace-nowrap pb-1.5 pl-3 text-right">{t('colLate')}</th>
                 </tr>
               </thead>
               <tbody>
                 {ar.map((r: DashV2OverdueAR) => (
                   <tr key={r.id} className="border-t border-gray-100">
-                    <td className="py-2 pr-2">
+                    <td className="break-words py-2 pr-2">
                       <Link
                         href={`/dashboard/orders/${r.id}`}
                         className="font-medium text-blue-600 hover:underline"
@@ -294,10 +294,10 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
                         {r.order_code ?? '—'}
                       </p>
                     </td>
-                    <td className="py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap py-2 pl-2 text-right tabular-nums">
                       {formatCurrency(r.amount)}
                     </td>
-                    <td className="py-2 text-right text-amber-700">
+                    <td className="whitespace-nowrap py-2 pl-3 text-right text-amber-700">
                       {t('daysShort', { days: r.days_overdue })}
                     </td>
                   </tr>
@@ -318,14 +318,14 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wide text-gray-400">
                   <th className="pb-1.5">{t('colParty')}</th>
-                  <th className="pb-1.5 text-right">{t('colAmount')}</th>
-                  <th className="pb-1.5 text-right">{t('colLate')}</th>
+                  <th className="whitespace-nowrap pb-1.5 pl-2 text-right">{t('colAmount')}</th>
+                  <th className="whitespace-nowrap pb-1.5 pl-3 text-right">{t('colLate')}</th>
                 </tr>
               </thead>
               <tbody>
                 {ap.map((r: DashV2OverdueAP) => (
                   <tr key={r.id} className="border-t border-gray-100">
-                    <td className="py-2 pr-2">
+                    <td className="break-words py-2 pr-2">
                       <Link
                         href={r.order_id ? `/dashboard/orders/${r.order_id}` : '/dashboard/payables'}
                         className="font-medium text-blue-600 hover:underline"
@@ -339,10 +339,10 @@ function NeedsAttention({ data }: { data: DashboardV2 }) {
                         {r.order_code ?? ''}
                       </p>
                     </td>
-                    <td className="py-2 text-right tabular-nums">
+                    <td className="whitespace-nowrap py-2 pl-2 text-right tabular-nums">
                       {formatCurrency(r.amount)}
                     </td>
-                    <td className="py-2 text-right text-rose-700">
+                    <td className="whitespace-nowrap py-2 pl-3 text-right text-rose-700">
                       {t('daysShort', { days: r.days_overdue })}
                     </td>
                   </tr>
@@ -385,13 +385,18 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
 }
 
 function Delta({ value }: { value: number | null }) {
-  if (value == null) return <span className="text-[11px] text-gray-400">— vs prev</span>;
+  if (value == null)
+    return (
+      <span className="whitespace-nowrap text-[11px] text-gray-400">
+        — <DeltaSuffix />
+      </span>
+    );
   const up = value >= 0;
   const Icon = up ? ArrowUpRight : ArrowDownRight;
   const cls = up ? 'text-emerald-600' : 'text-rose-600';
   const pct = `${(Math.abs(value) * 100).toFixed(1)}%`;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-[11px] font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-0.5 whitespace-nowrap text-[11px] font-medium ${cls}`}>
       <Icon className="h-3 w-3" /> {pct} <DeltaSuffix />
     </span>
   );
@@ -420,7 +425,7 @@ function LeadKPI({
   return (
     <Card className="border-emerald-200 bg-emerald-50/40 shadow-none">
       <CardContent className="space-y-1.5 p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-900">
             {icon} {label}
           </div>
@@ -429,7 +434,7 @@ function LeadKPI({
         <p className="text-[10px] uppercase tracking-wide text-emerald-700/60">
           {basis}
         </p>
-        <p className="text-2xl font-bold tabular-nums text-emerald-800">{value}</p>
+        <p className="break-words text-2xl font-bold tabular-nums text-emerald-800">{value}</p>
         <p className="text-xs text-emerald-900/80">{sub}</p>
       </CardContent>
     </Card>
@@ -454,14 +459,14 @@ function KPI({
   return (
     <Card className="border border-gray-200 shadow-none">
       <CardContent className="space-y-1.5 p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
             {icon} {label}
           </div>
           {delta !== undefined && <Delta value={delta ?? null} />}
         </div>
         <p className="text-[10px] uppercase tracking-wide text-gray-400">{basis}</p>
-        <p className="text-xl font-semibold tabular-nums text-gray-900">{value}</p>
+        <p className="break-words text-xl font-semibold tabular-nums text-gray-900">{value}</p>
         <p className="text-xs text-gray-500">{sub}</p>
       </CardContent>
     </Card>
@@ -472,17 +477,18 @@ function OutstandingKPI({ o }: { o: DashboardV2['outstanding'] }) {
   const t = useTranslations('dashboard');
   return (
     <Card className="border border-gray-200 shadow-none">
-      <CardContent className="space-y-1.5 p-4">
+      <CardContent className="@container space-y-1.5 p-4">
         <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600">
           <AlertCircle className="h-4 w-4" /> {t('outstanding')}
         </div>
         <p className="text-[10px] uppercase tracking-wide text-gray-400">
           {t('snapshotNow')}
         </p>
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        {/* Side by side only when the card is wide enough for two Rupiah amounts. */}
+        <div className="grid grid-cols-1 gap-2 text-sm @[15rem]:grid-cols-2">
           <div>
             <p className="text-[11px] text-gray-500">{t('arLabel')}</p>
-            <p className="text-base font-semibold text-amber-700 tabular-nums">
+            <p className="break-words text-sm font-semibold text-amber-700 tabular-nums @[18rem]:text-base">
               {formatCurrency(o.ar_outstanding)}
             </p>
             <p className="text-[11px] text-amber-700/80">
@@ -491,7 +497,7 @@ function OutstandingKPI({ o }: { o: DashboardV2['outstanding'] }) {
           </div>
           <div>
             <p className="text-[11px] text-gray-500">{t('apLabel')}</p>
-            <p className="text-base font-semibold text-rose-700 tabular-nums">
+            <p className="break-words text-sm font-semibold text-rose-700 tabular-nums @[18rem]:text-base">
               {formatCurrency(o.ap_outstanding)}
             </p>
             <p className="text-[11px] text-rose-700/80">
@@ -521,7 +527,7 @@ function Row({
     <>
       <span className="text-xs text-gray-500">{label}</span>
       <span
-        className={`text-right tabular-nums ${muted ? 'text-gray-500' : 'text-gray-800'}`}
+        className={`whitespace-nowrap text-right tabular-nums ${muted ? 'text-gray-500' : 'text-gray-800'}`}
       >
         {dash ? '—' : raw ? value : formatCurrency(value)}
       </span>
@@ -553,7 +559,7 @@ function OverdueCard({
   return (
     <Card className={`shadow-none ${tone}`}>
       <CardContent className="space-y-3 p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <p className="text-sm font-medium text-gray-700">{title}</p>
           <p className={`text-xs font-medium ${accent}`}>
             {t('overdueSummary', { count: totalCount, amount: formatCurrency(totalAmount) })}
@@ -584,7 +590,3 @@ function SkeletonHealthRow() {
     </div>
   );
 }
-
-// Keep an explicit import to silence unused-warn linters that don't know the
-// hook is referenced indirectly via TypeScript path resolution.
-export const _kpiIcons = { TrendingUp, Wallet, AlertCircle, Banknote };

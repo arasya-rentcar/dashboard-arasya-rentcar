@@ -56,13 +56,13 @@ export default function AssignDriverForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>{t('driver')}</Label>
+        <Label htmlFor="assign_driver">{t('driver')}</Label>
         <Controller
           control={control}
           name="driver_id"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger id="assign_driver" className="w-full min-w-0">
                 <SelectValue placeholder={driversLoading ? tc('loading') : t('selectDriver')} />
               </SelectTrigger>
               <SelectContent>
@@ -90,13 +90,13 @@ export default function AssignDriverForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>{t('car')}</Label>
+        <Label htmlFor="assign_car">{t('car')}</Label>
         <Controller
           control={control}
           name="car_id"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger id="assign_car" className="w-full min-w-0">
                 <SelectValue placeholder={carsLoading ? tc('loading') : t('selectCar')} />
               </SelectTrigger>
               <SelectContent>

@@ -5,6 +5,7 @@ import { Loader2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { resolvePeriod } from "@/lib/revenuePeriod";
+import QueryError from "@/components/dashboard/QueryError";
 import { useRevenuePeriod } from "@/hooks/useRevenuePeriod";
 import { useRevenueReport } from "@/hooks/useAnalytics";
 import PeriodToggle from "./PeriodToggle";
@@ -18,7 +19,7 @@ export default function VendorRevenuePanel({ vendorId }: { vendorId: string }) {
   const tc = useTranslations("common");
   const { period } = useRevenuePeriod("external");
   const range = useMemo(() => resolvePeriod(period), [period]);
-  const { data, isLoading, isFetching } = useRevenueReport({
+  const { data, isLoading, isFetching, isError, refetch } = useRevenueReport({
     date_from: range.date_from,
     date_to: range.date_to,
   });
@@ -29,7 +30,7 @@ export default function VendorRevenuePanel({ vendorId }: { vendorId: string }) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-2.5">
         <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
           <TrendingUp className="h-4 w-4" /> {t("vendorMargin")}
           {isFetching && (
@@ -39,7 +40,9 @@ export default function VendorRevenuePanel({ vendorId }: { vendorId: string }) {
         <PeriodToggle surface="external" />
       </div>
       <div className="p-4">
-        {isLoading ? (
+        {isError && !data ? (
+          <QueryError compact onRetry={() => refetch()} />
+        ) : isLoading ? (
           <p className="py-6 text-center text-sm text-gray-400">{tc("loading")}</p>
         ) : !row ? (
           <p className="py-6 text-center text-sm text-gray-400">
@@ -129,10 +132,10 @@ function Stat({
   emerald?: boolean;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs text-gray-500">{label}</p>
       <p
-        className={`mt-0.5 font-semibold tabular-nums ${
+        className={`mt-0.5 break-words font-semibold tabular-nums ${
           emerald ? "text-emerald-700" : muted ? "text-gray-500" : "text-gray-900"
         }`}
       >

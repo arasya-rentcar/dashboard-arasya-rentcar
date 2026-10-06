@@ -119,9 +119,9 @@ export function CardFormDialog({
         </DialogHeader>
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <Label>{t('issuer')}</Label>
+            <Label htmlFor="ec_issuer">{t('issuer')}</Label>
             <Select value={issuer} onValueChange={setIssuer}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger id="ec_issuer" className="w-full">
                 <SelectValue placeholder={t('selectIssuer')} />
               </SelectTrigger>
               <SelectContent>

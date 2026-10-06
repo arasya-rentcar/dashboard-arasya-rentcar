@@ -125,23 +125,31 @@ export default function OrderServiceItemsEditor<
     0,
   );
 
+  const rowErrors = (index: number) =>
+    (errors as FieldErrors<{ service_items: ServiceItemFormValue[] }>)
+      .service_items?.[index];
+  // Native selects match the Input height and use 16px text on phones (no
+  // iOS zoom on focus), like Input does.
+  const selectClass =
+    "h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs md:text-sm";
+
   return (
     <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-gray-100 bg-gray-50/70 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-3 border-b border-gray-100 bg-gray-50/70 px-3 py-3 sm:px-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <Label className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-gray-900">
             {t("title")}
-          </Label>
+          </p>
           <p className="mt-0.5 text-xs text-gray-500">
             {t("desc")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-lg bg-emerald-50 px-3 py-1.5 text-right">
             <p className="text-[10px] uppercase tracking-wide text-emerald-700">
               {t("finalPrice")}
             </p>
-            <p className="text-sm font-bold text-emerald-800">
+            <p className="text-sm font-bold text-emerald-800 tabular-nums">
               {formatCurrency(total)}
             </p>
           </div>
@@ -161,11 +169,13 @@ export default function OrderServiceItemsEditor<
           const lineTotal =
             Number(items?.[index]?.quantity || 1) *
             Number(items?.[index]?.unit_price || 0);
+          const err = rowErrors(index);
+          const id = (name: string) => `si-${field.id}-${name}`;
           return (
-            <div key={field.id} className="bg-white p-4">
+            <div key={field.id} className="bg-white p-3 sm:p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
                     {index + 1}
                   </span>
                   <p className="text-sm font-semibold text-gray-900">
@@ -177,7 +187,7 @@ export default function OrderServiceItemsEditor<
                     <p className="text-[10px] uppercase tracking-wide text-gray-400">
                       {t("lineTotal")}
                     </p>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 tabular-nums">
                       {formatCurrency(lineTotal)}
                     </p>
                   </div>
@@ -185,9 +195,11 @@ export default function OrderServiceItemsEditor<
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="icon-sm"
                       onClick={() => remove(index)}
                       className="text-red-500 hover:text-red-600"
+                      aria-label={t("removeRow", { n: index + 1 })}
+                      title={t("removeRow", { n: index + 1 })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -195,10 +207,11 @@ export default function OrderServiceItemsEditor<
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-12">
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("serviceDate")}</Label>
+                  <Label htmlFor={id("date")}>{t("serviceDate")}</Label>
                   <Input
+                    id={id("date")}
                     type="date"
                     {...register(
                       `service_items.${index}.service_date` as never,
@@ -206,9 +219,10 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("durasi")}</Label>
+                  <Label htmlFor={id("kind")}>{t("durasi")}</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    id={id("kind")}
+                    className={selectClass}
                     {...register(
                       `service_items.${index}.service_kind` as never,
                       {
@@ -239,9 +253,10 @@ export default function OrderServiceItemsEditor<
                   </select>
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("paket")}</Label>
+                  <Label htmlFor={id("package")}>{t("paket")}</Label>
                   <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    id={id("package")}
+                    className={selectClass}
                     {...register(
                       `service_items.${index}.service_package` as never,
                     )}
@@ -254,34 +269,46 @@ export default function OrderServiceItemsEditor<
                   </select>
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("description")}</Label>
+                  <Label htmlFor={id("desc")}>{t("description")}</Label>
                   <Input
+                    id={id("desc")}
                     placeholder={t("descriptionPlaceholder")}
                     {...register(`service_items.${index}.description` as never)}
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>{t("pickup")}</Label>
+                  <Label htmlFor={id("pickup")}>{t("pickup")}</Label>
                   <Input
+                    id={id("pickup")}
                     placeholder={t("pickupPlaceholder")}
+                    aria-invalid={!!err?.pickup_location}
                     {...register(
                       `service_items.${index}.pickup_location` as never,
                     )}
                   />
+                  {err?.pickup_location && (
+                    <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>{t("dropoff")}</Label>
+                  <Label htmlFor={id("dropoff")}>{t("dropoff")}</Label>
                   <Input
+                    id={id("dropoff")}
                     placeholder={t("dropoffPlaceholder")}
+                    aria-invalid={!!err?.dropoff_location}
                     {...register(
                       `service_items.${index}.dropoff_location` as never,
                     )}
                   />
+                  {err?.dropoff_location && (
+                    <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>{t("pickupTime")}</Label>
+                  <Label htmlFor={id("start")}>{t("pickupTime")}</Label>
                   <Input
+                    id={id("start")}
                     type="datetime-local"
                     step={60}
                     {...register(`service_items.${index}.start_at` as never, {
@@ -304,32 +331,46 @@ export default function OrderServiceItemsEditor<
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
-                  <Label>{t("dropoffTime")}</Label>
+                  <Label htmlFor={id("end")}>{t("dropoffTime")}</Label>
                   <Input
+                    id={id("end")}
                     type="datetime-local"
                     step={60}
                     {...register(`service_items.${index}.end_at` as never)}
                   />
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("qtyDays")}</Label>
+                  <Label htmlFor={id("qty")}>{t("qtyDays")}</Label>
                   <Input
+                    id={id("qty")}
                     type="number"
+                    inputMode="numeric"
                     min="1"
+                    aria-invalid={!!err?.quantity}
                     {...register(`service_items.${index}.quantity` as never)}
                   />
+                  {err?.quantity && (
+                    <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
                 </div>
                 <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("unitPrice")}</Label>
+                  <Label htmlFor={id("price")}>{t("unitPrice")}</Label>
                   <Input
+                    id={id("price")}
                     type="number"
+                    inputMode="numeric"
                     min="0"
+                    aria-invalid={!!err?.unit_price}
                     {...register(`service_items.${index}.unit_price` as never)}
                   />
+                  {err?.unit_price && (
+                    <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
                 </div>
-                <div className="space-y-1.5 xl:col-span-2">
-                  <Label>{t("notes")}</Label>
+                <div className="space-y-1.5 sm:col-span-2 xl:col-span-2">
+                  <Label htmlFor={id("notes")}>{t("notes")}</Label>
                   <Input
+                    id={id("notes")}
                     placeholder={t("notesPlaceholder")}
                     {...register(`service_items.${index}.notes` as never)}
                   />

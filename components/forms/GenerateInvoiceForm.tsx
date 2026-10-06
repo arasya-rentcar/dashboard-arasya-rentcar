@@ -17,15 +17,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { InvoiceType, PaymentMethod } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, wibDateTimeToIso } from '@/lib/utils';
 
 const schema = z.object({
   invoice_type: z.enum(['DP', 'SETTLEMENT', 'FULL', 'ADDITIONAL', 'COMBINED']),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'QRIS', 'OTHER']),
   amount: z
     .string()
-    .min(1, 'Amount is required')
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Must be a positive number'),
+    // Messages are i18n keys of `generateInvoice`, translated where shown.
+    .min(1, 'errAmountRequired')
+    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'errAmountPositive'),
   note: z.string().optional(),
   // Sprint 5: optional back-dated issue date (datetime-local string).
   issue_date: z.string().optional(),
@@ -53,11 +54,11 @@ const TYPE_OPTIONS: { value: 'DP' | 'SETTLEMENT' | 'FULL'; key: 'typeDP' | 'type
   { value: 'FULL', key: 'typeFull' },
 ];
 
-const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: 'CASH', label: 'Cash' },
-  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-  { value: 'QRIS', label: 'QRIS' },
-  { value: 'OTHER', label: 'Other' },
+const METHOD_OPTIONS: { value: PaymentMethod; labelKey: string }[] = [
+  { value: 'CASH', labelKey: 'methodCash' },
+  { value: 'BANK_TRANSFER', labelKey: 'methodBankTransfer' },
+  { value: 'QRIS', labelKey: 'methodQris' },
+  { value: 'OTHER', labelKey: 'methodOther' },
 ];
 
 export default function GenerateInvoiceForm({
@@ -124,10 +125,9 @@ export default function GenerateInvoiceForm({
       payment_method: values.payment_method as PaymentMethod,
       amount: Number(values.amount),
       note: values.note || undefined,
-      // Convert the local datetime to ISO; omit when left blank (API defaults to now).
-      issue_date: values.issue_date
-        ? new Date(values.issue_date).toISOString()
-        : undefined,
+      // The picker is WIB wall-clock time (whatever the browser timezone is);
+      // omit when left blank (API defaults to now).
+      issue_date: wibDateTimeToIso(values.issue_date),
     });
   }
 
@@ -135,17 +135,17 @@ export default function GenerateInvoiceForm({
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       {/* Summary */}
       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('orderTotal')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
         </div>
         {alreadyPaid > 0 && (
-          <div className="flex justify-between">
+          <div className="flex flex-wrap justify-between gap-x-3">
             <span className="text-gray-500">{t('alreadyPaid')}</span>
             <span className="font-medium text-gray-700">{formatCurrency(alreadyPaid)}</span>
           </div>
         )}
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('remaining')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(Math.max(remaining, 0))}</span>
         </div>
@@ -153,13 +153,13 @@ export default function GenerateInvoiceForm({
 
       {/* Invoice Type */}
       <div className="space-y-1.5">
-        <Label>{t('invoiceType')}</Label>
+        <Label htmlFor="invoice_type">{t('invoiceType')}</Label>
         <Controller
           control={control}
           name="invoice_type"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger id="invoice_type" className="w-full">
                 <SelectValue placeholder={t('selectType')} />
               </SelectTrigger>
               <SelectContent>
@@ -179,19 +179,19 @@ export default function GenerateInvoiceForm({
 
       {/* Payment Method */}
       <div className="space-y-1.5">
-        <Label>{t('paymentMethod')}</Label>
+        <Label htmlFor="invoice_method">{t('paymentMethod')}</Label>
         <Controller
           control={control}
           name="payment_method"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger id="invoice_method" className="w-full">
                 <SelectValue placeholder={t('selectMethod')} />
               </SelectTrigger>
               <SelectContent>
                 {METHOD_OPTIONS.map((m) => (
                   <SelectItem key={m.value} value={m.value}>
-                    {m.label}
+                    {t(m.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -209,13 +209,14 @@ export default function GenerateInvoiceForm({
         <Input
           id="invoice_amount"
           type="number"
+          inputMode="numeric"
           min={invoiceType === 'DP' ? minDp : 0}
           max={Math.max(remaining, 0)}
           {...register('amount')}
           readOnly={invoiceType === 'FULL'}
         />
         {errors.amount && (
-          <p className="text-xs text-red-500">{errors.amount.message}</p>
+          <p className="text-xs text-red-500">{t(errors.amount.message ?? 'errAmountPositive')}</p>
         )}
         {invoiceType === 'DP' && (
           <p className="text-xs text-gray-400">

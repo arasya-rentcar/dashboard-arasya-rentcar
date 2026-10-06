@@ -123,4 +123,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Tailwind v4 dropped the pointer cursor on buttons; clickable controls
+     should still look clickable on desktop. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }

@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import CustomerIdentityCard from '@/components/customers/CustomerIdentityCard';
+import QueryError from '@/components/dashboard/QueryError';
 import TablePagination from '@/components/dashboard/TablePagination';
 import { useCustomer, useUpdateCustomer } from '@/hooks/useCustomers';
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
@@ -31,7 +32,7 @@ export default function CustomerDetailPage() {
   const tx = useTranslations('customerDetail');
   const tos = useTranslations('orderStatus');
   const [ordersPage, setOrdersPage] = useState(1);
-  const { data: customer, isLoading } = useCustomer(id, ordersPage);
+  const { data: customer, isLoading, isError, error, refetch } = useCustomer(id, ordersPage);
   const updateMutation = useUpdateCustomer();
 
   const [tags, setTags] = useState<string[]>([]);
@@ -82,9 +83,15 @@ export default function CustomerDetailPage() {
     );
   }
   if (!customer) {
+    // A network / server error used to read "customer not found".
+    const status = (error as { response?: { status?: number } } | null)?.response?.status;
     return (
       <DashboardShell title={tx('title')}>
-        <p className="text-sm text-gray-500">{tx('notFound')}</p>
+        {isError && status !== 404 ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : (
+          <p className="text-sm text-gray-500">{tx('notFound')}</p>
+        )}
       </DashboardShell>
     );
   }
@@ -99,7 +106,7 @@ export default function CustomerDetailPage() {
           href="/dashboard/customers"
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-800"
         >
-          <ArrowLeft className="h-4 w-4 mr-1" /> {tx('backToCustomers')}
+          <ArrowLeft className="h-4 w-4 mr-1" aria-hidden="true" /> {tx('backToCustomers')}
         </Link>
 
         {/* Summary cards */}
@@ -128,11 +135,13 @@ export default function CustomerDetailPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-sm">
               <div className="flex items-center gap-2 text-gray-700">
-                <Phone className="h-4 w-4 text-gray-400" /> {customer.phone}
+                <Phone className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+                <span className="min-w-0 break-words">{customer.phone}</span>
               </div>
               {customer.email && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Mail className="h-4 w-4 text-gray-400" /> {customer.email}
+                  <Mail className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
+                  <span className="min-w-0 break-all">{customer.email}</span>
                 </div>
               )}
 
@@ -146,14 +155,17 @@ export default function CustomerDetailPage() {
                   {tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 pl-2.5 pr-1 py-0.5 text-xs"
+                      className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 pl-2.5 pr-0.5 py-0.5 text-xs"
                     >
-                      {tag}
+                      <span className="min-w-0 truncate" title={tag}>{tag}</span>
                       <button
+                        type="button"
                         onClick={() => removeTag(tag)}
-                        className="text-indigo-300 hover:text-red-500"
+                        aria-label={tx('removeTag', { tag })}
+                        title={tx('removeTag', { tag })}
+                        className="flex size-6 shrink-0 items-center justify-center rounded-full text-indigo-300 hover:bg-indigo-100 hover:text-red-500 sm:size-5"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3 w-3" aria-hidden="true" />
                       </button>
                     </span>
                   ))}
@@ -161,7 +173,8 @@ export default function CustomerDetailPage() {
                 <div className="flex gap-1.5">
                   <Input
                     placeholder={tx('addTagPlaceholder')}
-                    className="h-8 text-xs"
+                    aria-label={tx('addTag')}
+                    className="h-9 sm:h-8 sm:text-xs"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyDown={(e) => {
@@ -171,8 +184,17 @@ export default function CustomerDetailPage() {
                       }
                     }}
                   />
-                  <Button variant="outline" size="sm" onClick={addTag}>
-                    <Plus className="h-3.5 w-3.5" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-9 shrink-0 px-0 sm:h-8 sm:w-8"
+                    onClick={addTag}
+                    disabled={!newTag.trim()}
+                    aria-label={tx('addTag')}
+                    title={tx('addTag')}
+                  >
+                    <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -183,7 +205,8 @@ export default function CustomerDetailPage() {
                 </p>
                 <Textarea
                   placeholder={tx('notesPlaceholder')}
-                  className="text-sm min-h-20"
+                  aria-label={tx('loyaltyNotes')}
+                  className="min-h-20"
                   value={notes}
                   onChange={(e) => {
                     setNotes(e.target.value);
@@ -197,7 +220,7 @@ export default function CustomerDetailPage() {
                 onClick={save}
                 disabled={!dirty || updateMutation.isPending}
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-4 w-4" aria-hidden="true" />
                 {updateMutation.isPending ? tx('saving') : tx('saveChanges')}
               </Button>
             </CardContent>
@@ -214,7 +237,7 @@ export default function CustomerDetailPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <Th className="w-10">{tx('colNo')}</Th>
+                    <Th className="hidden w-10 sm:table-cell">{tx('colNo')}</Th>
                     <Th>{tx('colDate')}</Th>
                     <Th className="hidden sm:table-cell">{tx('colRoute')}</Th>
                     <Th>{tx('colStatus')}</Th>
@@ -235,13 +258,16 @@ export default function CustomerDetailPage() {
                   ) : (
                     customer.orders.map((o, i) => (
                       <TableRow key={o.id} className="hover:bg-gray-50/50">
-                        <TableCell className="text-xs text-gray-400 tabular-nums">
+                        <TableCell className="hidden text-xs text-gray-400 tabular-nums sm:table-cell">
                           {start + i + 1}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600">
+                        <TableCell className="text-sm text-gray-600 whitespace-nowrap">
                           {formatDate(o.order_date)}
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600 hidden sm:table-cell max-w-48 truncate">
+                        <TableCell
+                          className="text-sm text-gray-600 hidden sm:table-cell max-w-48 truncate"
+                          title={`${o.pickup_location} → ${o.dropoff_location}`}
+                        >
                           {o.pickup_location} → {o.dropoff_location}
                         </TableCell>
                         <TableCell>
@@ -263,7 +289,7 @@ export default function CustomerDetailPage() {
                         <TableCell>
                           <Link
                             href={`/dashboard/orders/${o.id}`}
-                            className="text-xs text-blue-600 hover:underline"
+                            className="inline-flex min-h-8 items-center text-xs text-blue-600 hover:underline"
                           >
                             {tx('open')}
                           </Link>
@@ -295,7 +321,7 @@ function Stat({ label, value }: { label: string; value: string }) {
     <Card className="border border-gray-200 shadow-none">
       <CardContent className="p-3">
         <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-base font-semibold text-gray-900">{value}</p>
+        <p className="break-words text-base font-semibold tabular-nums text-gray-900">{value}</p>
       </CardContent>
     </Card>
   );

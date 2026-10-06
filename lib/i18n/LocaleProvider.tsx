@@ -40,16 +40,17 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Keep <html lang> in sync with the active locale (also after restoring it).
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
+
   const setLocale = (next: Locale) => {
     setLocaleState(next);
     try {
       window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
     } catch {
       /* ignore storage errors */
-    }
-    // Keep <html lang> in sync for a11y / SEO.
-    if (typeof document !== 'undefined') {
-      document.documentElement.lang = next;
     }
   };
 

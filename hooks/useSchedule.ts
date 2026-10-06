@@ -117,6 +117,8 @@ export function useScheduleWeek(from?: string, resource: 'drivers' | 'cars' = 'd
       const res = await scheduleApi.week({ from, resource });
       return res.data.data;
     },
+    // Keep the current week on screen while the next one loads.
+    placeholderData: (prev) => prev,
   });
 }
 

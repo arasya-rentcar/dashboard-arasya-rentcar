@@ -24,11 +24,10 @@ import { Button } from "@/components/ui/button";
 
 type Pair = { t: string; d: string };
 
-const botTemplates = [
-  {
-    title: "1. Internal driver pakai nama pendek",
-    note: "Paling aman untuk operasional. Bot match nama ke database.",
-    text: `#order
+// Sample chat text stays as the bot reads it (Indonesian keywords); the title
+// and note of each sample come from guide.botTemplateMeta (same order).
+const botTemplateTexts = [
+  `#order
 
 PIC:
 Nama: Budi Santoso
@@ -46,11 +45,7 @@ Layanan: 12 JAM
 Driver: Sutan
 Harga: 750000
 Catatan: Jemput VIP`,
-  },
-  {
-    title: "2. Internal driver pakai tag WhatsApp",
-    note: "Bisa dipakai jika nomor tag sudah sama dengan phone driver di database.",
-    text: `#order
+  `#order
 
 PIC:
 Nama: Budi Santoso
@@ -69,11 +64,7 @@ Harga: 750000
 Catatan: Jemput VIP
 
 @Sutan`,
-  },
-  {
-    title: "3. Multi-day / banyak rute (driver bisa beda tiap hari)",
-    note: "Setiap nomor menjadi satu hari di Schedule dan satu baris invoice. Tulis Driver di tiap nomor; boleh berbeda tiap hari. Total otomatis dari semua Harga.",
-    text: `#order
+  `#order
 
 PIC:
 Nama: Budi Santoso
@@ -99,11 +90,7 @@ Layanan: FULL DAY
 Driver: Rori
 Harga: 950000
 Catatan: Hari kedua ganti driver`,
-  },
-  {
-    title: "4. Lokasi/jam menyusul",
-    note: "Boleh untuk hari berikutnya. Hari pertama sebaiknya lengkap.",
-    text: `#order
+  `#order
 
 PIC:
 Nama: Rina
@@ -129,11 +116,7 @@ Layanan: FULL DAY
 Driver: Ruli
 Harga: 650000
 Catatan: Tujuan hari kedua menyusul`,
-  },
-  {
-    title: "5. External driver",
-    note: "Wajib nama + nomor WA + asal/base. External tidak perlu akun/email.",
-    text: `#order
+  `#order
 
 PIC:
 Nama: Budi Santoso
@@ -151,11 +134,7 @@ Layanan: ALL INCLUDED
 Driver: Budi External / 081288889999 / Bandung
 Harga: 750000
 Catatan: Driver luar, asal Bandung`,
-  },
-  {
-    title: "6. Beberapa PIC/customer",
-    note: "PIC pertama jadi primary. PIC tambahan tetap tersimpan di order.",
-    text: `#order
+  `#order
 
 PIC:
 Nama: Budi Santoso
@@ -174,20 +153,17 @@ Mobil: VLZ1
 Layanan: 12 JAM
 Driver: Rori
 Harga: 700000`,
-  },
 ];
 
+// Sample driver messages (what the driver types). Labels come from
+// guide.reportExampleLabels (same order, plus one for the caption rule).
 const driverReportExamples = [
-  ["Start", "#start\nStart dari pool Arasya menuju pickup customer. Odo 12345."],
-  ["Drop", "#drop\nSudah dropoff di tujuan / customer sudah turun."],
-  ["Drop 1", "#drop 1\nCustomer pertama turun di Hotel Mulia."],
-  ["Drop 2", "#drop 2\nCustomer kedua turun di Bandara Soetta Terminal 3."],
-  ["Drop tambahan", "#drop\nDrop tambahan di PIK. Parkir 20000."],
-  ["Finish", "#finish\nSelesai semua. Odo 12430. Parkir 25000."],
-  [
-    "Foto/PDF/Dokumen",
-    "Foto, PDF, nota, atau dokumen wajib diberi caption yang diawali #start, #drop, atau #finish.",
-  ],
+  "#start\nStart dari pool Arasya menuju pickup customer. Odo 12345.",
+  "#drop\nSudah dropoff di tujuan / customer sudah turun.",
+  "#drop 1\nCustomer pertama turun di Hotel Mulia.",
+  "#drop 2\nCustomer kedua turun di Bandara Soetta Terminal 3.",
+  "#drop\nDrop tambahan di PIK. Parkir 20000.",
+  "#finish\nSelesai semua. Odo 12430. Parkir 25000.",
 ];
 
 function Card({
@@ -200,7 +176,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <div className="rounded-lg bg-gray-900 p-2 text-white">
           <Icon className="h-4 w-4" />
@@ -214,7 +190,7 @@ function Card({
 
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
-    <pre className="whitespace-pre-wrap rounded-lg bg-gray-950 p-4 text-sm leading-relaxed text-gray-50">
+    <pre className="whitespace-pre-wrap break-words rounded-lg bg-gray-950 p-3 text-sm leading-relaxed text-gray-50 sm:p-4">
       {children}
     </pre>
   );
@@ -231,14 +207,16 @@ export default function GuidePage() {
   const websiteMenuParas = t.raw("websiteMenuParas") as string[];
   const botWakeKeywords = t.raw("botWakeKeywords") as { k: string; d: string }[];
   const mistakes = t.raw("mistakes") as string[];
+  const botTemplateMeta = t.raw("botTemplateMeta") as Pair[];
+  const reportLabels = t.raw("reportExampleLabels") as string[];
   return (
     <DashboardShell title={t("title")}>
       <div className="mx-auto max-w-6xl space-y-5">
-        <div className="rounded-2xl bg-gray-900 p-6 text-white">
+        <div className="rounded-2xl bg-gray-900 p-5 text-white sm:p-6">
           <p className="text-sm text-gray-300">{t("heroKicker")}</p>
-          <h1 className="mt-1 text-2xl font-semibold">
+          <h2 className="mt-1 text-xl font-semibold sm:text-2xl">
             {t("heroTitle")}
-          </h1>
+          </h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-300">
             {t("heroSubtitle")}
           </p>
@@ -420,13 +398,13 @@ Selesai semua, unit kembali standby`}</CodeBlock>
           icon={MessageCircle}
         >
           <div className="grid gap-4 lg:grid-cols-2">
-            {botTemplates.map((tpl) => (
-              <div key={tpl.title} className="space-y-2 rounded-xl border p-4">
+            {botTemplateTexts.map((text, i) => (
+              <div key={i} className="min-w-0 space-y-2 rounded-xl border p-4">
                 <div>
-                  <b className="text-sm text-gray-900">{tpl.title}</b>
-                  <p className="text-xs text-gray-500">{tpl.note}</p>
+                  <b className="text-sm text-gray-900">{botTemplateMeta[i]?.t}</b>
+                  <p className="text-xs text-gray-500">{botTemplateMeta[i]?.d}</p>
                 </div>
-                <CodeBlock>{tpl.text}</CodeBlock>
+                <CodeBlock>{text}</CodeBlock>
               </div>
             ))}
           </div>
@@ -434,17 +412,21 @@ Selesai semua, unit kembali standby`}</CodeBlock>
 
         <Card title={t("driverReportTitle")} icon={Send}>
           <div className="grid gap-3 text-sm text-gray-700 md:grid-cols-2">
-            {driverReportExamples.map(([title, text]) => (
-              <div key={title} className="space-y-2 rounded-lg border p-3">
-                <b>{title}</b>
+            {driverReportExamples.map((text, i) => (
+              <div key={i} className="min-w-0 space-y-2 rounded-lg border p-3">
+                <b>{reportLabels[i]}</b>
                 <CodeBlock>{text}</CodeBlock>
               </div>
             ))}
+            <div className="min-w-0 space-y-2 rounded-lg border p-3">
+              <b>{reportLabels[driverReportExamples.length]}</b>
+              <CodeBlock>{t("reportCaptionRule")}</CodeBlock>
+            </div>
           </div>
         </Card>
 
         <Card title={t("keywordsTitle")} icon={ClipboardList}>
-          <div className="overflow-hidden rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>

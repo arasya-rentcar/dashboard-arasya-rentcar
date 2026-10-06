@@ -36,7 +36,7 @@ export default function CustomerPicker({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-            <p className="truncate text-sm font-medium text-gray-900">
+            <p className="truncate text-sm font-medium text-gray-900" title={selected.name}>
               {selected.name}
             </p>
           </div>
@@ -48,7 +48,7 @@ export default function CustomerPicker({
         <button
           type="button"
           onClick={onClear}
-          className="ml-3 flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-white hover:text-gray-900"
+          className="ml-3 flex min-h-8 shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs text-gray-500 hover:bg-white hover:text-gray-900"
         >
           <X className="h-3.5 w-3.5" /> {t("change")}
         </button>
@@ -61,7 +61,10 @@ export default function CustomerPicker({
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
+          type="search"
           placeholder={t("searchPlaceholder")}
+          aria-label={t("searchPlaceholder")}
+          aria-expanded={open}
           className="pl-9"
           value={search}
           onChange={(e) => {

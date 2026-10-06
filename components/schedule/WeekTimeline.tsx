@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import QueryError from '@/components/dashboard/QueryError';
 import { useScheduleWeek } from '@/hooks/useSchedule';
 import { WeekRow, WeekDayCapacity } from '@/types';
 
@@ -65,9 +66,10 @@ export default function WeekTimeline({
   onPickDay?: (date: string) => void;
 }) {
   const t = useTranslations('timeline');
+  const locale = useLocale() === 'en' ? 'en-GB' : 'id-ID';
   const [from, setFrom] = useState<string | undefined>(undefined);
   const [resource, setResource] = useState<'drivers' | 'cars'>('drivers');
-  const { data, isLoading } = useScheduleWeek(from, resource);
+  const { data, isLoading, isError, refetch } = useScheduleWeek(from, resource);
 
   const days = data?.days ?? [];
   const rows = data?.rows ?? [];
@@ -78,7 +80,7 @@ export default function WeekTimeline({
     !!data && today >= data.week_start && today <= data.week_end;
   const rangeLabel =
     data && days.length
-      ? weekRangeLabel(data.week_start, data.week_end, 'id-ID')
+      ? weekRangeLabel(data.week_start, data.week_end, locale)
       : '';
 
   function prevWeek() {
@@ -95,17 +97,19 @@ export default function WeekTimeline({
     <div className="rounded-xl border border-gray-200 bg-white">
       {/* Header: title, resource toggle, week nav */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">{t('title')}</h3>
             {rangeLabel && (
               <p className="text-xs text-gray-400">{rangeLabel}</p>
             )}
           </div>
-          <div className="flex rounded-lg bg-gray-100 p-0.5">
+          <div className="flex rounded-lg bg-gray-100 p-0.5" role="group" aria-label={t('title')}>
             <button
+              type="button"
+              aria-pressed={resource === 'drivers'}
               onClick={() => setResource('drivers')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
+              className={`flex min-h-8 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
                 resource === 'drivers'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500'
@@ -114,8 +118,10 @@ export default function WeekTimeline({
               <Users className="h-3.5 w-3.5" /> {t('drivers')}
             </button>
             <button
+              type="button"
+              aria-pressed={resource === 'cars'}
               onClick={() => setResource('cars')}
-              className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
+              className={`flex min-h-8 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
                 resource === 'cars'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500'
@@ -126,7 +132,13 @@ export default function WeekTimeline({
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="outline" size="sm" onClick={prevWeek}>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={prevWeek}
+            aria-label={t('prevWeek')}
+            title={t('prevWeek')}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           {/* Middle button: a passive "This week" label when already on the
@@ -139,7 +151,13 @@ export default function WeekTimeline({
           >
             {onCurrentWeek ? t('thisWeek') : t('today')}
           </Button>
-          <Button variant="outline" size="sm" onClick={nextWeek}>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            onClick={nextWeek}
+            aria-label={t('nextWeek')}
+            title={t('nextWeek')}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -147,12 +165,16 @@ export default function WeekTimeline({
 
       {isLoading ? (
         <p className="py-10 text-center text-sm text-gray-400">{t('loading')}</p>
+      ) : isError ? (
+        <div className="p-4">
+          <QueryError onRetry={() => refetch()} compact />
+        </div>
       ) : (
         <div className="overflow-x-auto">
-          <div className="min-w-[760px]">
+          <div className="min-w-[628px] sm:min-w-[760px]">
             {/* Day header row with capacity ribbon */}
-            <div className="grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-100">
-              <div className="sticky left-0 z-20 bg-white px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-gray-400 shadow-[1px_0_0_0_rgb(243,244,246)]">
+            <div className="grid grid-cols-[96px_repeat(7,minmax(76px,1fr))] sm:grid-cols-[140px_repeat(7,minmax(80px,1fr))] border-b border-gray-100">
+              <div className="sticky left-0 z-20 bg-white px-2 py-2 text-[11px] font-medium uppercase tracking-wide text-gray-400 shadow-[1px_0_0_0_rgb(243,244,246)] sm:px-3">
                 {resource === 'drivers' ? t('drivers') : t('cars')}
               </div>
               {days.map((d, i) => {
@@ -161,8 +183,12 @@ export default function WeekTimeline({
                 return (
                   <button
                     key={d}
+                    type="button"
                     onClick={() => onPickDay?.(d)}
-                    className={`border-l border-gray-100 px-2 py-2 text-center transition-colors hover:bg-gray-50 ${
+                    title={t('openDay')}
+                    aria-label={`${t('openDay')} ${dowLabel(d, locale)} ${dayNum(d)}`}
+                    aria-current={isToday ? 'date' : undefined}
+                    className={`min-w-0 border-l border-gray-100 px-1 py-2 text-center transition-colors hover:bg-gray-50 sm:px-2 ${
                       isToday ? 'bg-blue-50/60' : ''
                     }`}
                   >
@@ -171,7 +197,7 @@ export default function WeekTimeline({
                         isToday ? 'text-blue-600' : 'text-gray-400'
                       }`}
                     >
-                      {dowLabel(d, 'id-ID')}
+                      {dowLabel(d, locale)}
                     </div>
                     <div
                       className={`text-sm font-semibold ${
@@ -225,10 +251,14 @@ function CapacityBadge({
   cap: WeekDayCapacity;
   resource: 'drivers' | 'cars';
 }) {
+  const t = useTranslations('timeline');
   const c = resource === 'drivers' ? cap.drivers : cap.cars;
   const tight = c.free === 0;
   return (
-    <div className="mt-1 flex items-center justify-center gap-1 text-[10px]">
+    <div
+      className="mt-1 flex flex-wrap items-center justify-center gap-x-1 text-[10px]"
+      title={t('capacityTitle', { free: c.free, trips: cap.trips })}
+    >
       <span
         className={`rounded px-1 font-medium ${
           tight
@@ -238,10 +268,10 @@ function CapacityBadge({
               : 'bg-emerald-50 text-emerald-700'
         }`}
       >
-        {c.free} free
+        {t('freeShort', { n: c.free })}
       </span>
       {cap.trips > 0 && (
-        <span className="text-gray-400">{cap.trips}t</span>
+        <span className="text-gray-400">{t('tripsShort', { n: cap.trips })}</span>
       )}
     </div>
   );
@@ -261,8 +291,8 @@ function UnassignedLane({
   label: string;
 }) {
   return (
-    <div className="group grid grid-cols-[140px_repeat(7,1fr)] border-b border-amber-200 bg-amber-50/40">
-      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-amber-50 px-3 py-2 shadow-[1px_0_0_0_rgb(253,230,138)]">
+    <div className="group grid grid-cols-[96px_repeat(7,minmax(76px,1fr))] sm:grid-cols-[140px_repeat(7,minmax(80px,1fr))] border-b border-amber-200 bg-amber-50/40">
+      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-amber-50 px-2 py-2 shadow-[1px_0_0_0_rgb(253,230,138)] sm:px-3" title={label}>
         <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         <span className="min-w-0 flex-1 truncate text-xs font-semibold text-amber-700">
           {label}
@@ -319,9 +349,9 @@ function TimelineRow({
   days: string[];
 }) {
   return (
-    <div className="group grid grid-cols-[140px_repeat(7,1fr)] border-b border-gray-50 last:border-b-0">
+    <div className="group grid grid-cols-[96px_repeat(7,minmax(76px,1fr))] sm:grid-cols-[140px_repeat(7,minmax(80px,1fr))] border-b border-gray-50 last:border-b-0">
       {/* Resource label (frozen first column) */}
-      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-white px-3 py-2 shadow-[1px_0_0_0_rgb(243,244,246)] group-hover:bg-gray-50/80">
+      <div className="sticky left-0 z-10 flex items-center gap-1.5 bg-white px-2 py-2 shadow-[1px_0_0_0_rgb(243,244,246)] group-hover:bg-gray-50 sm:px-3">
         <div className="min-w-0 flex-1">
           <span
             className={`block truncate text-xs font-medium ${

@@ -1,8 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, ExternalLink, MapPin, Navigation } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Eye, MapPin, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import { formatDateTime } from '@/lib/utils';
 import type { TripReportEntry } from '@/types';
 
@@ -22,6 +23,7 @@ export default function ArrivalEvidence({
   arrivedAt?: string | null;
 }) {
   const t = useTranslations('arrival');
+  const { openPreview } = useFilePreview();
   const list = reports ?? [];
   const latest = (type: string) =>
     list
@@ -46,6 +48,17 @@ export default function ArrivalEvidence({
   const lng = withFix?.longitude ?? null;
   const point = lat != null && lng != null ? `${lat.toFixed(6)},${lng.toFixed(6)}` : null;
 
+  function showPhoto() {
+    if (!photo?.file_url) return;
+    openPreview({
+      url: photo.file_url,
+      title: [t('title'), photo.created_at ? formatDateTime(photo.created_at) : null]
+        .filter(Boolean)
+        .join(' · '),
+      kind: 'image',
+    });
+  }
+
   return (
     <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2 text-[11px]">
       <div className="flex flex-wrap items-center gap-1.5">
@@ -65,14 +78,21 @@ export default function ArrivalEvidence({
       </div>
       <div className="mt-1.5 flex gap-2">
         {photo?.file_url && (
-          <a href={photo.file_url} target="_blank" rel="noopener noreferrer" className="shrink-0" title={t('openPhoto')}>
+          <button
+            type="button"
+            onClick={showPhoto}
+            className="shrink-0 cursor-zoom-in rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            title={t('openPhoto')}
+            aria-label={t('openPhoto')}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.file_url}
               alt={t('photoAlt')}
+              loading="lazy"
               className="h-20 w-16 rounded border border-gray-200 object-cover bg-white"
             />
-          </a>
+          </button>
         )}
         <div className="min-w-0 space-y-0.5 text-gray-600">
           {locationName && (
@@ -80,7 +100,7 @@ export default function ArrivalEvidence({
           )}
           {point ? (
             <>
-              <p className="tabular-nums">
+              <p className="tabular-nums break-all">
                 {point}
                 {withFix?.location_accuracy_m != null &&
                   ` · ${t('accuracy', { m: withFix.location_accuracy_m })}`}
@@ -110,14 +130,13 @@ export default function ArrivalEvidence({
             <p>{t('noGpsHint')}</p>
           )}
           {photo?.file_url && (
-            <a
-              href={photo.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+            <button
+              type="button"
+              onClick={showPhoto}
+              className="inline-flex min-h-6 items-center gap-1 text-blue-600 hover:underline"
             >
-              {t('openPhoto')} <ExternalLink className="h-3 w-3" />
-            </a>
+              <Eye className="h-3 w-3" /> {t('openPhoto')}
+            </button>
           )}
         </div>
       </div>

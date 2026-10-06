@@ -21,8 +21,9 @@ import { formatCurrency } from '@/lib/utils';
 const schema = z.object({
   amount: z
     .string()
-    .min(1, 'Amount is required')
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Must be a positive number'),
+    // Messages are i18n keys of `reviseInvoice`, translated where shown.
+    .min(1, 'errAmountRequired')
+    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'errAmountPositive'),
   payment_method: z.enum(['CASH', 'BANK_TRANSFER', 'QRIS', 'OTHER']),
   note: z.string().optional(),
 });
@@ -58,7 +59,9 @@ export default function ReviseInvoiceForm({ invoice, onSubmit, isLoading }: Prop
     defaultValues: {
       amount: String(Number(invoice.amount)),
       payment_method: invoice.payment_method,
-      note: invoice.note ? `Revision of ${invoice.invoice_number}: ${invoice.note}` : `Revision of ${invoice.invoice_number}`,
+      note: invoice.note
+        ? t('defaultNoteWith', { number: invoice.invoice_number, note: invoice.note })
+        : t('defaultNote', { number: invoice.invoice_number }),
     },
   });
 
@@ -73,11 +76,11 @@ export default function ReviseInvoiceForm({ invoice, onSubmit, isLoading }: Prop
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 space-y-1 text-sm">
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-amber-700">{t('currentInvoice')}</span>
-          <span className="font-mono font-semibold text-amber-900">{invoice.invoice_number}</span>
+          <span className="min-w-0 break-all font-mono font-semibold text-amber-900">{invoice.invoice_number}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-amber-700">{t('currentAmount')}</span>
           <span className="font-semibold text-amber-900">{formatCurrency(invoice.amount)}</span>
         </div>
@@ -91,22 +94,23 @@ export default function ReviseInvoiceForm({ invoice, onSubmit, isLoading }: Prop
         <Input
           id="revision_amount"
           type="number"
+          inputMode="numeric"
           min="0"
           {...register('amount')}
         />
         {errors.amount && (
-          <p className="text-xs text-red-500">{errors.amount.message}</p>
+          <p className="text-xs text-red-500">{t(errors.amount.message ?? 'errAmountPositive')}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <Label>{t('paymentMethod')}</Label>
+        <Label htmlFor="revision_method">{t('paymentMethod')}</Label>
         <Controller
           control={control}
           name="payment_method"
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger id="revision_method" className="w-full">
                 <SelectValue placeholder={t('selectMethod')} />
               </SelectTrigger>
               <SelectContent>

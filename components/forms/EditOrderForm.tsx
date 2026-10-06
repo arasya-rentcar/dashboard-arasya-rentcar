@@ -43,23 +43,14 @@ const serviceItemSchema = z.object({
   unit_price: z.string().min(1),
   notes: z.string().optional(),
 });
-const schema = z
-  .object({
-    customers: z.array(customerSchema).min(1),
-    service_items: z.array(serviceItemSchema).min(1),
-    change_reason: z.string().optional(),
-  })
-  .superRefine((values, ctx) => {
-    if (
-      values.change_reason !== undefined &&
-      values.change_reason.trim().length === 0
-    )
-      ctx.addIssue({
-        code: "custom",
-        path: ["change_reason"],
-        message: "Reason is required when changing price",
-      });
-  });
+// The price-change reason is checked on submit (only when a price actually
+// changed): checking it in the schema also blocked saving after the price was
+// changed back, with the error hidden together with the reason field.
+const schema = z.object({
+  customers: z.array(customerSchema).min(1),
+  service_items: z.array(serviceItemSchema).min(1),
+  change_reason: z.string().optional(),
+});
 type FormValues = z.infer<typeof schema>;
 interface Props {
   order: Order;
@@ -131,6 +122,7 @@ export default function EditOrderForm({
     watch,
     control,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -197,6 +189,10 @@ export default function EditOrderForm({
     );
   }
   async function handleFormSubmit(values: FormValues) {
+    if (priceChanged && !values.change_reason?.trim()) {
+      setError("change_reason", { message: tEdit("reasonRequired") }, { shouldFocus: true });
+      return;
+    }
     const primary =
       values.customers.find((c) => c.is_primary) || values.customers[0];
     await onSubmit({
@@ -239,17 +235,17 @@ export default function EditOrderForm({
   return (
     <form
       onSubmit={handleSubmit(handleFormSubmit)}
-      className="flex max-h-[calc(96vh-96px)] flex-col overflow-hidden"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="flex-1 space-y-5 overflow-y-auto px-1 pb-24 pr-2">
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pr-2 sm:space-y-5">
+        <section className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <Label className="text-sm font-semibold text-gray-900">
-                Customer / PIC
-              </Label>
+              <p className="text-sm font-semibold text-gray-900">
+                {tEdit("customerTitle")}
+              </p>
               <p className="text-xs text-gray-500">
-                Primary PIC is used as the main customer contact.
+                {tEdit("customerHint")}
               </p>
             </div>
             <Button
@@ -258,7 +254,7 @@ export default function EditOrderForm({
               size="sm"
               onClick={() => append({ name: "", phone: "", is_primary: false })}
             >
-              <Plus className="mr-1 h-3.5 w-3.5" /> Add PIC
+              <Plus className="mr-1 h-3.5 w-3.5" /> {tEdit("addPic")}
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -270,24 +266,27 @@ export default function EditOrderForm({
                 <div className="mb-2 flex items-center justify-between">
                   <button
                     type="button"
+                    aria-pressed={!!customers?.[index]?.is_primary}
                     className={
                       customers?.[index]?.is_primary
-                        ? "rounded-full bg-gray-900 px-2.5 py-1 text-xs font-medium text-white"
-                        : "text-xs font-medium text-gray-500 hover:text-gray-900"
+                        ? "min-h-7 rounded-full bg-gray-900 px-2.5 py-1 text-xs font-medium text-white"
+                        : "min-h-7 rounded-full px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                     }
                     onClick={() => setPrimary(index)}
                   >
                     {customers?.[index]?.is_primary
-                      ? "Primary PIC"
-                      : "Set primary"}
+                      ? tEdit("primaryPic")
+                      : tEdit("setPrimary")}
                   </button>
                   {fields.length > 1 && (
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
+                      size="icon-sm"
                       onClick={() => remove(index)}
                       className="text-red-500 hover:text-red-600"
+                      aria-label={tEdit("removePic")}
+                      title={tEdit("removePic")}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -295,12 +294,24 @@ export default function EditOrderForm({
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <Label>{tEdit("name")}</Label>
-                    <Input {...register(`customers.${index}.name`)} />
+                    <Label htmlFor={`edit-pic-${index}-name`}>{tEdit("name")}</Label>
+                    <Input
+                      id={`edit-pic-${index}-name`}
+                      aria-invalid={!!errors.customers?.[index]?.name}
+                      {...register(`customers.${index}.name`)}
+                    />
+                    {errors.customers?.[index]?.name && (
+                      <p className="text-xs text-red-500">{tEdit("nameRequired")}</p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
-                    <Label>{tEdit("phone")}</Label>
-                    <Input {...register(`customers.${index}.phone`)} />
+                    <Label htmlFor={`edit-pic-${index}-phone`}>{tEdit("phone")}</Label>
+                    <Input
+                      id={`edit-pic-${index}-phone`}
+                      type="tel"
+                      inputMode="tel"
+                      {...register(`customers.${index}.phone`)}
+                    />
                   </div>
                 </div>
               </div>
@@ -308,7 +319,7 @@ export default function EditOrderForm({
           </div>
         </section>
 
-        <section className="space-y-1 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-xs leading-5 text-gray-600 shadow-sm">
+        <section className="space-y-1 rounded-2xl border border-gray-200 bg-gray-50 p-3 text-xs leading-5 text-gray-600 shadow-sm sm:p-4">
           <p>{tEdit("orderDateNote")}</p>
           <p>{tEdit("assignedDaysNote")}</p>
         </section>
@@ -322,7 +333,7 @@ export default function EditOrderForm({
         />
 
         {priceChanged && (
-          <section className="rounded-2xl border border-amber-100 bg-amber-50 p-4 shadow-sm">
+          <section className="rounded-2xl border border-amber-100 bg-amber-50 p-3 shadow-sm sm:p-4">
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.4fr] lg:items-end">
               <div className="text-xs text-amber-800 space-y-1">
                 <p className="font-semibold">
@@ -342,9 +353,13 @@ export default function EditOrderForm({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{tEdit("reasonForChange")}</Label>
+                <Label htmlFor="edit-change-reason">
+                  {tEdit("reasonForChange")} <span className="text-red-600">*</span>
+                </Label>
                 <Input
+                  id="edit-change-reason"
                   placeholder={tEdit("reasonPlaceholder")}
+                  aria-invalid={!!errors.change_reason}
                   {...register("change_reason")}
                 />
                 {errors.change_reason && (
@@ -357,7 +372,7 @@ export default function EditOrderForm({
           </section>
         )}
       </div>
-      <div className="sticky bottom-0 -mx-1 flex items-center justify-between border-t border-gray-100 bg-white/95 px-1 py-3 backdrop-blur">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-100 bg-white px-1 pt-3">
         <div className="text-xs text-gray-500">
           {tEdit("finalPrice")}:{" "}
           <span className="font-semibold text-gray-900">

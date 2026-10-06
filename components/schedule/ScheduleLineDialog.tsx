@@ -29,7 +29,7 @@ import {
 } from '@/hooks/useExternalVendors';
 import { useAssignScheduleLine, useBusyUnits } from '@/hooks/useSchedule';
 import { useDriverFeePresets } from '@/hooks/useTripCosts';
-import { dayLockReason, formatCurrency, getErrorMessage, isoToWibDate } from '@/lib/utils';
+import { dayLockReason, formatCurrency, formatDate, getErrorMessage, isoToWibDate } from '@/lib/utils';
 import { ScheduleLine } from '@/types';
 import { Plus, Loader2, Lock } from 'lucide-react';
 
@@ -259,9 +259,9 @@ export default function ScheduleLineDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader>
+        <DialogHeader className="pr-6 text-left">
           <DialogTitle>
-            {t('editDay')} · {(line.service_date && isoToWibDate(line.service_date)) || '—'}
+            {t('editDay')} · {line.service_date ? formatDate(line.service_date) : '—'}
           </DialogTitle>
         </DialogHeader>
         <fieldset disabled={!!lockReason} className="m-0 min-w-0 space-y-3 border-0 p-0">
@@ -281,11 +281,12 @@ export default function ScheduleLineDialog({
           </p>
 
           {/* Internal / External toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="group" aria-label={t('driver')}>
             <button
               type="button"
+              aria-pressed={!isExternal}
               onClick={() => setIsExternal(false)}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium border ${
+              className={`min-h-9 flex-1 rounded-lg px-3 py-1.5 text-sm font-medium border ${
                 !isExternal
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-600 border-gray-200'
@@ -295,8 +296,9 @@ export default function ScheduleLineDialog({
             </button>
             <button
               type="button"
+              aria-pressed={isExternal}
               onClick={() => setIsExternal(true)}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium border ${
+              className={`min-h-9 flex-1 rounded-lg px-3 py-1.5 text-sm font-medium border ${
                 isExternal
                   ? 'bg-purple-600 text-white border-purple-600'
                   : 'bg-white text-gray-600 border-gray-200'
@@ -318,13 +320,13 @@ export default function ScheduleLineDialog({
                 </p>
               ) : null}
               <div className="space-y-1.5">
-                <Label>{t('driver')}</Label>
+                <Label htmlFor="line-driver">{t('driver')}</Label>
                 <Select
                   value={driverId}
                   onValueChange={setDriverId}
                   disabled={awaitingDp}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="line-driver" className="w-full">
                     <SelectValue placeholder={t('selectDriver')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -343,9 +345,9 @@ export default function ScheduleLineDialog({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('car')}</Label>
+                <Label htmlFor="line-car">{t('car')}</Label>
                 <Select value={carId} onValueChange={setCarId}>
-                  <SelectTrigger>
+                  <SelectTrigger id="line-car" className="w-full">
                     <SelectValue placeholder={t('selectCar')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -362,8 +364,9 @@ export default function ScheduleLineDialog({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('driverFeeDay')}</Label>
+                <Label htmlFor="line-driver-fee">{t('driverFeeDay')}</Label>
                 <Input
+                  id="line-driver-fee"
                   inputMode="numeric"
                   value={fee}
                   onChange={(e) => setFee(e.target.value)}
@@ -380,7 +383,7 @@ export default function ScheduleLineDialog({
                           setFee(String(p.amount));
                           setFeeNote(p.label);
                         }}
-                        className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[11px] text-gray-700 hover:bg-gray-50"
+                        className="min-h-7 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-700 hover:bg-gray-50"
                       >
                         {p.label} · {fmtK(p.amount)}
                       </button>
@@ -393,7 +396,7 @@ export default function ScheduleLineDialog({
                           `${presets.addons.overnight.label} 1 ${presets.addons.overnight.unit}`,
                         )
                       }
-                      className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700 hover:bg-blue-100"
+                      className="min-h-7 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] text-blue-700 hover:bg-blue-100"
                     >
                       + {presets.addons.overnight.label} {fmtK(presets.addons.overnight.amount)}
                     </button>
@@ -405,7 +408,7 @@ export default function ScheduleLineDialog({
                           `${presets.addons.overtime.label} 1 ${presets.addons.overtime.unit}`,
                         )
                       }
-                      className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700 hover:bg-blue-100"
+                      className="min-h-7 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] text-blue-700 hover:bg-blue-100"
                     >
                       + {presets.addons.overtime.label} 1 {presets.addons.overtime.unit} {fmtK(presets.addons.overtime.amount)}
                     </button>
@@ -415,13 +418,15 @@ export default function ScheduleLineDialog({
                   value={feeNote}
                   onChange={(e) => setFeeNote(e.target.value)}
                   placeholder={t('driverFeeNote')}
+                  aria-label={t('driverFeeNote')}
                   disabled={payLocked}
                   className="text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>{t('travelAdvance')}</Label>
+                <Label htmlFor="line-travel-advance">{t('travelAdvance')}</Label>
                 <Input
+                  id="line-travel-advance"
                   inputMode="numeric"
                   value={advance}
                   onChange={(e) => setAdvance(e.target.value)}
@@ -444,7 +449,7 @@ export default function ScheduleLineDialog({
                   <button
                     type="button"
                     onClick={() => setNewVendorOpen((o) => !o)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
+                    className="inline-flex min-h-7 items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
                   >
                     <Plus className="h-3 w-3" />
                     {newVendorOpen ? t('cancel') : t('newVendor')}
@@ -484,7 +489,7 @@ export default function ScheduleLineDialog({
                       setNewCarOpen(false);
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full" aria-label={t('vendor')}>
                       <SelectValue placeholder={t('selectVendor')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -504,7 +509,7 @@ export default function ScheduleLineDialog({
                     <button
                       type="button"
                       onClick={() => setNewCarOpen((o) => !o)}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
+                      className="inline-flex min-h-7 items-center gap-1 text-xs font-medium text-purple-600 hover:text-purple-700"
                     >
                       <Plus className="h-3 w-3" />
                       {newCarOpen ? t('cancel') : t('newCar')}
@@ -545,7 +550,7 @@ export default function ScheduleLineDialog({
                         if (!partnerPlate.trim() && plate) setPartnerPlate(plate);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full" aria-label={t('vendorCar')}>
                         <SelectValue placeholder={t('selectCar')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -598,8 +603,9 @@ export default function ScheduleLineDialog({
                 <p className="text-[11px] text-gray-500">{t('partnerHint')}</p>
               </div>
               <div className="space-y-1.5">
-                <Label>{t('rtrDay')}</Label>
+                <Label htmlFor="line-rtr">{t('rtrDay')}</Label>
                 <Input
+                  id="line-rtr"
                   inputMode="numeric"
                   value={rtr}
                   onChange={(e) => setRtr(e.target.value)}
@@ -610,9 +616,9 @@ export default function ScheduleLineDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label>{t('status')}</Label>
+            <Label htmlFor="line-status">{t('status')}</Label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger>
+              <SelectTrigger id="line-status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -625,8 +631,8 @@ export default function ScheduleLineDialog({
             </Select>
           </div>
 
-          <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
-            <span className="text-xs text-gray-500">
+          <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between gap-3">
+            <span className="min-w-0 text-xs text-gray-500">
               {t('marginPreview')} ({isExternal ? t('revenueMinusRtr') : t('revenueMinusFee')})
               {arasyaCosts + extras !== 0 && (
                 <span className="block text-[11px] text-gray-400">
@@ -635,17 +641,19 @@ export default function ScheduleLineDialog({
               )}
             </span>
             <span
-              className={`text-sm font-semibold ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
+              className={`shrink-0 text-sm font-semibold tabular-nums ${previewMargin >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
             >
               {formatCurrency(previewMargin)}
             </span>
           </div>
 
           <Button
+            type="button"
             className="w-full"
             onClick={save}
             disabled={mutation.isPending}
           >
+            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {mutation.isPending ? t('saving') : t('saveRecompute')}
           </Button>
         </fieldset>

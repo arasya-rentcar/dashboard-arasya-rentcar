@@ -20,10 +20,11 @@ export const metadata: Metadata = {
 
 // Responsive foundation: correct scaling on phones/tablets in any orientation.
 // maximumScale is intentionally NOT locked so users can pinch-zoom (a11y).
+// viewportFit stays at the default ("auto"): with "cover" the content would run
+// under the iPhone notch / home bar in landscape, and nothing pads for it.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover",
 };
 
 export default function RootLayout({

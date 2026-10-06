@@ -132,11 +132,11 @@ export function DialogActions({
 }) {
   const t = useTranslations('priceList');
   return (
-    <div className="flex justify-end gap-2 pt-1">
-      <Button variant="outline" onClick={onClose} disabled={busy}>
+    <div className="flex flex-wrap justify-end gap-2 pt-1">
+      <Button type="button" variant="outline" onClick={onClose} disabled={busy}>
         {t('cancel')}
       </Button>
-      <Button variant={danger ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy || disabled}>
+      <Button type="button" variant={danger ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy || disabled}>
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         {label}
       </Button>

@@ -55,6 +55,10 @@ import type { ScheduleLine, ScheduleStatus, OrderServiceItem } from "@/types";
 import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
 import EditOrderForm from "@/components/forms/EditOrderForm";
 import {
+  DURASI_OPTIONS,
+  PAKET_OPTIONS,
+} from "@/components/forms/OrderServiceItemsEditor";
+import {
   useOrder,
   useReassignOrder,
   useUpdateOrder,
@@ -233,6 +237,15 @@ export default function OrderDetailPage({
     { label: t("typeAdditional"), value: "OTHER" },
   ];
 
+  // Display labels for every adjustment type the API can return (the form
+  // above only offers the ones admins add by hand).
+  const ADJUSTMENT_TYPE_LABELS: Record<string, string> = {
+    ...Object.fromEntries(ADDITIONAL_TYPES.map((at) => [at.value, at.label])),
+    EXTRA_DESTINATION: t("typeExtraDestination"),
+    FUEL: t("typeFuel"),
+    DISCOUNT: t("typeDiscount"),
+  };
+
   async function handleAddAdditional() {
     const amt = Number(adjAmount || 0);
     if (!amt || amt <= 0) {
@@ -358,10 +371,24 @@ export default function OrderDetailPage({
     (!!serviceStart && new Date(serviceStart).getTime() <= Date.now());
   const unpaidAtServiceStart =
     !!order && serviceStarted && order.payment_status !== "PAID";
+  // "2 hr 3 jam 15 mnt" / "2d 3h 15m"
+  const durationUnits = {
+    days: (n: number) => t("durDays", { n }),
+    hours: (n: number) => t("durHours", { n }),
+    minutes: (n: number) => t("durMinutes", { n }),
+  };
   const serviceDuration =
     serviceStart && serviceEnd
-      ? formatDuration(serviceStart, serviceEnd)
+      ? formatDuration(serviceStart, serviceEnd, durationUnits)
       : t("notFinishedYet");
+  const kindLabel = (v?: string | null) =>
+    DURASI_OPTIONS.find((o) => o.value === v)?.label ?? v ?? "";
+  const packageLabel = (v?: string | null) =>
+    PAKET_OPTIONS.find((o) => o.value === v)?.label ?? v ?? "";
+  const paymentStatusLabel = (status: string) =>
+    PAYMENT_STATUS_KEYS[status]
+      ? t(PAYMENT_STATUS_KEYS[status])
+      : status.replace("_", " ");
 
   const serviceSummary = (() => {
     const items = order?.service_items ?? [];
@@ -656,16 +683,16 @@ export default function OrderDetailPage({
       <div className="space-y-6">
         {/* Back + Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+            <Button variant="ghost" size="sm" asChild className="-ml-2">
               <Link href="/dashboard/orders">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 {t('orders')}
               </Link>
             </Button>
             <div className="h-4 w-px bg-gray-200" />
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-semibold text-gray-900">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="font-mono text-sm font-semibold text-gray-900 break-all">
                 {(order as { order_code?: string | null }).order_code ||
                   order.id.slice(0, 8)}
               </span>
@@ -679,9 +706,7 @@ export default function OrderDetailPage({
                 variant="outline"
                 className={`text-xs ${PAYMENT_STATUS_STYLES[order.payment_status] ?? ""}`}
               >
-                {PAYMENT_STATUS_KEYS[order.payment_status]
-                  ? t(PAYMENT_STATUS_KEYS[order.payment_status])
-                  : order.payment_status.replace("_", " ")}
+                {paymentStatusLabel(order.payment_status)}
               </Badge>
               {refundDue > 0 && !isRefunded && (
                 <Badge
@@ -795,7 +820,7 @@ export default function OrderDetailPage({
                 {t('serviceStartedUnpaidTitle')}
               </p>
               <p className="text-xs mt-1">
-                {t('serviceStartedUnpaidBody', { status: order.payment_status.replace("_", " ") })}
+                {t('serviceStartedUnpaidBody', { status: paymentStatusLabel(order.payment_status) })}
               </p>
             </div>
           </div>
@@ -828,13 +853,15 @@ export default function OrderDetailPage({
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* The invoice column keeps a usable width (20-24rem) on desktop; with
+            thirds it was only ~176px wide at 1024px. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[minmax(0,1fr)_24rem]">
           {/* Left column — Order + Trip */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Order Information */}
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle className="text-base">{t('orderInformation')}</CardTitle>
                   <Badge
                     variant="outline"
@@ -897,8 +924,8 @@ export default function OrderDetailPage({
                           key={customer.id || index}
                           className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm"
                         >
-                          <div>
-                            <p className="font-medium text-gray-900">
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 break-words">
                               {customer.name}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -930,7 +957,7 @@ export default function OrderDetailPage({
                     </CardTitle>
                     <Link
                       href={`/dashboard/leads?q=${encodeURIComponent(order.web_lead.lead_code)}`}
-                      className="text-xs font-medium text-blue-600 hover:underline"
+                      className="inline-flex min-h-8 items-center text-xs font-medium text-blue-600 hover:underline"
                     >
                       {t('webLeadOpen')}
                     </Link>
@@ -993,11 +1020,11 @@ export default function OrderDetailPage({
 
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <CardTitle className="text-base">
                     {t('serviceDetails')}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {serviceSummary && (
                       <Badge
                         variant="outline"
@@ -1014,10 +1041,11 @@ export default function OrderDetailPage({
                     )}
                     {!isStructurallyLocked && !awaitingDp && hasReassignableLine && (
                       <Button
+                        type="button"
                         onClick={() => setReassignOpen(true)}
                         size="sm"
                         variant="outline"
-                        className="h-7 gap-1 text-xs"
+                        className="h-8 gap-1 text-xs"
                       >
                         <UserPlus className="h-3.5 w-3.5" />
                         {t('reassignAll')}
@@ -1051,7 +1079,7 @@ export default function OrderDetailPage({
                     <div className="space-y-4">
                       {serviceSummary.groups.map((group, gIndex) => (
                         <div key={group.key}>
-                          <div className="flex items-center justify-between gap-3 mb-2">
+                          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
                             <p className="text-sm font-semibold text-gray-900">
                               <span className="inline-flex items-center justify-center rounded bg-indigo-100 text-indigo-700 text-[11px] font-semibold px-1.5 py-0.5 mr-2 align-middle">
                                 {t('day', { n: gIndex + 1 })}
@@ -1104,11 +1132,11 @@ export default function OrderDetailPage({
                                       : "border-gray-100 bg-gray-50/70"
                                   }`}
                                 >
-                                  <div className="flex items-start justify-between gap-3">
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                     <div className="min-w-0">
                                       <p className="text-sm font-medium text-gray-900">
                                         {item.service_kind
-                                          ? `${item.service_kind} — `
+                                          ? `${kindLabel(item.service_kind)} — `
                                           : ""}
                                         {carName ||
                                           t('serviceDetailNum', { n: index + 1 })}
@@ -1129,17 +1157,17 @@ export default function OrderDetailPage({
                                         <div className="flex flex-wrap gap-1 mt-1">
                                           {item.service_kind && (
                                             <span className="inline-flex items-center rounded bg-blue-50 text-blue-700 text-[10px] font-medium px-1.5 py-0.5">
-                                              {item.service_kind}
+                                              {kindLabel(item.service_kind)}
                                             </span>
                                           )}
                                           {item.service_package && (
                                             <span className="inline-flex items-center rounded bg-amber-50 text-amber-700 text-[10px] font-medium px-1.5 py-0.5">
-                                              {item.service_package}
+                                              {packageLabel(item.service_package)}
                                             </span>
                                           )}
                                         </div>
                                       )}
-                                      <p className="text-xs text-gray-500 mt-1">
+                                      <p className="text-xs text-gray-500 mt-1 break-words">
                                         {item.pickup_location} →{" "}
                                         {item.dropoff_location}
                                       </p>
@@ -1162,7 +1190,7 @@ export default function OrderDetailPage({
                                       <div className="mt-1.5">
                                         {driverLabel ? (
                                           <span
-                                            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                                            className={`inline-flex max-w-full items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium break-words ${
                                               item.is_external
                                                 ? "bg-purple-50 text-purple-700"
                                                 : "bg-emerald-50 text-emerald-700"
@@ -1234,70 +1262,20 @@ export default function OrderDetailPage({
                                           )}
                                         </div>
                                       )}
-                                      {!item.is_external && (
-                                        <ArrivalEvidence
-                                          reports={item.reports}
-                                          pickupLocation={item.pickup_location}
-                                          arrivedAt={item.actual_pickup_at}
-                                        />
-                                      )}
-                                      {item.id && (
-                                        <TripCostsPanel
-                                          lineId={item.id}
-                                          costs={item.expenses}
-                                          payable={item.payable}
-                                          isExternal={item.is_external}
-                                          readOnly={order.order_status === "DONE"}
-                                        />
-                                      )}
-                                      {(item.trip_started_at ||
-                                        item.trip_finished_at) && (
-                                        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
-                                          {item.trip_started_at && (
-                                            <span className="inline-flex items-center gap-1 text-emerald-700">
-                                              <PlayCircle className="h-3 w-3" />
-                                              {t('actualStart')}:{" "}
-                                              {formatDateTime(item.trip_started_at)}
-                                            </span>
-                                          )}
-                                          {item.trip_finished_at && (
-                                            <span className="inline-flex items-center gap-1 text-gray-600">
-                                              <CheckCircle2 className="h-3 w-3" />
-                                              {t('actualFinish')}:{" "}
-                                              {formatDateTime(
-                                                item.trip_finished_at,
-                                              )}
-                                            </span>
-                                          )}
-                                          {item.trip_started_at &&
-                                            item.trip_finished_at && (
-                                              <span className="text-gray-400">
-                                                ({formatDuration(
-                                                  item.trip_started_at,
-                                                  item.trip_finished_at,
-                                                )})
-                                              </span>
-                                            )}
-                                        </div>
-                                      )}
-                                      {item.notes && (
-                                        <p className="text-xs text-gray-400 mt-1">
-                                          {item.notes}
-                                        </p>
-                                      )}
                                     </div>
-                                    <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
-                                      <p className="text-xs text-gray-400">
+                                    <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-gray-200/70 pt-2 sm:flex-col sm:items-end sm:border-0 sm:pt-0 sm:text-right">
+                                      <p className="text-xs text-gray-400 whitespace-nowrap">
                                         {t('qty', { qty: item.quantity })}{" "}
                                         {formatCurrency(item.unit_price)}
                                       </p>
-                                      <p className="text-sm font-semibold text-gray-900">
+                                      <p className="text-sm font-semibold text-gray-900 whitespace-nowrap tabular-nums">
                                         {formatCurrency(item.total_price)}
                                       </p>
                                       <Button
+                                        type="button"
                                         variant="outline"
                                         size="sm"
-                                        className="h-7 gap-1 text-xs"
+                                        className="ml-auto h-8 gap-1 text-xs sm:ml-0"
                                         disabled={!!dayLock}
                                         title={dayLock ? tc(dayLock) : undefined}
                                         onClick={() => openDayAssign(item)}
@@ -1306,12 +1284,64 @@ export default function OrderDetailPage({
                                         {driverLabel ? t('change') : t('assign')}
                                       </Button>
                                       {dayLock && (
-                                        <p className="max-w-[10rem] text-right text-[10px] leading-tight text-gray-400">
+                                        <p className="basis-full text-[10px] sm:max-w-[10rem] sm:basis-auto sm:text-right leading-tight text-gray-400">
                                           {tc(dayLock)}
                                         </p>
                                       )}
                                     </div>
                                   </div>
+                                  {!item.is_external && (
+                                    <ArrivalEvidence
+                                      reports={item.reports}
+                                      pickupLocation={item.pickup_location}
+                                      arrivedAt={item.actual_pickup_at}
+                                    />
+                                  )}
+                                  {item.id && (
+                                    <TripCostsPanel
+                                      lineId={item.id}
+                                      costs={item.expenses}
+                                      payable={item.payable}
+                                      isExternal={item.is_external}
+                                      readOnly={order.order_status === "DONE"}
+                                    />
+                                  )}
+                                  {(item.trip_started_at ||
+                                    item.trip_finished_at) && (
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+                                      {item.trip_started_at && (
+                                        <span className="inline-flex items-center gap-1 text-emerald-700">
+                                          <PlayCircle className="h-3 w-3" />
+                                          {t('actualStart')}:{" "}
+                                          {formatDateTime(item.trip_started_at)}
+                                        </span>
+                                      )}
+                                      {item.trip_finished_at && (
+                                        <span className="inline-flex items-center gap-1 text-gray-600">
+                                          <CheckCircle2 className="h-3 w-3" />
+                                          {t('actualFinish')}:{" "}
+                                          {formatDateTime(
+                                            item.trip_finished_at,
+                                          )}
+                                        </span>
+                                      )}
+                                      {item.trip_started_at &&
+                                        item.trip_finished_at && (
+                                          <span className="text-gray-400">
+                                            ({formatDuration(
+                                              item.trip_started_at,
+                                              item.trip_finished_at,
+                                              durationUnits,
+                                            )})
+                                          </span>
+                                        )}
+                                    </div>
+                                  )}
+                                  {item.notes && (
+                                    <p className="text-xs text-gray-400 mt-1 break-words whitespace-pre-line">
+                                      {item.notes}
+                                    </p>
+                                  )}
                                 </div>
                               );
                             })}
@@ -1342,7 +1372,7 @@ export default function OrderDetailPage({
             {/* Additional Charges */}
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
                   <CardTitle className="text-base">
                     {t('additionalCharges')}
                   </CardTitle>
@@ -1368,18 +1398,18 @@ export default function OrderDetailPage({
                           className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50/70 p-3"
                         >
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-gray-900 break-words">
                               {adj.description}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              {adj.type}
+                              {ADJUSTMENT_TYPE_LABELS[adj.type] ?? adj.type}
                               {adj.is_billable ? "" : ` · ${t('nonBillable')}`}
                               {adj.created_at
                                 ? ` · ${formatDate(adj.created_at)}`
                                 : ""}
                             </p>
                           </div>
-                          <p className="text-sm font-semibold text-gray-900 shrink-0">
+                          <p className="text-sm font-semibold text-gray-900 shrink-0 tabular-nums">
                             {formatCurrency(
                               Number(adj.amount) * (adj.quantity || 1),
                             )}
@@ -1416,10 +1446,10 @@ export default function OrderDetailPage({
           </div>
 
           {/* Right column — Invoice & Payment */}
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <Card className="shadow-none border border-gray-200">
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <CardTitle className="text-base">
                     {t('invoicesPayment')}
                   </CardTitle>
@@ -1433,9 +1463,7 @@ export default function OrderDetailPage({
                           : "bg-red-50 text-red-700 border-red-200"
                     }`}
                   >
-                    {PAYMENT_STATUS_KEYS[order.payment_status]
-                      ? t(PAYMENT_STATUS_KEYS[order.payment_status])
-                      : order.payment_status.replace("_", " ")}
+                    {paymentStatusLabel(order.payment_status)}
                   </Badge>
                 </div>
               </CardHeader>
@@ -1481,9 +1509,10 @@ export default function OrderDetailPage({
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t('type')}</Label>
+              <Label htmlFor="adj-type">{t('type')}</Label>
               <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                id="adj-type"
+                className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs md:text-sm"
                 value={adjType}
                 onChange={(e) => setAdjType(e.target.value)}
               >
@@ -1495,17 +1524,20 @@ export default function OrderDetailPage({
               </select>
             </div>
             <div className="space-y-1.5">
-              <Label>{t('labelNote')}</Label>
+              <Label htmlFor="adj-desc">{t('labelNote')}</Label>
               <Input
+                id="adj-desc"
                 placeholder={t('labelNotePlaceholder')}
                 value={adjDesc}
                 onChange={(e) => setAdjDesc(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t('amountRp')}</Label>
+              <Label htmlFor="adj-amount">{t('amountRp')}</Label>
               <Input
+                id="adj-amount"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 placeholder="0"
                 value={adjAmount}
@@ -1515,10 +1547,11 @@ export default function OrderDetailPage({
             <p className="text-xs text-gray-500">
               {t('addedToFinal')}
             </p>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
+                disabled={addAdjustmentMutation.isPending}
                 onClick={() => setAdditionalOpen(false)}
               >
                 {tc('cancel')}
@@ -1540,8 +1573,8 @@ export default function OrderDetailPage({
 
       {/* Edit Order Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="w-[96vw] max-w-[1280px] max-h-[96vh] overflow-hidden">
-          <DialogHeader>
+        <DialogContent className="flex w-[calc(100%-1rem)] max-w-[1280px] max-h-[calc(100dvh-1rem)] flex-col gap-3 overflow-hidden p-4 sm:w-[96vw] sm:max-h-[96dvh] sm:p-6">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{t('editOrder')}</DialogTitle>
           </DialogHeader>
           <EditOrderForm
@@ -1753,25 +1786,29 @@ export default function OrderDetailPage({
                 <p>{t('cancelWarning')}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">
+                <label htmlFor="cancel-reason" className="text-xs text-gray-500 mb-1 block">
                   {t('cancelReasonLabel')}
                 </label>
                 <Textarea
+                  id="cancel-reason"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   placeholder={t('cancelReasonPlaceholder')}
                   rows={3}
                 />
               </div>
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
+                  disabled={cancelMutation.isPending}
                   onClick={() => setCancelOpen(false)}
                 >
                   {tc('cancel')}
                 </Button>
                 <Button
+                  type="button"
                   size="sm"
                   className="bg-red-600 hover:bg-red-700"
                   onClick={handleCancelOrder}
@@ -1805,15 +1842,18 @@ export default function OrderDetailPage({
             ) : (
               <p className="text-sm text-gray-600">{t('finalizeConfirmHint')}</p>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
+                disabled={finalizeMutation.isPending}
                 onClick={() => setFinalizeOpen(false)}
               >
                 {tc('cancel')}
               </Button>
               <Button
+                type="button"
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
                 onClick={handleFinalizeOrder}
@@ -1832,7 +1872,15 @@ export default function OrderDetailPage({
   );
 }
 
-function formatDuration(start: string, end: string) {
+function formatDuration(
+  start: string,
+  end: string,
+  units: {
+    days: (n: number) => string;
+    hours: (n: number) => string;
+    minutes: (n: number) => string;
+  },
+) {
   const ms = new Date(end).getTime() - new Date(start).getTime();
   if (!Number.isFinite(ms) || ms < 0) return "-";
   const totalMinutes = Math.round(ms / 60000);
@@ -1840,9 +1888,9 @@ function formatDuration(start: string, end: string) {
   const hours = Math.floor((totalMinutes % 1440) / 60);
   const minutes = totalMinutes % 60;
   const parts = [];
-  if (days) parts.push(`${days}d`);
-  if (hours) parts.push(`${hours}h`);
-  if (minutes || !parts.length) parts.push(`${minutes}m`);
+  if (days) parts.push(units.days(days));
+  if (hours) parts.push(units.hours(hours));
+  if (minutes || !parts.length) parts.push(units.minutes(minutes));
   return parts.join(" ");
 }
 
@@ -1850,7 +1898,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-gray-900">{value}</p>
+      <p className="text-sm font-medium text-gray-900 break-words">{value}</p>
     </div>
   );
 }

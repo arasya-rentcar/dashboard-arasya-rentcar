@@ -22,12 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useFilePreview } from "@/components/preview/FilePreview";
 import {
   Select,
   SelectContent,
@@ -57,6 +52,7 @@ import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
 import {
   InvoiceDeliveryLog,
+  InvoiceStatus,
 } from "@/types";
 import {
   INVOICE_STATUS_STYLES,
@@ -73,6 +69,14 @@ const PAYMENT_STATUS_KEYS: Record<string, string> = {
   UNPAID: "payUnpaid",
   DP_PAID: "payDp",
   PAID: "payPaid",
+};
+
+const INVOICE_STATUS_KEYS: Record<InvoiceStatus, string> = {
+  DRAFT: "statusDraft",
+  ISSUED: "statusIssued",
+  REVISED: "statusRevised",
+  PAID: "statusPaid",
+  CANCELLED: "statusCancelled",
 };
 
 const DELIVERY_STATUS_STYLES = {
@@ -117,7 +121,7 @@ export default function InvoicesPage() {
   // order.payment_status (UNPAID / DP_PAID / PAID).
   const [payFilter, setPayFilter] = useState<string>("ALL");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { openPreview } = useFilePreview();
   const [recipientByInvoice, setRecipientByInvoice] = useState<
     Record<string, string>
   >({});
@@ -254,68 +258,70 @@ export default function InvoicesPage() {
   return (
     <DashboardShell title={t('title')}>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder={t('searchPlaceholder')}
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <Select value={payFilter} onValueChange={setPayFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">{t('allPayments')}</SelectItem>
-                <SelectItem value="UNPAID">{t('payUnpaid')}</SelectItem>
-                <SelectItem value="DP_PAID">{t('payDp')}</SelectItem>
-                <SelectItem value="PAID">{t('payPaid')}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">{t('allStatus')}</SelectItem>
-                <SelectItem value="DRAFT">{t('statusDraft')}</SelectItem>
-                <SelectItem value="ISSUED">{t('statusIssued')}</SelectItem>
-                <SelectItem value="REVISED">{t('statusRevised')}</SelectItem>
-                <SelectItem value="PAID">{t('statusPaid')}</SelectItem>
-                <SelectItem value="CANCELLED">{t('statusCancelled')}</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+          <div className="relative col-span-2 sm:w-64">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="search"
+              placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
+              className="pl-9"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
+          <Select value={payFilter} onValueChange={setPayFilter}>
+            <SelectTrigger className="w-full min-w-0 sm:w-44" aria-label={t('allPayments')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{t('allPayments')}</SelectItem>
+              <SelectItem value="UNPAID">{t('payUnpaid')}</SelectItem>
+              <SelectItem value="DP_PAID">{t('payDp')}</SelectItem>
+              <SelectItem value="PAID">{t('payPaid')}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full min-w-0 sm:w-40" aria-label={t('allStatus')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{t('allStatus')}</SelectItem>
+              <SelectItem value="DRAFT">{t('statusDraft')}</SelectItem>
+              <SelectItem value="ISSUED">{t('statusIssued')}</SelectItem>
+              <SelectItem value="REVISED">{t('statusRevised')}</SelectItem>
+              <SelectItem value="PAID">{t('statusPaid')}</SelectItem>
+              <SelectItem value="CANCELLED">{t('statusCancelled')}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-none overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="w-8" />
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12">
+                <TableHead className="w-8">
+                  <span className="sr-only">{t('expandRow')}</span>
+                </TableHead>
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide w-12 hidden xl:table-cell">
                   {t('colNo')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {t('colInvoiceNum')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden xl:table-cell">
                   {t('colCustomer')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">
                   {t('colType')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {t('colAmount')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">
                   {t('colStatus')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide text-right hidden lg:table-cell">
                   {t('colActions')}
                 </TableHead>
               </TableRow>
@@ -363,14 +369,19 @@ export default function InvoicesPage() {
                       manualName={manualNameByInvoice[inv.id] || ""}
                       manualPhone={manualPhoneByInvoice[inv.id] || ""}
                       note={noteByInvoice[inv.id] || ""}
-                      sending={sendMutation.isPending}
+                      sending={
+                        sendMutation.isPending &&
+                        sendMutation.variables?.invoiceId === inv.id
+                      }
                       sendingReceipt={
                         sendReceiptMutation.isPending &&
                         sendReceiptMutation.variables?.invoiceId === inv.id
                       }
                       recipients={recipientsFor(inv)}
                       onToggle={() => setExpandedId(expanded ? null : inv.id)}
-                      onPreview={(url) => setPreviewUrl(url)}
+                      onPreview={(url, title) =>
+                        openPreview({ url, title, kind: "pdf" })
+                      }
                       onRecipientChange={(value) =>
                         setRecipientByInvoice((prev) => ({
                           ...prev,
@@ -416,23 +427,6 @@ export default function InvoicesPage() {
         />
       </div>
 
-      <Dialog
-        open={!!previewUrl}
-        onOpenChange={(open) => !open && setPreviewUrl(null)}
-      >
-        <DialogContent className="!w-[96vw] !max-w-[1400px] h-[94vh] p-4 gap-3">
-          <DialogHeader>
-            <DialogTitle>{t('invoicePdf')}</DialogTitle>
-          </DialogHeader>
-          {previewUrl && (
-            <iframe
-              src={pdfViewerUrl(previewUrl)}
-              className="h-full min-h-0 w-full rounded-md border"
-              title="Invoice PDF Preview"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
     </DashboardShell>
   );
 }
@@ -472,7 +466,7 @@ function FragmentInvoiceRow({
   sendingReceipt: boolean;
   recipients: { name: string; phone?: string | null; is_primary?: boolean }[];
   onToggle: () => void;
-  onPreview: (url: string) => void;
+  onPreview: (url: string, title: string) => void;
   onRecipientChange: (value: string) => void;
   onManualNameChange: (value: string) => void;
   onManualPhoneChange: (value: string) => void;
@@ -481,20 +475,34 @@ function FragmentInvoiceRow({
   onSendReceipt: () => void;
 }) {
   const t = useTranslations("invoicesPage");
+  const receiptUrl = inv.receipts?.[0]?.file_url || inv.receipt_url;
+  const invoiceTitle = `${t('invoicePdf')} ${inv.invoice_number}`;
+  const receiptTitle = `${t('receiptHeading')} ${inv.receipts?.[0]?.receipt_number ?? inv.invoice_number}`;
   return (
     <>
       <TableRow
         className="hover:bg-gray-50/50 cursor-pointer"
         onClick={onToggle}
       >
-        <TableCell>
-          {expanded ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+        <TableCell className="pr-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle();
+            }}
+            aria-expanded={expanded}
+            aria-label={t(expanded ? 'collapseRow' : 'expandRow')}
+            className="-m-1 flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
+          >
+            {expanded ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
         </TableCell>
-        <TableCell className="text-sm text-gray-400 tabular-nums">{no}</TableCell>
+        <TableCell className="text-sm text-gray-400 tabular-nums hidden xl:table-cell">{no}</TableCell>
         <TableCell className="font-mono text-sm text-gray-900 font-medium">
           <div>{inv.invoice_number}</div>
           {(inv.revision ?? 0) > 0 && (
@@ -502,11 +510,21 @@ function FragmentInvoiceRow({
               {t('revision', { n: inv.revision ?? 0 })}
             </div>
           )}
+          {/* Customer column is hidden on small screens: show it here. */}
+          <div
+            className="max-w-[11rem] truncate font-sans text-xs font-normal text-gray-500 xl:hidden"
+            title={inv.order.customer_name}
+          >
+            {inv.order.customer_name}
+          </div>
         </TableCell>
-        <TableCell className="text-sm text-gray-700">
-          {inv.order.customer_name}
+        <TableCell className="text-sm text-gray-700 hidden xl:table-cell">
+          {/* Long company names would stretch the table past the screen. */}
+          <div className="max-w-[12rem] truncate xl:max-w-[18rem]" title={inv.order.customer_name}>
+            {inv.order.customer_name}
+          </div>
         </TableCell>
-        <TableCell className="hidden md:table-cell">
+        <TableCell className="hidden lg:table-cell">
           <Badge
             variant="outline"
             className={`text-xs ${TYPE_STYLES[inv.invoice_type]}`}
@@ -514,10 +532,28 @@ function FragmentInvoiceRow({
             {t(TYPE_KEYS[inv.invoice_type])}
           </Badge>
         </TableCell>
-        <TableCell className="text-sm font-semibold text-gray-900">
+        <TableCell className="text-sm font-semibold text-gray-900 tabular-nums">
           {formatCurrency(inv.amount)}
+          {/* Status and actions columns are hidden below lg: the status goes
+              here, the actions live in the expanded row. */}
+          <div className="mt-1 flex flex-col items-start gap-1 lg:hidden">
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${PAYMENT_STATUS_STYLES[inv.order.payment_status] ?? ""}`}
+            >
+              {PAYMENT_STATUS_KEYS[inv.order.payment_status]
+                ? t(PAYMENT_STATUS_KEYS[inv.order.payment_status])
+                : inv.order.payment_status}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${INVOICE_STATUS_STYLES[inv.status]}`}
+            >
+              {INVOICE_STATUS_KEYS[inv.status] ? t(INVOICE_STATUS_KEYS[inv.status]) : inv.status}
+            </Badge>
+          </div>
         </TableCell>
-        <TableCell>
+        <TableCell className="hidden lg:table-cell">
           <div className="flex flex-col items-start gap-1">
             {/* Order-level payment bucket (the business view). */}
             <Badge
@@ -533,26 +569,39 @@ function FragmentInvoiceRow({
               variant="outline"
               className={`text-[10px] ${INVOICE_STATUS_STYLES[inv.status]}`}
             >
-              {inv.status}
+              {INVOICE_STATUS_KEYS[inv.status] ? t(INVOICE_STATUS_KEYS[inv.status]) : inv.status}
             </Badge>
           </div>
         </TableCell>
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-1">
+        <TableCell className="hidden lg:table-cell" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end gap-1">
             {inv.file_url && (
               <Button
+                type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onPreview(inv.file_url!)}
+                className="h-8 w-8 p-0 xl:w-auto xl:px-2.5"
+                aria-label={t('viewInvoicePdfAria', { number: inv.invoice_number })}
+                title={t('viewPdf')}
+                onClick={() => onPreview(inv.file_url!, invoiceTitle)}
               >
-                <Eye className="h-4 w-4 mr-1" />
-                PDF
+                <Eye className="h-4 w-4" />
+                <span className="hidden xl:inline">PDF</span>
               </Button>
             )}
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`/dashboard/orders/${inv.order.id}`}>
-                <ExternalLink className="h-4 w-4 mr-1" />
-                {t('order')}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 xl:w-auto xl:px-2.5"
+              asChild
+            >
+              <Link
+                href={`/dashboard/orders/${inv.order.id}`}
+                aria-label={t('openOrderAria', { number: inv.invoice_number })}
+                title={t('order')}
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden xl:inline">{t('order')}</span>
               </Link>
             </Button>
           </div>
@@ -560,28 +609,43 @@ function FragmentInvoiceRow({
       </TableRow>
       {expanded && (
         <TableRow>
-          <TableCell colSpan={8} className="bg-gray-50/80 p-0">
-            <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
+          {/* whitespace-normal: TableCell is nowrap by default, which kept
+              every sentence in this panel on one line. */}
+          <TableCell colSpan={8} className="bg-gray-50/80 p-0 whitespace-normal">
+            <div className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <div className="min-w-0 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
                     <FileText className="h-4 w-4" /> {t('pdfPreview')}
                   </div>
-                  {inv.file_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onPreview(inv.file_url!)}
-                    >
-                      {t('largeView')}
+                  <div className="flex flex-wrap gap-2">
+                    {inv.file_url && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPreview(inv.file_url!, invoiceTitle)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        {t('largeView')}
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" asChild className="lg:hidden">
+                      <Link href={`/dashboard/orders/${inv.order.id}`}>
+                        <ExternalLink className="h-4 w-4" />
+                        {t('order')}
+                      </Link>
                     </Button>
-                  )}
+                  </div>
                 </div>
                 {inv.file_url ? (
+                  // Inline PDFs need room (and do not render on Android): on
+                  // small screens the "Large view" button opens the viewer.
                   <iframe
                     src={pdfViewerUrl(inv.file_url)}
-                    className="h-[520px] w-full rounded-lg border bg-white"
-                    title={`${inv.invoice_number} PDF`}
+                    loading="lazy"
+                    className="hidden h-[520px] w-full rounded-lg border bg-white md:block"
+                    title={invoiceTitle}
                   />
                 ) : (
                   <div className="rounded-lg border border-dashed bg-white p-8 text-center text-sm text-gray-500">
@@ -592,42 +656,45 @@ function FragmentInvoiceRow({
                 {/* Kwitansi / receipt tied to this invoice. */}
                 {(inv.receipts && inv.receipts.length > 0) || inv.receipt_url ? (
                   <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
                         <ReceiptText className="h-4 w-4" /> {t('receiptHeading')}
                       </div>
-                      {(inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                      {receiptUrl && (
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
-                          className="h-7 border-emerald-300 px-2 text-emerald-700 hover:bg-emerald-100"
-                          onClick={() => onPreview((inv.receipts?.[0]?.file_url || inv.receipt_url)!)}
+                          className="border-emerald-300 px-2.5 text-emerald-700 hover:bg-emerald-100"
+                          onClick={() => onPreview(receiptUrl, receiptTitle)}
                         >
-                          <Eye className="mr-1 h-3.5 w-3.5" /> {t('largeView')}
+                          <Eye className="h-3.5 w-3.5" /> {t('largeView')}
                         </Button>
                       )}
                     </div>
                     {inv.receipts && inv.receipts.length > 0 && (
                       <div className="space-y-1">
                         {inv.receipts.map((rcpt) => (
-                          <div key={rcpt.id} className="flex items-center justify-between text-xs">
-                            <span className="font-mono font-semibold text-emerald-900">{rcpt.receipt_number}</span>
-                            <span className="text-emerald-700/80">{formatCurrency(rcpt.amount)}</span>
+                          <div key={rcpt.id} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="min-w-0 truncate font-mono font-semibold text-emerald-900" title={rcpt.receipt_number}>{rcpt.receipt_number}</span>
+                            <span className="shrink-0 text-emerald-700/80 tabular-nums">{formatCurrency(rcpt.amount)}</span>
                           </div>
                         ))}
                       </div>
                     )}
-                    {(inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                    {receiptUrl && (
                       <iframe
-                        src={pdfViewerUrl((inv.receipts?.[0]?.file_url || inv.receipt_url)!)}
-                        className="h-[360px] w-full rounded-lg border bg-white"
-                        title={`${inv.invoice_number} Receipt PDF`}
+                        src={pdfViewerUrl(receiptUrl)}
+                        loading="lazy"
+                        className="hidden h-[360px] w-full rounded-lg border bg-white md:block"
+                        title={receiptTitle}
                       />
                     )}
-                    {inv.status === "PAID" && (inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                    {inv.status === "PAID" && receiptUrl && (
                       <Button
+                        type="button"
                         size="sm"
-                        className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+                        className="h-auto min-h-8 w-full whitespace-normal bg-emerald-600 py-1.5 text-white hover:bg-emerald-700"
                         disabled={sendingReceipt}
                         onClick={onSendReceipt}
                       >
@@ -643,18 +710,18 @@ function FragmentInvoiceRow({
                 ) : null}
               </div>
 
-              <div className="space-y-4">
-                <div className="rounded-lg border bg-white p-4 space-y-3">
+              <div className="min-w-0 space-y-4">
+                <div className="rounded-lg border bg-white p-3 space-y-3 sm:p-4">
                   <div className="text-sm font-semibold text-gray-900">
                     {t('sendToWhatsapp')}
                   </div>
                   <div className="space-y-1.5">
-                    <Label>{t('recipient')}</Label>
+                    <Label htmlFor={`recipient-${inv.id}`}>{t('recipient')}</Label>
                     <Select
                       value={recipientValue}
                       onValueChange={onRecipientChange}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id={`recipient-${inv.id}`} className="w-full min-w-0">
                         <SelectValue placeholder={t('chooseRecipient')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -676,16 +743,20 @@ function FragmentInvoiceRow({
                   {recipientValue === "manual" && (
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label>{t('name')}</Label>
+                        <Label htmlFor={`manual-name-${inv.id}`}>{t('name')}</Label>
                         <Input
+                          id={`manual-name-${inv.id}`}
                           value={manualName}
                           onChange={(e) => onManualNameChange(e.target.value)}
-                          placeholder="Finance / PIC"
+                          placeholder={t('manualNamePlaceholder')}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>{t('whatsappNumber')}</Label>
+                        <Label htmlFor={`manual-phone-${inv.id}`}>{t('whatsappNumber')}</Label>
                         <Input
+                          id={`manual-phone-${inv.id}`}
+                          type="tel"
+                          inputMode="tel"
                           value={manualPhone}
                           onChange={(e) => onManualPhoneChange(e.target.value)}
                           placeholder="0812..."
@@ -694,8 +765,9 @@ function FragmentInvoiceRow({
                     </div>
                   )}
                   <div className="space-y-1.5">
-                    <Label>{t('optionalNote')}</Label>
+                    <Label htmlFor={`note-${inv.id}`}>{t('optionalNote')}</Label>
                     <Textarea
+                      id={`note-${inv.id}`}
                       value={note}
                       onChange={(e) => onNoteChange(e.target.value)}
                       placeholder={t('notePlaceholder')}
@@ -708,7 +780,8 @@ function FragmentInvoiceRow({
                     </p>
                   )}
                   <Button
-                    className="w-full"
+                    type="button"
+                    className="h-auto min-h-9 w-full whitespace-normal py-2"
                     disabled={!canSend || sending}
                     onClick={onSend}
                   >
@@ -721,7 +794,7 @@ function FragmentInvoiceRow({
                   </Button>
                 </div>
 
-                <div className="rounded-lg border bg-white p-4">
+                <div className="rounded-lg border bg-white p-3 sm:p-4">
                   <div className="mb-3 text-sm font-semibold text-gray-900">
                     {t('sendHistory')}
                   </div>
@@ -737,14 +810,14 @@ function FragmentInvoiceRow({
                           className="rounded-md border p-3 text-sm"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <div className="font-medium text-gray-900">
+                            <div className="min-w-0 truncate font-medium text-gray-900">
                               {log.target_name || t('customerFallback')}
                             </div>
                             <Badge
                               variant="outline"
                               className={`text-xs ${DELIVERY_STATUS_STYLES[log.status]}`}
                             >
-                              {log.status}
+                              {t(`deliveryStatus.${log.status}`)}
                             </Badge>
                           </div>
                           <div className="mt-1 text-xs text-gray-500">
@@ -752,15 +825,16 @@ function FragmentInvoiceRow({
                             {formatDateTime(log.sent_at || log.created_at)}
                           </div>
                           {log.error_message && (
-                            <div className="mt-1 text-xs text-red-600">
+                            <div className="mt-1 text-xs text-red-600 break-words">
                               {log.error_message}
                             </div>
                           )}
                           <Button
+                            type="button"
                             variant="outline"
                             size="sm"
                             className="mt-2"
-                            onClick={() => onPreview(log.file_url)}
+                            onClick={() => onPreview(log.file_url, invoiceTitle)}
                           >
                             <Eye className="h-4 w-4 mr-1" /> {t('viewPdf')}
                           </Button>

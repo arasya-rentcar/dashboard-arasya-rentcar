@@ -297,7 +297,7 @@ function Surcharges({ zone }: { zone: PriceZone }) {
   const live = (s: PriceSurcharge) => zone.surcharges.find((x) => x.id === s.id) ?? s;
   return (
     <Card className="shadow-none">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-0">
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-0">
         <CardTitle className="text-sm">{t('surchargesTitle')}</CardTitle>
         <Button size="sm" variant="outline" onClick={() => setEditing('new')}>
           <Plus className="h-4 w-4" /> {t('addArea')}
@@ -311,8 +311,8 @@ function Surcharges({ zone }: { zone: PriceZone }) {
           <ul className="overflow-hidden rounded-lg border border-gray-200">
             {zone.surcharges.map((s) => (
               <li key={s.id} className="flex items-center gap-2 border-b border-gray-100 px-3 py-2 last:border-b-0">
-                <span className="min-w-0 flex-1 truncate text-sm text-gray-900">{s.area}</span>
-                <span className="text-sm font-medium tabular-nums text-gray-900">+{formatCurrency(s.amount)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm text-gray-900" title={s.area}>{s.area}</span>
+                <span className="whitespace-nowrap text-sm font-medium tabular-nums text-gray-900">+{formatCurrency(s.amount)}</span>
                 <Button size="icon" variant="ghost" aria-label={t('edit')} onClick={() => setEditing(s)}>
                   <Pencil className="h-4 w-4" />
                 </Button>

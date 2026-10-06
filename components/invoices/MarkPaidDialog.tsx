@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -20,13 +21,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Invoice } from "@/types";
+import { wibDateTimeToIso } from "@/lib/utils";
 
-const PAYMENT_METHODS = [
-  { value: "CASH", label: "Cash" },
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "QRIS", label: "QRIS" },
-  { value: "OTHER", label: "Other" },
-];
+const PAYMENT_METHODS = ["CASH", "BANK_TRANSFER", "QRIS", "OTHER"] as const;
 
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -59,6 +56,16 @@ export default function MarkPaidDialog({
   // S5-polish inputs that ride along here per agreement.
   const [amountReceived, setAmountReceived] = useState<string>("");
   const [paidAt, setPaidAt] = useState<string>("");
+  // The dialog stays mounted, so prefill from the invoice each time it opens
+  // (the method used to stay on CASH whatever the invoice said) and clear the
+  // form when it closes. A failed submit keeps what was entered.
+  const openedFor = open ? (invoice?.id ?? null) : null;
+  const [syncedFor, setSyncedFor] = useState<string | null>(null);
+  if (openedFor !== syncedFor) {
+    setSyncedFor(openedFor);
+    if (openedFor) setMethod(invoice?.payment_method ?? "CASH");
+    else reset();
+  }
 
   function reset() {
     setProof(null);
@@ -89,13 +96,14 @@ export default function MarkPaidDialog({
       setFileError(t("proofRequired"));
       return;
     }
+    if (isSubmittingPaid) return;
     await onConfirm({
       proof,
       payment_method: method,
       amount_received: amountReceived ? Number(amountReceived) : undefined,
-      paid_at: paidAt ? new Date(paidAt).toISOString() : undefined,
+      // The picker is WIB wall-clock time, whatever the browser timezone is.
+      paid_at: wibDateTimeToIso(paidAt),
     });
-    reset();
   }
 
   const invoiceAmount = invoice ? Number(invoice.amount) : 0;
@@ -104,13 +112,13 @@ export default function MarkPaidDialog({
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        if (!v) reset();
+        if (!v && isSubmittingPaid) return;
         onOpenChange(v);
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="break-words pr-6">
             {t("title", { invoice: invoice?.invoice_number ?? "" })}
           </DialogTitle>
         </DialogHeader>
@@ -121,16 +129,17 @@ export default function MarkPaidDialog({
           </p>
 
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor="mark_paid_proof">
               {t("proofLabel")} <span className="text-red-600">*</span>
             </Label>
             <Input
+              id="mark_paid_proof"
               type="file"
               accept={ACCEPT}
               onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
             />
             {proof && (
-              <p className="text-xs text-emerald-600">
+              <p className="text-xs text-emerald-600 break-all">
                 {proof.name} ({(proof.size / 1024).toFixed(0)} KB)
               </p>
             )}
@@ -140,26 +149,28 @@ export default function MarkPaidDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t("method")}</Label>
+            <Label htmlFor="mark_paid_method">{t("method")}</Label>
             <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger>
+              <SelectTrigger id="mark_paid_method" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {PAYMENT_METHODS.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.label}
+                  <SelectItem key={m} value={m}>
+                    {t(`methods.${m}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t("amountReceived")}</Label>
+              <Label htmlFor="mark_paid_amount">{t("amountReceived")}</Label>
               <Input
+                id="mark_paid_amount"
                 type="number"
+                min="0"
                 inputMode="numeric"
                 placeholder={invoiceAmount ? String(invoiceAmount) : "0"}
                 value={amountReceived}
@@ -170,8 +181,9 @@ export default function MarkPaidDialog({
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label>{t("paymentDate")}</Label>
+              <Label htmlFor="mark_paid_at">{t("paymentDate")}</Label>
               <Input
+                id="mark_paid_at"
                 type="datetime-local"
                 step={60}
                 value={paidAt}
@@ -186,13 +198,15 @@ export default function MarkPaidDialog({
 
         <DialogFooter>
           <Button
+            type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmittingPaid}
           >
             {tc("cancel")}
           </Button>
-          <Button onClick={submit} disabled={!proof || isSubmittingPaid}>
+          <Button type="button" onClick={submit} disabled={!proof || isSubmittingPaid}>
+            {isSubmittingPaid && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmittingPaid ? t("processing") : t("markPaidBtn")}
           </Button>
         </DialogFooter>

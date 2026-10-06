@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import DashboardShell from '@/components/layout/DashboardShell';
 import TablePagination from '@/components/dashboard/TablePagination';
+import QueryError from '@/components/dashboard/QueryError';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +86,7 @@ function LeadsPageInner() {
     setPage(1);
   }
 
-  const { data, isLoading, isFetching } = useLeads(
+  const { data, isLoading, isError, isFetching, refetch } = useLeads(
     { status: tab === 'ALL' ? undefined : tab, q: q || undefined, page, limit: PAGE_SIZE },
     { refetchInterval: 60_000 },
   );
@@ -104,13 +105,14 @@ function LeadsPageInner() {
         <p className="text-sm text-gray-500 max-w-3xl">{t('intro')}</p>
 
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('title')}>
             {TABS.map((s) => {
               const n = s === 'ALL' ? allCount : counts[s] ?? 0;
               return (
                 <button
                   key={s}
                   type="button"
+                  aria-pressed={tab === s}
                   onClick={() => setTab(s)}
                   className={cn(
                     'rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',
@@ -126,9 +128,11 @@ function LeadsPageInner() {
             })}
           </div>
           <div className="relative w-full lg:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
+              type="search"
               placeholder={t('searchPlaceholder')}
+              aria-label={t('searchPlaceholder')}
               className="pl-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -142,6 +146,8 @@ function LeadsPageInner() {
               <div key={i} className="h-32 rounded-xl border border-gray-200 bg-white animate-pulse" />
             ))}
           </div>
+        ) : isError ? (
+          <QueryError onRetry={() => refetch()} />
         ) : rows.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-200 bg-white py-14 text-center text-sm text-gray-400">
             {tab === 'NEW' ? t('emptyNew') : t('empty')}
@@ -154,6 +160,7 @@ function LeadsPageInner() {
                 lead={lead}
                 onIgnore={() => setIgnoring(lead)}
                 onLink={() => setLinking(lead)}
+                reopening={reopen.isPending && reopen.variables === lead.id}
                 onReopen={async () => {
                   try {
                     await reopen.mutateAsync(lead.id);
@@ -168,8 +175,8 @@ function LeadsPageInner() {
         )}
 
         {meta && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">{isFetching ? t('updating') : ' '}</span>
+          <div className="flex flex-col-reverse items-center gap-2 sm:flex-row sm:justify-between">
+            <span className="text-xs text-gray-400" aria-live="polite">{isFetching ? t('updating') : ' '}</span>
             <TablePagination
               page={meta.page}
               pageCount={meta.total_pages}
@@ -191,8 +198,16 @@ function LeadsPageInner() {
 
 function tripDate(lead: WebLead, locale: string) {
   if (!lead.trip_date) return null;
-  const d = new Date(`${lead.trip_date}T00:00:00`);
-  const day = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  // trip_date is a WIB calendar day: pin both parsing and formatting to WIB.
+  const d = new Date(`${lead.trip_date}T00:00:00+07:00`);
+  if (Number.isNaN(d.getTime())) return lead.trip_date;
+  const day = d.toLocaleDateString(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Jakarta',
+  });
   return lead.pickup_time ? `${day} · ${lead.pickup_time}` : day;
 }
 
@@ -201,11 +216,13 @@ function LeadCard({
   onIgnore,
   onLink,
   onReopen,
+  reopening,
 }: {
   lead: WebLead;
   onIgnore: () => void;
   onLink: () => void;
   onReopen: () => void;
+  reopening: boolean;
 }) {
   const t = useTranslations('leads');
   const locale = useLocale() === 'en' ? 'en-GB' : 'id-ID';
@@ -227,8 +244,8 @@ function LeadCard({
       </div>
 
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="grid gap-2 min-w-0">
-          <p className="text-base font-semibold text-gray-950">{lead.name}</p>
+        <div className="grid min-w-0 grid-cols-1 gap-2">
+          <p className="text-base font-semibold text-gray-950 break-words">{lead.name}</p>
           <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-700">
             <Info icon={CalendarDays}>{tripDate(lead, locale) ?? t('noDate')}</Info>
             <Info icon={Car}>
@@ -238,23 +255,29 @@ function LeadCard({
           </div>
           <div className="text-sm text-gray-700">
             <Info icon={MapPin}>
-              <span className="truncate">{lead.pickup_location}</span>
-              {lead.destination && (
-                <>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                  <span className="truncate">{lead.destination}</span>
-                </>
-              )}
+              {/* Full addresses wrap: the admin needs them to quote and plan. */}
+              <span className="min-w-0 break-words">
+                {lead.pickup_location}
+                {lead.destination && (
+                  <>
+                    <ArrowRight className="mx-1 inline h-3.5 w-3.5 align-[-2px] text-gray-400" aria-hidden="true" />
+                    {lead.destination}
+                  </>
+                )}
+              </span>
             </Info>
           </div>
           {(extras.length > 0 || lead.notes) && (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 break-words">
               {extras.join(' · ')}
               {extras.length > 0 && lead.notes ? ' · ' : ''}
               {lead.notes && <span className="italic">“{lead.notes}”</span>}
             </p>
           )}
-          <p className="text-xs text-gray-400 truncate">
+          <p
+            className="text-xs text-gray-400 truncate"
+            title={[lead.page_path, lead.campaign].filter(Boolean).join(' · ') || undefined}
+          >
             {t('from')} <span className="font-mono">{lead.page_path || '-'}</span>
             {lead.campaign && <> · {lead.campaign}</>}
           </p>
@@ -268,14 +291,14 @@ function LeadCard({
             <>
               <Button size="sm" asChild>
                 <Link href={`/dashboard/orders?lead=${lead.id}`}>
-                  <Sparkles className="h-4 w-4 mr-1.5" /> {t('createOrder')}
+                  <Sparkles className="h-4 w-4" /> {t('createOrder')}
                 </Link>
               </Button>
               <Button size="sm" variant="outline" onClick={onLink}>
-                <Link2 className="h-4 w-4 mr-1.5" /> {t('linkOrder')}
+                <Link2 className="h-4 w-4" /> {t('linkOrder')}
               </Button>
               <Button size="sm" variant="ghost" className="text-gray-500 hover:text-red-600" onClick={onIgnore}>
-                <XCircle className="h-4 w-4 mr-1.5" /> {t('ignore')}
+                <XCircle className="h-4 w-4" /> {t('ignore')}
               </Button>
             </>
           )}
@@ -283,7 +306,7 @@ function LeadCard({
             <div className="flex flex-col items-start gap-1 lg:items-end">
               <Button size="sm" variant="outline" asChild>
                 <Link href={`/dashboard/orders/${lead.order.id}`}>
-                  <ExternalLink className="h-4 w-4 mr-1.5" /> {lead.order.order_code || t('openOrder')}
+                  <ExternalLink className="h-4 w-4" /> {lead.order.order_code || t('openOrder')}
                 </Link>
               </Button>
               <span className="text-xs text-gray-500">
@@ -296,8 +319,9 @@ function LeadCard({
             </div>
           )}
           {lead.status === 'IGNORED' && (
-            <Button size="sm" variant="outline" onClick={onReopen}>
-              <RotateCcw className="h-4 w-4 mr-1.5" /> {t('reopen')}
+            <Button size="sm" variant="outline" onClick={onReopen} disabled={reopening}>
+              {reopening ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              {t('reopen')}
             </Button>
           )}
         </div>
@@ -337,8 +361,8 @@ function FleetBadge({ lead }: { lead: WebLead }) {
 
 function Info({ icon: Icon, children }: { icon: typeof MapPin; children: React.ReactNode }) {
   return (
-    <span className="flex items-center gap-1.5 min-w-0">
-      <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+    <span className="flex items-start gap-1.5 min-w-0">
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
       {children}
     </span>
   );
@@ -354,14 +378,18 @@ function IgnoreDialog({ lead, onClose }: { lead: WebLead | null; onClose: () => 
     try {
       await ignore.mutateAsync({ id: lead.id, reason: reason.trim() || undefined });
       toast.success(t('okIgnored'));
-      setReason('');
-      onClose();
+      close();
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
   }
+  // A reason typed for one lead must not carry over to the next one.
+  function close() {
+    setReason('');
+    onClose();
+  }
   return (
-    <Dialog open={!!lead} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!lead} onOpenChange={(o) => !o && close()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('ignoreTitle', { code: lead?.lead_code ?? '' })}</DialogTitle>
@@ -373,9 +401,10 @@ function IgnoreDialog({ lead, onClose }: { lead: WebLead | null; onClose: () => 
               <button
                 key={r}
                 type="button"
+                aria-pressed={reason === r}
                 onClick={() => setReason(r)}
                 className={cn(
-                  'rounded-full border px-3 py-1 text-xs',
+                  'min-h-8 rounded-full border px-3 py-1 text-xs',
                   reason === r ? 'bg-gray-900 text-white border-gray-900' : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                 )}
               >
@@ -383,11 +412,16 @@ function IgnoreDialog({ lead, onClose }: { lead: WebLead | null; onClose: () => 
               </button>
             ))}
           </div>
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('reasonPlaceholder')} />
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder={t('reasonPlaceholder')}
+            aria-label={t('reasonLabel')}
+          />
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="ghost" onClick={onClose}>{t('cancel')}</Button>
+            <Button type="button" variant="ghost" onClick={close}>{t('cancel')}</Button>
             <Button variant="destructive" onClick={submit} disabled={ignore.isPending}>
-              {ignore.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
+              {ignore.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {t('ignore')}
             </Button>
           </div>
@@ -457,11 +491,21 @@ function LinkDialog({ lead, onClose }: { lead: WebLead | null; onClose: () => vo
         >
           <Input
             autoFocus
+            type="search"
+            aria-label={t('linkPlaceholder', { name: lead?.name ?? '' })}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('linkPlaceholder', { name: lead?.name ?? '' })}
           />
-          <Button type="submit" variant="outline" disabled={searching}>
+          <Button
+            type="submit"
+            variant="outline"
+            size="icon"
+            className="shrink-0"
+            disabled={searching}
+            aria-label={t('linkSearch')}
+            title={t('linkSearch')}
+          >
             {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </Button>
         </form>
@@ -476,11 +520,11 @@ function LinkDialog({ lead, onClose }: { lead: WebLead | null; onClose: () => vo
                   type="button"
                   disabled={link.isPending}
                   onClick={() => choose(o)}
-                  className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-gray-50"
+                  className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-gray-50 disabled:opacity-50"
                 >
                   <span className="min-w-0">
                     <span className="block font-mono text-sm font-medium text-gray-900">{o.order_code ?? '-'}</span>
-                    <span className="block truncate text-xs text-gray-500">
+                    <span className="block truncate text-xs text-gray-500" title={o.customer_name}>
                       {o.customer_name}
                       {o.pickup_location && <> · {o.pickup_location}</>}
                       {(o.service_start_at || o.order_date) && <> · {formatDateTime((o.service_start_at || o.order_date)!)}</>}
