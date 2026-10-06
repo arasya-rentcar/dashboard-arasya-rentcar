@@ -272,6 +272,31 @@ export const etollCardsApi = {
     api.post(`/etoll-cards/${id}/return`, data),
 };
 
+// ─── Price list (Daftar Harga) ───────────────────────────────────────────────
+
+// Every write answers with the whole list, same as get().
+export const pricesApi = {
+  get: () => api.get("/prices"),
+  updateRates: (data: {
+    items: { id: string; amount: number | null; is_proposal?: boolean; note?: string | null }[];
+  }) => api.patch("/prices/rates", data),
+  createSurcharge: (data: { zone_id: string; area: string; amount: number }) =>
+    api.post("/prices/surcharges", data),
+  updateSurcharge: (id: string, data: { area?: string; amount?: number }) =>
+    api.patch(`/prices/surcharges/${id}`, data),
+  removeSurcharge: (id: string) => api.delete(`/prices/surcharges/${id}`),
+  updateZone: (id: string, data: object) => api.patch(`/prices/zones/${id}`, data),
+  updateExtra: (id: string, data: object) => api.patch(`/prices/extras/${id}`, data),
+  updateCity: (id: string, data: object) => api.patch(`/prices/cities/${id}`, data),
+  createCar: (data: { slug: string; name: string; price_class?: string | null }) =>
+    api.post("/prices/cars", data),
+  updateCar: (id: string, data: object) => api.patch(`/prices/cars/${id}`, data),
+  history: (params: { limit?: number } = {}) => api.get("/prices/history", { params }),
+  publications: (params: { limit?: number } = {}) => api.get("/prices/publications", { params }),
+  // 201 published, 200 resend of the same client_ref.
+  publish: (data: { note?: string; client_ref?: string }) => api.post("/prices/publish", data),
+};
+
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
 
 export const analyticsApi = {

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { RupiahInput, rupiahValue } from '@/components/forms/RupiahInput';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -43,39 +44,6 @@ export function formatCardNumber(n: string): string {
 }
 
 const digits = (v: string) => v.replace(/\D/g, '');
-
-/** Rupiah amount typed with thousands dots; value is the plain number text. */
-export function RupiahInput({
-  id,
-  value,
-  onChange,
-  placeholder = '0',
-  autoFocus,
-}: {
-  id?: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  autoFocus?: boolean;
-}) {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">Rp</span>
-      <Input
-        id={id}
-        inputMode="numeric"
-        autoFocus={autoFocus}
-        className="pl-9 tabular-nums"
-        placeholder={placeholder}
-        value={value ? Number(value).toLocaleString('id-ID') : ''}
-        // 9 digits: the API refuses more than Rp 100.000.000.
-        onChange={(e) => onChange(digits(e.target.value).slice(0, 9))}
-      />
-    </div>
-  );
-}
-
-export const rupiahValue = (v: string): number | undefined => (v === '' ? undefined : Number(v));
 
 /** "Rp 85.000 · dicek 2 Okt 2026 10.12", or "Belum diketahui". */
 export function BalanceText({ card, className }: { card: Pick<EtollCard, 'balance' | 'balance_at'>; className?: string }) {

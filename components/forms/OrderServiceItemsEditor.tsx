@@ -99,7 +99,7 @@ function newItem(): ServiceItemFormValue {
     end_at: "",
     description: "",
     service_kind: "12H",
-    service_package: "ALL-IN",
+    service_package: "ALL-IN X PARKIR",
     pickup_location: "",
     dropoff_location: "",
     quantity: "1",

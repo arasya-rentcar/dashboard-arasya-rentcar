@@ -1580,3 +1580,138 @@ export interface EtollCardHistory {
   // Admin user id → email, for "dicatat oleh".
   users: Record<string, string>;
 }
+
+// ─── Price list (Daftar Harga) ──────────────────────────────────────────────
+
+/** "12H" | "FULLDAY" | "DROP" (the order form's service_kind vocabulary). */
+export type PriceDuration = '12H' | 'FULLDAY' | 'DROP';
+
+export interface PriceCar {
+  id: string;
+  // Website (Sanity) car slug, e.g. "toyota-avanza".
+  slug: string;
+  name: string;
+  // "Avanza sekelas"
+  price_class: string | null;
+  note: string | null;
+  sort_order: number;
+}
+
+export interface PriceRate {
+  id: string;
+  car_id: string;
+  duration: PriceDuration;
+  // Rupiah; null = "tanya admin".
+  amount: number | null;
+  // Proposed by the team, the owner still has to confirm.
+  is_proposal: boolean;
+  note: string | null;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface PriceSurcharge {
+  id: string;
+  zone_id: string;
+  area: string;
+  amount: number;
+  sort_order: number;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export interface PriceZone {
+  id: string;
+  // JABODETABEK, LUAR_KOTA, JAKARTA, BANDUNG, SURABAYA, DROP_JABODETABEK
+  code: string;
+  name: string;
+  // "XOPS" (car + driver) or "ALL-IN X PARKIR".
+  service_package: string;
+  included: string;
+  excluded: string;
+  note: string | null;
+  // The table for cities that have none of their own.
+  default_for_unlisted: boolean;
+  sort_order: number;
+  rates: PriceRate[];
+  surcharges: PriceSurcharge[];
+}
+
+export interface PriceCity {
+  id: string;
+  slug: string;
+  name: string;
+  driver_zone_id: string | null;
+  all_in_zone_id: string | null;
+  // Priced per trip (abroad): no tables.
+  quote: boolean;
+  sort_order: number;
+}
+
+export interface PriceExtra {
+  id: string;
+  // DRIVER_MEAL | DRIVER_LODGING | OVERTIME
+  code: string;
+  label: string;
+  amount: number | null;
+  // Overtime: percent of the Fullday price per hour.
+  percent: number | null;
+  // "hari" | "malam" | "jam"
+  unit: string;
+  note: string | null;
+  updated_by: string | null;
+  updated_at: string;
+}
+
+export type PriceDeployStatus = 'SENT' | 'SKIPPED' | 'FAILED';
+
+export interface PricePublication {
+  id: string;
+  created_at: string;
+  // Admin user id.
+  published_by: string | null;
+  note: string | null;
+  deploy_status: PriceDeployStatus;
+}
+
+export interface PriceListData {
+  cars: PriceCar[];
+  zones: PriceZone[];
+  cities: PriceCity[];
+  extras: PriceExtra[];
+  last_publication: PricePublication | null;
+  // Changes logged since the last publication.
+  unpublished_changes: number;
+  // Admin user id → email.
+  users: Record<string, string>;
+}
+
+export interface PriceChangeEntry {
+  id: string;
+  // rate | surcharge | extra | zone | city | car
+  entity: string;
+  entity_id: string;
+  // The column, or "created" / "deleted" for a whole row.
+  field: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string | null;
+  created_at: string;
+  // "Avanza · All-in Jakarta · 12 jam"; null when the row is gone.
+  label: string | null;
+}
+
+export interface PriceHistory {
+  items: PriceChangeEntry[];
+  users: Record<string, string>;
+}
+
+export interface PricePublications {
+  items: PricePublication[];
+  users: Record<string, string>;
+}
+
+export interface PricePublishResult {
+  publication: PricePublication;
+  snapshot: unknown;
+}

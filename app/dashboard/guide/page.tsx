@@ -18,103 +18,11 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import DashboardShell from "@/components/layout/DashboardShell";
+import { Button } from "@/components/ui/button";
 
 type Pair = { t: string; d: string };
-
-const layananCities = [
-  {
-    city: "Jakarta",
-    area: "Pemakaian dalam kota Jakarta",
-    included: "Harga sewa termasuk Mobil, Supir, Bensin, Tol, dan Makan Supir.",
-    excluded:
-      "Belum termasuk Parkir/Tiket masuk wisata dan Tip Supir seikhlasnya.",
-    twelveHour: [
-      ["Avanza Sekelas", "750.000"],
-      ["Xpander", "850.000"],
-      ["Innova Reborn", "1.000.000"],
-      ["Innova Zenix", "1.300.000"],
-      ["Innova Zenix Q", "1.700.000"],
-    ],
-    fullDay: [
-      ["Avanza Sekelas", "950.000"],
-      ["Xpander", "1.100.000"],
-      ["Innova Reborn", "1.250.000"],
-      ["Innova Zenix", "1.600.000"],
-      ["Innova Zenix Q", "2.100.000"],
-    ],
-    overtime:
-      "Pemakaian melebihi durasi sewa atau lewat jam 23.00 dikenakan biaya overtime 10% per jam.",
-    extra: [
-      "Tangerang +200.000",
-      "Bekasi +100.000",
-      "Cikarang +200.000",
-      "Depok +100.000",
-      "Bogor +100.000",
-      "Puncak +200.000",
-    ],
-  },
-  {
-    city: "Bandung",
-    area: "Pemakaian area Bandung",
-    included: "Harga sewa termasuk Mobil, Supir, Bensin, Tol, dan Makan Supir.",
-    excluded:
-      "Belum termasuk Parkir/Tiket masuk wisata dan Tip Supir seikhlasnya.",
-    twelveHour: [
-      ["Avanza Sekelas", "850.000"],
-      ["Xpander", "950.000"],
-      ["Innova Reborn", "1.100.000"],
-      ["Innova Zenix", "1.400.000"],
-      ["Innova Zenix Q", "1.800.000"],
-    ],
-    fullDay: [
-      ["Avanza Sekelas", "1.100.000"],
-      ["Xpander", "1.200.000"],
-      ["Innova Reborn", "1.350.000"],
-      ["Innova Zenix", "1.700.000"],
-      ["Innova Zenix Q", "2.200.000"],
-    ],
-    overtime:
-      "Pemakaian melebihi durasi sewa atau lewat dari jam 23.00 dikenakan biaya overtime 10% per jam.",
-    extra: [
-      "Tambahan 100.000 untuk area: Tangkuban Parahu, Ciater, Jatinangor, Pangalengan",
-    ],
-  },
-  {
-    city: "Surabaya",
-    area: "Pemakaian dalam kota Surabaya",
-    included: "Harga sewa termasuk Mobil, Supir, Bensin, Tol, dan Makan Supir.",
-    excluded:
-      "Belum termasuk Parkir/Tiket masuk wisata dan Tip Supir seikhlasnya.",
-    twelveHour: [
-      ["Avanza Sekelas", "850.000"],
-      ["Veloz", "950.000"],
-      ["Innova Reborn", "1.100.000"],
-      ["Innova Zenix", "1.400.000"],
-      ["Innova Zenix Q", "1.800.000"],
-    ],
-    fullDay: [
-      ["Avanza Sekelas", "1.100.000"],
-      ["Veloz", "1.200.000"],
-      ["Innova Reborn", "1.350.000"],
-      ["Innova Zenix", "1.700.000"],
-      ["Innova Zenix Q", "2.200.000"],
-    ],
-    overtime:
-      "Pemakaian melebihi durasi sewa atau lewat dari jam 23.00 dikenakan biaya overtime 10% per jam.",
-    extra: [
-      "Gresik +200.000",
-      "Sidoarjo +150.000",
-      "Prigen +250.000",
-      "Mojokerto +250.000",
-      "Kediri +500.000",
-      "Pasuruan +400.000",
-      "Malang +400.000",
-      "Bromo +500.000",
-      "Probolinggo +500.000",
-    ],
-  },
-];
 
 const botTemplates = [
   {
@@ -424,74 +332,11 @@ export default function GuidePage() {
         </Card>
 
         <Card title={t("serviceTypesTitle")} icon={Car}>
-          <div className="space-y-4 text-sm text-gray-700">
+          <div className="space-y-3 text-sm text-gray-700">
             <p>{t("serviceTypesIntro")}</p>
-            <div className="grid gap-4 lg:grid-cols-3">
-              {layananCities.map((city) => (
-                <div
-                  key={city.city}
-                  className="rounded-xl border bg-gray-50 p-4"
-                >
-                  <h3 className="text-base font-semibold text-gray-900">
-                    {city.city}
-                  </h3>
-                  <p className="mt-1 text-xs font-medium text-gray-600">
-                    {city.area}
-                  </p>
-                  <div className="mt-3 rounded-lg bg-white p-3 text-xs leading-5 text-gray-700">
-                    <p>
-                      <b>{t("allInclusiveLabel")}</b>
-                    </p>
-                    <p>• {city.included}</p>
-                    <p>• {city.excluded}</p>
-                  </div>
-
-                  <div className="mt-3 overflow-hidden rounded-lg border bg-white">
-                    <div className="bg-gray-100 px-3 py-2 text-xs font-semibold uppercase text-gray-600">
-                      {t("package12h")}
-                    </div>
-                    {city.twelveHour.map(([car, price]) => (
-                      <div
-                        key={`${city.city}-12-${car}`}
-                        className="flex justify-between border-t px-3 py-2 text-xs"
-                      >
-                        <span>{car}</span>
-                        <b>{price}</b>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 overflow-hidden rounded-lg border bg-white">
-                    <div className="bg-gray-100 px-3 py-2 text-xs font-semibold uppercase text-gray-600">
-                      {t("packageFullDay")}
-                    </div>
-                    {city.fullDay.map(([car, price]) => (
-                      <div
-                        key={`${city.city}-full-${car}`}
-                        className="flex justify-between border-t px-3 py-2 text-xs"
-                      >
-                        <span>{car}</span>
-                        <b>{price}</b>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                    <p>
-                      <b>{t("overtimeLabel")}</b> {city.overtime}
-                    </p>
-                    <p className="mt-2">
-                      <b>{t("extraAreaLabel")}</b>
-                    </p>
-                    <ul className="list-disc pl-4">
-                      {city.extra.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/price-list">{t("priceListLink")}</Link>
+            </Button>
           </div>
         </Card>
 
