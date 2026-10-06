@@ -102,6 +102,7 @@ export default function EditOrderForm({
         end_at: toDateTimeLocal(item.end_at),
         description: item.description || "",
         service_kind: item.service_kind || "12H",
+        // An existing day without a package was billed as All-in; keep it.
         service_package: item.service_package || "ALL-IN",
         pickup_location: item.pickup_location,
         dropoff_location: item.dropoff_location,
@@ -116,7 +117,7 @@ export default function EditOrderForm({
           end_at: toDateTimeLocal(order.service_end_at),
           description: "",
           service_kind: "12H",
-          service_package: "ALL-IN",
+          service_package: "ALL-IN X PARKIR",
           pickup_location: order.pickup_location,
           dropoff_location: order.dropoff_location,
           quantity: "1",

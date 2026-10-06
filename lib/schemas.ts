@@ -162,3 +162,111 @@ export const etollCardHistorySchema = z
     users: z.record(z.string(), z.string()),
   })
   .passthrough();
+
+// ─── Price list ──────────────────────────────────────────────────────────────
+
+const priceUsers = z.record(z.string(), z.string());
+
+const pricePublicationSchema = z
+  .object({
+    id: z.string(),
+    created_at: z.string(),
+    published_by: nullableStr,
+    note: nullableStr,
+    deploy_status: z.string(),
+  })
+  .passthrough();
+
+export const priceListSchema = z
+  .object({
+    cars: z.array(
+      z
+        .object({ id: z.string(), slug: z.string(), name: z.string(), sort_order: z.number(), updated_at: z.string() })
+        .passthrough(),
+    ),
+    zones: z.array(
+      z
+        .object({
+          id: z.string(),
+          code: z.string(),
+          name: z.string(),
+          service_package: z.string(),
+          included: z.string(),
+          excluded: z.string(),
+          updated_at: z.string(),
+          rates: z.array(
+            z
+              .object({
+                id: z.string(),
+                car_id: z.string(),
+                duration: z.string(),
+                amount: z.number().nullable(),
+                is_proposal: z.boolean(),
+                updated_at: z.string(),
+              })
+              .passthrough(),
+          ),
+          surcharges: z.array(
+            z
+              .object({ id: z.string(), zone_id: z.string(), area: z.string(), amount: z.number(), updated_at: z.string() })
+              .passthrough(),
+          ),
+        })
+        .passthrough(),
+    ),
+    cities: z
+      .array(
+        z
+          .object({
+            id: z.string(),
+            slug: z.string(),
+            name: z.string(),
+            driver_zone_id: nullableStr,
+            all_in_zone_id: nullableStr,
+            quote: z.boolean(),
+            updated_at: z.string(),
+          })
+          .passthrough(),
+      ),
+    extras: z.array(
+      z
+        .object({
+          id: z.string(),
+          code: z.string(),
+          label: z.string(),
+          amount: z.number().nullable(),
+          percent: z.number().nullable(),
+          unit: z.string(),
+          updated_at: z.string(),
+        })
+        .passthrough(),
+    ),
+    last_publication: pricePublicationSchema.nullable(),
+    unpublished_changes: z.number(),
+    proposal_count: z.number().optional(),
+    users: priceUsers,
+  })
+  .passthrough();
+
+export const priceHistorySchema = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string(),
+          entity: z.string(),
+          field: z.string(),
+          created_at: z.string(),
+          label: nullableStr,
+        })
+        .passthrough(),
+    ),
+    users: priceUsers,
+  })
+  .passthrough();
+
+export const pricePublicationsSchema = z
+  .object({ items: z.array(pricePublicationSchema), users: priceUsers })
+  .passthrough();
+
+export const pricePublishResultSchema = z.object({ publication: pricePublicationSchema }).passthrough();

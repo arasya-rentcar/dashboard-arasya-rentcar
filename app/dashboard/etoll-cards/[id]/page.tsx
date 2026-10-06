@@ -28,11 +28,10 @@ import {
   BalanceText,
   CardFormDialog,
   ISSUER_TINT,
-  RupiahInput,
   TransactionDialog,
   formatCardNumber,
-  rupiahValue,
 } from '@/components/etoll/etoll';
+import { RupiahInput, rupiahValue } from '@/components/forms/RupiahInput';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

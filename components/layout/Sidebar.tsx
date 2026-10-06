@@ -19,12 +19,14 @@ import {
   Inbox,
   Bell,
   CreditCard,
+  Tags,
 } from "lucide-react";
 import { useLeads } from "@/hooks/useLeads";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
+import { confirmLeave } from "@/lib/leaveGuard";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 
@@ -39,6 +41,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/cars", key: "cars", icon: Car },
   { href: "/dashboard/etoll-cards", key: "etollCards", icon: CreditCard },
   { href: "/dashboard/external", key: "external", icon: Handshake },
+  { href: "/dashboard/price-list", key: "priceList", icon: Tags },
   { href: "/dashboard/invoices", key: "invoices", icon: FileText },
   { href: "/dashboard/payables", key: "payables", icon: Wallet },
   { href: "/dashboard/agent", key: "agent", icon: Bot },
@@ -63,6 +66,8 @@ export default function Sidebar() {
   }, []);
 
   function handleLogout() {
+    // A page with unsaved edits (price list) asks first.
+    if (!confirmLeave()) return;
     clearAuth();
     router.push("/login");
   }
