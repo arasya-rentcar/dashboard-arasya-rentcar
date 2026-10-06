@@ -52,15 +52,14 @@ function ExtraCard({ extra }: { extra: PriceExtra }) {
       if (percent.trim() === '' || !Number.isFinite(p) || p < 0 || p > 100) return toast.error(t('errPercent'));
       data.percent = p;
     } else {
-      const a = rupiahValue(amount);
-      if (a == null) return toast.error(t('errAmount'));
+      // Empty = no fixed amount: the website shows "Tanya admin".
       if (rupiahTooLarge(amount)) return toast.error(t('errTooLarge'));
-      data.amount = a;
+      data.amount = rupiahValue(amount) ?? null;
     }
     try {
       const list = await update.mutateAsync({ id: extra.id, data });
       const saved = list.extras.find((e) => e.id === extra.id);
-      if (saved) adopt(saved);
+      if (saved) adopt(saved, form);
       toast.success(t('okExtraSaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -94,8 +93,14 @@ function ExtraCard({ extra }: { extra: PriceExtra }) {
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
             </div>
           ) : (
-            <RupiahInput id={`extra_${extra.id}`} value={amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} />
+            <RupiahInput
+              id={`extra_${extra.id}`}
+              value={amount}
+              placeholder={t('askAdmin')}
+              onChange={(v) => setForm((f) => ({ ...f, amount: v }))}
+            />
           )}
+          {!isPercent && <p className="text-xs text-gray-500">{t('amountEmptyHint')}</p>}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor={`extra_note_${extra.id}`}>{t('noteOptional')}</Label>

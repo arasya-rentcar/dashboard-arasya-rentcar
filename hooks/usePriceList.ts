@@ -64,7 +64,10 @@ function usePriceMutation<V>(fn: (v: V) => Promise<PriceListData>) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // A list GET still running (focus refetch, reload) was sent before this
+      // write: cancel it, or its older answer would replace the saved list.
+      await qc.cancelQueries({ queryKey: KEY, exact: true });
       qc.setQueryData(KEY, data);
       qc.invalidateQueries({ queryKey: [...KEY, 'history'] });
       qc.invalidateQueries({ queryKey: [...KEY, 'publications'] });
@@ -157,14 +160,19 @@ export function useUpdatePriceCar() {
   );
 }
 
-/** "Terbitkan ke website". Not a list answer: publishing changes "last publication" and the count. */
+/**
+ * "Terbitkan ke website". Not a list answer: publishing changes "last publication" and the count.
+ * resent: the API answered 200 instead of 201, i.e. this client_ref was already
+ * published (an earlier attempt whose answer was lost); nothing new was published.
+ */
 export function usePublishPrices() {
   const qc = useQueryClient();
   return useMutation({
     // confirm_proposals: the admin ticked "harga usulan ikut tampil"; without it the API answers 409.
     mutationFn: async (data: { note?: string; client_ref: string; confirm_proposals?: boolean }) => {
       const res = await pricesApi.publish(data);
-      return parseResponse<PricePublishResult>(pricePublishResultSchema, res.data.data, 'price-publish');
+      const result = parseResponse<PricePublishResult>(pricePublishResultSchema, res.data.data, 'price-publish');
+      return { ...result, resent: res.status === 200 };
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEY });

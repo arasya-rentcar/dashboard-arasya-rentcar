@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,6 +29,8 @@ import {
 export default function CityTab({ data }: { data: PriceListData }) {
   const t = useTranslations('priceList');
   const [cityId, setCityId] = useState(data.cities[0]?.id ?? '');
+  // The table settings form has unsaved edits: switching cities asks first (it remounts).
+  const [mappingDirty, setMappingDirty] = useState(false);
   const city = data.cities.find((c) => c.id === cityId) ?? data.cities[0];
   const zoneById = (id: string | null) => data.zones.find((z) => z.id === id);
 
@@ -38,7 +40,13 @@ export default function CityTab({ data }: { data: PriceListData }) {
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label>{t('city')}</Label>
-        <Select value={city.id} onValueChange={setCityId}>
+        <Select
+          value={city.id}
+          onValueChange={(id) => {
+            if (mappingDirty && !window.confirm(t('switchCityUnsaved'))) return;
+            setCityId(id);
+          }}
+        >
           <SelectTrigger className="w-full sm:w-72">
             <SelectValue />
           </SelectTrigger>
@@ -80,7 +88,7 @@ export default function CityTab({ data }: { data: PriceListData }) {
         </>
       )}
 
-      <CityMapping key={city.id} city={city} zones={data.zones} />
+      <CityMapping key={city.id} city={city} zones={data.zones} onDirtyChange={setMappingDirty} />
     </div>
   );
 }
@@ -181,7 +189,15 @@ function ExtrasCard({ extras }: { extras: PriceExtra[] }) {
 const NONE = '__none__';
 
 /** Which tables the city page shows (or: priced per trip). */
-function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
+function CityMapping({
+  city,
+  zones,
+  onDirtyChange,
+}: {
+  city: PriceCity;
+  zones: PriceZone[];
+  onDirtyChange: (dirty: boolean) => void;
+}) {
   const t = useTranslations('priceList');
   const update = useUpdatePriceCity();
   const reload = useReloadPriceList();
@@ -197,6 +213,7 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
   // Without "penawaran" the city page needs both tables (the API refuses otherwise).
   const missingTable = !quote && (driver === NONE || allIn === NONE);
   useReportDirty('city-mapping', dirty);
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   async function save() {
     if (missingTable) return;
@@ -208,7 +225,7 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
           : { quote: false, driver_zone_id: driver, all_in_zone_id: allIn, expected_updated_at: expectedAt },
       });
       const saved = list.cities.find((c) => c.id === city.id);
-      if (saved) adopt(saved);
+      if (saved) adopt(saved, form);
       toast.success(t('okCitySaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));

@@ -144,15 +144,17 @@ export function DialogActions({
   );
 }
 
-/** Segmented-control button style (same look as the e-toll page filter). */
-export const segmentClass = (active: boolean) =>
-  `shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-    active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
-  }`;
-
 /** 409: someone else changed the row since this page loaded it (expected_updated_at). */
 export const isConflict = (err: unknown) =>
   !!err && typeof err === 'object' && (err as { response?: { status?: number } }).response?.status === 409;
+
+/**
+ * 409 because the row is stale (the API sends conflict_ids), not another 409
+ * such as an area or slug that already exists.
+ */
+export const isStaleConflict = (err: unknown) =>
+  isConflict(err) &&
+  Array.isArray((err as { response?: { data?: { conflict_ids?: unknown } } }).response?.data?.conflict_ids);
 
 // ─── Unsaved edits ──────────────────────────────────────────────────────────
 
@@ -195,10 +197,14 @@ export function useRowForm<R extends { updated_at: string }, T>(row: R, toForm: 
     setForm,
     dirty,
     expectedAt: base.at,
-    /** After a save: take the saved row as answered by the API (trimmed, normalised). */
-    adopt: (saved: R) => {
+    /**
+     * After a save: take the saved row as answered by the API (trimmed,
+     * normalised). `sent` is the form that was saved; text typed while the
+     * request ran is kept (still unsaved, now based on the saved version).
+     */
+    adopt: (saved: R, sent: T) => {
       const values = toForm(saved);
-      setForm(values);
+      setForm((cur) => (sameValues(cur, sent) ? values : cur));
       setBase({ at: saved.updated_at, values });
     },
     /** Drop the edits; the form then follows the (refetched) server row. */

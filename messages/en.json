@@ -2208,6 +2208,14 @@
     "zoneTextsHint": "The table name, \"included\", \"not included\" and the note are published to the website.",
     "shownOnWebsite": "Published to the website.",
     "errMappingTables": "Choose both tables, or tick priced per trip.",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "switchZoneUnsaved": "This table's texts are not saved and will be lost if you switch tables. Switch anyway?",
+    "switchCityUnsaved": "This city's table settings are not saved and will be lost if you switch cities. Switch anyway?",
+    "conflictSurchargeReloaded": "Another admin just changed this area; its latest data is loaded: {area} +{amount}. Your entries are not saved. Check them, then click Save if you still want to replace it.",
+    "conflictCarReloaded": "Another admin just changed this car; its latest data is loaded. Your entries are not saved. Check them, then click Save if you still want to replace it.",
+    "okPublishResent": "These prices had already been published by the earlier attempt (its answer did not arrive), so they were not published twice. If there are still unpublished changes, click Publish again.",
+    "amountEmptyHint": "Leave empty when there is no fixed cost; it then shows as \"Ask admin\" (\"Tanya admin\" on the website).",
+    "slugPlaceholder": "toyota-avanza",
+    "priceClassPlaceholder": "e.g. Avanza sekelas"
   }
 }

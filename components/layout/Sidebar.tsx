@@ -26,6 +26,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { clearAuth, getUser } from "@/lib/auth";
+import { confirmLeave } from "@/lib/leaveGuard";
 import { Button } from "@/components/ui/button";
 import { User } from "@/types";
 
@@ -65,6 +66,8 @@ export default function Sidebar() {
   }, []);
 
   function handleLogout() {
+    // A page with unsaved edits (price list) asks first.
+    if (!confirmLeave()) return;
     clearAuth();
     router.push("/login");
   }

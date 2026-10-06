@@ -11,6 +11,7 @@ import {
   useUnreadCount,
 } from '@/hooks/useNotifications';
 import { invalidateLineMoneyViews } from '@/hooks/useTripCosts';
+import { confirmLeave } from '@/lib/leaveGuard';
 
 // At most this many toasts per new batch; the rest is summarised in one line.
 const MAX_TOASTS = 3;
@@ -84,7 +85,7 @@ export default function NotificationWatcher() {
             description: n.body || undefined,
             duration: 10_000,
             action: n.link
-              ? { label: t('open'), onClick: () => router.push(n.link) }
+              ? { label: t('open'), onClick: () => confirmLeave() && router.push(n.link) }
               : undefined,
           });
         }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ import {
   RateGrid,
   citiesUsing,
   isConflict,
+  isStaleConflict,
   rateOf,
   useReportDirty,
   useRowForm,
@@ -45,6 +46,8 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
   const [zoneId, setZoneId] = useState(data.zones[0]?.id ?? '');
   // Unsaved cells by rate id. They stay while another table is shown.
   const [edits, setEdits] = useState<Record<string, Edit>>({});
+  // The table texts form has unsaved edits: switching tables asks first (it remounts).
+  const [textsDirty, setTextsDirty] = useState(false);
   const saveRates = useUpdatePriceRates();
   const reload = useReloadPriceList();
   const zone = data.zones.find((z) => z.id === zoneId) ?? data.zones[0];
@@ -83,9 +86,27 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
       is_proposal: e.proposal,
       expected_updated_at: e.at,
     }));
+    // What was sent: the inputs stay editable while saving.
+    const sent = edits;
     try {
-      await saveRates.mutateAsync(items);
-      setEdits({});
+      const list = await saveRates.mutateAsync(items);
+      const saved = new Map(list.zones.flatMap((z) => z.rates.map((r) => [r.id, r] as const)));
+      // Drop the cells that were saved as sent. A cell typed while saving stays
+      // unsaved: a new one keeps its version, one that was sent and changed
+      // again now starts from the version just saved.
+      setEdits((prev) => {
+        const next: Record<string, Edit> = {};
+        for (const [id, e] of Object.entries(prev)) {
+          const s = sent[id];
+          if (!s) next[id] = e;
+          else if (s.amount === e.amount && s.proposal === e.proposal) continue;
+          else {
+            const r = saved.get(id);
+            if (r && (e.amount !== amountText(r.amount) || e.proposal !== r.is_proposal)) next[id] = { ...e, at: r.updated_at };
+          }
+        }
+        return next;
+      });
       toast.success(t('okRatesSaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -103,7 +124,13 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
     <div className="space-y-4">
       <div className="space-y-1.5">
         <Label>{t('table')}</Label>
-        <Select value={zone.id} onValueChange={setZoneId}>
+        <Select
+          value={zone.id}
+          onValueChange={(id) => {
+            if (textsDirty && !window.confirm(t('switchZoneUnsaved'))) return;
+            setZoneId(id);
+          }}
+        >
           <SelectTrigger className="w-full sm:w-96">
             <SelectValue />
           </SelectTrigger>
@@ -175,14 +202,14 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
         </CardContent>
       </Card>
 
-      <ZoneTexts key={zone.id} zone={zone} />
+      <ZoneTexts key={zone.id} zone={zone} onDirtyChange={setTextsDirty} />
       <Surcharges zone={zone} />
     </div>
   );
 }
 
 /** Name, "sudah termasuk", "belum termasuk" and note of the table. */
-function ZoneTexts({ zone }: { zone: PriceZone }) {
+function ZoneTexts({ zone, onDirtyChange }: { zone: PriceZone; onDirtyChange: (dirty: boolean) => void }) {
   const t = useTranslations('priceList');
   const update = useUpdatePriceZone();
   const reload = useReloadPriceList();
@@ -195,6 +222,7 @@ function ZoneTexts({ zone }: { zone: PriceZone }) {
   const { name, included, excluded, note } = form;
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   useReportDirty('zone-texts', dirty);
+  useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange]);
 
   async function save() {
     if (!name.trim() || !included.trim() || !excluded.trim()) return toast.error(t('errZoneTexts'));
@@ -210,7 +238,7 @@ function ZoneTexts({ zone }: { zone: PriceZone }) {
         },
       });
       const saved = list.zones.find((z) => z.id === zone.id);
-      if (saved) adopt(saved);
+      if (saved) adopt(saved, form);
       toast.success(t('okZoneSaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -265,6 +293,8 @@ function Surcharges({ zone }: { zone: PriceZone }) {
   // null = closed, 'new' = adding.
   const [editing, setEditing] = useState<PriceSurcharge | 'new' | null>(null);
   const [deleting, setDeleting] = useState<PriceSurcharge | null>(null);
+  // The row as it is now (after a reload), so a retry sends its current updated_at.
+  const live = (s: PriceSurcharge) => zone.surcharges.find((x) => x.id === s.id) ?? s;
   return (
     <Card className="shadow-none">
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-0">
@@ -297,7 +327,7 @@ function Surcharges({ zone }: { zone: PriceZone }) {
       {editing && (
         <SurchargeDialog
           zone={zone}
-          surcharge={editing === 'new' ? null : editing}
+          surcharge={editing === 'new' ? null : live(editing)}
           onClose={() => setEditing(null)}
         />
       )}
@@ -342,10 +372,20 @@ function SurchargeDialog({
       toast.success(t('okSurchargeSaved'));
       onClose();
     } catch (err) {
-      // 409: the area already exists in this table, or another admin changed
-      // this area meanwhile (then the list is loaded again; reopen to retry).
+      // 409 with conflict_ids: another admin changed this area meanwhile. The
+      // list is loaded again; `surcharge` then is the current row, so Simpan
+      // once more saves over it on purpose. Other 409: the area already exists.
+      if (surcharge && isStaleConflict(err)) {
+        const fresh = await reload();
+        const now = fresh?.zones.flatMap((z) => z.surcharges).find((s) => s.id === surcharge.id);
+        setError(
+          now
+            ? t('conflictSurchargeReloaded', { area: now.area, amount: formatCurrency(now.amount) })
+            : getErrorMessage(err),
+        );
+        return;
+      }
       setError(getErrorMessage(err));
-      if (surcharge && isConflict(err)) void reload();
     }
   }
 

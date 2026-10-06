@@ -36,7 +36,7 @@ import {
   useNotificationFeed,
   useUnreadCount,
 } from '@/hooks/useNotifications';
-import { cn, formatCurrency, formatDateTime, getErrorMessage } from '@/lib/utils';
+import { cn, formatCurrency, formatDateTime, getErrorMessage, segmentClass } from '@/lib/utils';
 import type { AdminNotification, DriverRequest } from '@/types';
 
 export default function NotificationsPage() {
@@ -333,12 +333,6 @@ function FeedSection() {
     if (!n.read) markRead.mutate({ ids: [n.id] });
   }
 
-  const tab = (active: boolean) =>
-    cn(
-      'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-      active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800',
-    );
-
   return (
     <Card className="border border-gray-200 shadow-none">
       <CardHeader className="pb-3">
@@ -349,10 +343,10 @@ function FeedSection() {
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex gap-0.5 rounded-lg bg-gray-100 p-0.5">
-              <button type="button" className={tab(!unreadOnly)} onClick={() => setUnreadOnly(false)}>
+              <button type="button" className={segmentClass(!unreadOnly)} onClick={() => setUnreadOnly(false)}>
                 {t('filterAll')}
               </button>
-              <button type="button" className={tab(unreadOnly)} onClick={() => setUnreadOnly(true)}>
+              <button type="button" className={segmentClass(unreadOnly)} onClick={() => setUnreadOnly(true)}>
                 {t('filterUnread')}
                 {unread > 0 ? ` (${unread})` : ''}
               </button>

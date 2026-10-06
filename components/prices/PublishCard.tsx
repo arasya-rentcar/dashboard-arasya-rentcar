@@ -39,19 +39,14 @@ export const proposalCount = (data: PriceListData) =>
 export default function PublishCard({ data, unsaved }: { data: PriceListData; unsaved: boolean }) {
   const t = useTranslations('priceList');
   const [open, setOpen] = useState(false);
-  // One id per publication, kept across close/reopen: a retry after a lost answer
-  // (timeout) publishes once. A new one only after a publish went through.
+  // One id per publication, kept across close/reopen and across refetches: a
+  // retry after a lost answer (timeout) is the same publish, and the API answers
+  // it with the publication already stored. A new id only once this client got
+  // a 2xx for its publish (onPublished below).
   const [clientRef, setClientRef] = useState(() => crypto.randomUUID());
   // Disabled while a change is being saved: the snapshot must hold it completely.
   const saving = useIsMutating() > 0;
   const last = data.last_publication;
-  // A new last publication (this admin's, even when its answer was lost, or
-  // another admin's) means the next publish is a new one.
-  const [refAfter, setRefAfter] = useState(last?.id ?? null);
-  if ((last?.id ?? null) !== refAfter) {
-    setRefAfter(last?.id ?? null);
-    setClientRef(crypto.randomUUID());
-  }
   const pending = data.unpublished_changes;
 
   return (
@@ -126,13 +121,16 @@ function PublishDialog({
   async function confirm() {
     setError(null);
     try {
-      const { publication } = await publish.mutateAsync({
+      const { publication, resent } = await publish.mutateAsync({
         note: note.trim() || undefined,
         client_ref: clientRef,
         confirm_proposals: proposals > 0 && confirmProposals ? true : undefined,
       });
       onPublished();
+      // An earlier attempt had gone through (its answer was lost): nothing new was
+      // published. Changes saved after it need another publish (new id now).
       if (publication.deploy_status === 'FAILED') toast.error(t('okPublishedFailed'), { duration: 15000 });
+      else if (resent) toast.info(t('okPublishResent'), { duration: 15000 });
       else if (publication.deploy_status === 'SKIPPED') toast.success(t('okPublishedSkipped'));
       else toast.success(t('okPublished'));
       onClose();

@@ -61,7 +61,10 @@ export default function HistoryTab({ data }: { data: PriceListData }) {
   }
 
   const items = history.data?.items ?? [];
-  const canLoadMore = items.length >= limit && limit < HISTORY_MAX;
+  // While the longer list loads, the previous one stays on screen (fewer items
+  // than the new limit): keep the button, with its spinner, until it arrives.
+  const loadingMore = history.isPlaceholderData;
+  const canLoadMore = loadingMore || (items.length >= limit && limit < HISTORY_MAX);
 
   return (
     <div className="space-y-4">
@@ -117,7 +120,7 @@ export default function HistoryTab({ data }: { data: PriceListData }) {
                 disabled={history.isFetching}
                 onClick={() => setLimit((l) => Math.min(l + HISTORY_STEP, HISTORY_MAX))}
               >
-                {history.isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t('loadMore')}
               </Button>
             </div>

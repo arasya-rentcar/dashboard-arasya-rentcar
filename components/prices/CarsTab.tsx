@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCreatePriceCar, useReloadPriceList, useUpdatePriceCar } from '@/hooks/usePriceList';
 import { getErrorMessage } from '@/lib/utils';
 import type { PriceCar } from '@/types';
-import { DialogActions, DialogShell, isConflict } from './common';
+import { DialogActions, DialogShell, isStaleConflict } from './common';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // Same limit as the API.
@@ -61,7 +61,13 @@ export default function CarsTab({ cars }: { cars: PriceCar[] }) {
           ))}
         </ul>
       )}
-      {editing && <CarDialog car={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <CarDialog
+          // The row as it is now (after a reload), so a retry sends its current updated_at.
+          car={editing === 'new' ? null : (cars.find((c) => c.id === editing.id) ?? editing)}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }
@@ -108,9 +114,14 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
       }
       onClose();
     } catch (err) {
+      // Edit, 409 with conflict_ids: another admin changed this car meanwhile.
+      // The list is loaded again; `car` then is the current row, so Simpan once
+      // more saves over it on purpose.
+      if (car && isStaleConflict(err)) {
+        await reload();
+        return setError(t('conflictCarReloaded'));
+      }
       setError(getErrorMessage(err));
-      // Edit: another admin changed this car meanwhile; reopen it to see their version.
-      if (car && isConflict(err)) void reload();
     }
   }
 
@@ -125,7 +136,7 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
             id="car_slug"
             className="font-mono"
             maxLength={80}
-            placeholder="toyota-avanza"
+            placeholder={t('slugPlaceholder')}
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             autoFocus
@@ -139,7 +150,7 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="car_class">{t('priceClass')}</Label>
-        <Input id="car_class" maxLength={60} placeholder="Avanza sekelas" value={priceClass} onChange={(e) => setPriceClass(e.target.value)} />
+        <Input id="car_class" maxLength={60} placeholder={t('priceClassPlaceholder')} value={priceClass} onChange={(e) => setPriceClass(e.target.value)} />
         <p className="text-xs text-gray-500">{t('priceClassHint')}</p>
       </div>
       {car && (

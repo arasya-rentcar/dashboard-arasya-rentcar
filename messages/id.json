@@ -2208,6 +2208,14 @@
     "zoneTextsHint": "Nama tabel, \"sudah termasuk\", \"belum termasuk\", dan catatan ikut diterbitkan ke website.",
     "shownOnWebsite": "Ikut diterbitkan ke website.",
     "errMappingTables": "Pilih kedua tabel, atau centang penawaran per perjalanan.",
-    "loadMore": "Muat lebih banyak"
+    "loadMore": "Muat lebih banyak",
+    "switchZoneUnsaved": "Teks tabel ini belum disimpan dan akan hilang kalau pindah tabel. Tetap pindah?",
+    "switchCityUnsaved": "Pengaturan tabel untuk kota ini belum disimpan dan akan hilang kalau pindah kota. Tetap pindah?",
+    "conflictSurchargeReloaded": "Area ini baru saja diubah admin lain, data terbarunya sudah dimuat: {area} +{amount}. Isian Anda belum tersimpan. Periksa lagi, lalu klik Simpan kalau tetap ingin menggantinya.",
+    "conflictCarReloaded": "Mobil ini baru saja diubah admin lain, data terbarunya sudah dimuat. Isian Anda belum tersimpan. Periksa lagi, lalu klik Simpan kalau tetap ingin menggantinya.",
+    "okPublishResent": "Harga ini ternyata sudah diterbitkan pada percobaan sebelumnya (jawabannya tadi tidak sampai), jadi tidak diterbitkan dua kali. Kalau masih ada perubahan yang belum terbit, klik Terbitkan lagi.",
+    "amountEmptyHint": "Kosongkan kalau biayanya tidak tetap; website akan menampilkan \"Tanya admin\".",
+    "slugPlaceholder": "toyota-avanza",
+    "priceClassPlaceholder": "Avanza sekelas"
   }
 }
