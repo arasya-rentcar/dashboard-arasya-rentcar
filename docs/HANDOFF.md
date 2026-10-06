@@ -1,4 +1,4 @@
-# Serah terima — 3 Oktober 2026
+# Serah terima — 6 Oktober 2026
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
@@ -30,13 +30,17 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 - **Dirilis 4 Okt 18.49–19.11 UTC:** API arasya-rentcar/api-arasya-rentcar#4 ("Deploy API" run #70, migrasi `20261004150000_etoll_cards`, e2e 267 lolos), dashboard arasya-rentcar/dashboard-arasya-rentcar#8 ("Deploy Dashboard" run #67 + "Deploy to Vercel" run #24), aplikasi arasya-rentcar/mobile-arasya-rentcar#4 → "EAS Build (Android)" run #7, build `af651751-3348-4b9b-aae5-0904f9511a51` (https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/af651751-3348-4b9b-aae5-0904f9511a51; pasang APK ini di HP driver).
 - **Langkah pemilik/admin:** daftarkan ke-10 kartu di Kartu E-Toll (nomor lengkap + saldo bila tahu); pasang APK baru; uji NFC: tempelkan satu kartu dari tiap bank di "Tes kartu NFC" dan kirim hasilnya (lihat TEST-PLAN §1.2, BACKLOG §5).
 
-**Status 6 Okt: satu rumus keuangan (review keuangan 5 Okt, temuan A1–A3, A6–A8). Belum dirilis.**
+**Status 6 Okt: satu rumus keuangan (review keuangan 5 Okt, temuan A1–A3, A6–A8). Dirilis 6 Okt.**
 - Pendapatan di Dashboard dan halaman Pendapatan = harga hari + biaya tambahan (overtime dll., dihitung pada tanggal dicatat) + biaya pembatalan (pada tanggal pembatalan). Biaya perjalanan yang ditagihkan ulang ke pelanggan = pass-through (bukan pendapatan, bukan biaya). Hari yang dibatalkan tetap membawa biayanya (fee driver/RTR bila trip sudah jalan). Kartu "Keuangan & Margin" order memakai rumus yang sama (margin v5) dan dihitung ulang saat order dibatalkan.
 - Pembatalan: invoice biaya pembatalan hanya untuk sisa yang belum dibayar; tidak ada invoice bila uang yang sudah masuk menutupnya. Sebelumnya pembatalan sebelum hari H dengan DP selalu membuat invoice ISSUED yang, bila ditandai terbayar, mencatat uang yang tidak pernah masuk. Biaya, tanggal, dan alasan disimpan di order (`cancellation_fee`, `cancelled_at`, `cancellation_reason`; migrasi `20261006090000_order_cancellation_fields` mengisi order lama dari log perubahan).
 - Batal setelah hari 1 selesai (diputuskan 6 Okt): order tetap "Menunggu finalisasi" dengan total = biaya pembatalan (tier 3 = 100%); Edit Order, biaya tambahan, dan batal kedua ditolak; hari yang dibatalkan terkunci; Finalisasi menutupnya sebagai Selesai dengan catatan pembatalan. Dashboard menampilkan keterangan ini di halaman order.
 - Pendapatan = harga ke pelanggan, termasuk hari rekanan; RTR adalah biaya, markup terlihat di margin (diputuskan 6 Okt). Piutang di Dashboard sekarang memuat biaya pembatalan yang belum dibayar.
 - Uang yang sudah diterima pada invoice yang dibatalkan dihitung sebagai sudah ditagih, jadi tidak bisa ditagih ulang. Order yang semua harinya sudah selesai tidak bisa dibatalkan (pakai Finalisasi).
 - Uji: e2e API 293 lolos (grup O baru; E3, G15, D19b disesuaikan/ditambah); dashboard `tsc` + `next build` lolos. Rilis API dulu (ada migrasi), lalu dashboard.
+- **Rilis:** API `fc37142` di `main`; migrasi `20261006090000_order_cancellation_fields` tercatat di `_prisma_migrations` produksi 5 Okt 21.14 UTC (dicek SQL baca 6 Okt; kolom `cancellation_fee`, `cancelled_at`, `cancellation_reason` ada). Dashboard `9640cc9` di-push ke `main` 6 Okt ±09.00 UTC; dashboard.haikuy.com menyajikan build baru ±90 detik kemudian (teks "…tinggal finalisasi" ada di JS live). Salinan Vercel tidak dicek.
+- **Belum tercatat:** temuan review keuangan selain A1–A3 dan A6–A8 (A4, A5, dst.) — dokumen review tidak ada di repo; perlu dipastikan dikerjakan, ditunda, atau tidak perlu.
+
+**Sedang dikerjakan (belum di-merge): daftar harga resmi (BACKLOG §1).** Branch `claude/price-list` di API (`d7ee8b0`, migrasi `20261006120000_price_list`: `price_cars`, `price_zones`, …; belum ada di produksi) dan dashboard (`9b3d2f3`, halaman Daftar Harga per kota, ubah, riwayat, terbit ke website). Belum di-review dan belum diuji di sesi ini.
 
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
@@ -192,9 +196,9 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (25815c3, perbaikan T1–T3; PR arasya-rentcar/api-arasya-rentcar#2, sebelumnya #1) | ✅ "Deploy API" run #68 sukses 3 Okt 17.22 UTC (4 Okt 00.22 WIB), `/health` 200. Run #67 (3 Okt 08.41 UTC): kedua migrasi tercatat di `_prisma_migrations`, RLS `driver_notifications` menyala | Migrasi baru: `20261003120000_driver_pay_trip_costs`, `20261003180000_onboard_arrival_location_driver_inbox`. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (Edit Order mengirim id hari + TEST-PLAN; PR arasya-rentcar/dashboard-arasya-rentcar#4, sebelumnya #3) | ✅ Live di Vercel dan dashboard.haikuy.com (VPS): "Deploy Dashboard" run #65 dan "Deploy to Vercel" run #20 sukses 3 Okt 20.58 UTC | Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
-| **mobile-arasya-rentcar** (aplikasi driver) | `main` (sesi 3 Okt §00; PR arasya-rentcar/mobile-arasya-rentcar#1, repo publik) | ⏳ **APK baru sedang di-build**: workflow "EAS Build (Android)" run #4 (profile `preview`, dari `main` 6aa3787) → build `d603a395-2d3a-4c25-a12e-fd475c7c7afe` (https://expo.dev/accounts/rimbalun/projects/arasyarentcar/builds/d603a395-2d3a-4c25-a12e-fd475c7c7afe). Unduh APK dari halaman itu setelah selesai | APK lama (`0e492789…`) masih jalan dengan API baru, tetapi tanpa kamera GPS, langkah "Mulai perjalanan", dan notifikasi; "Selesai" di APK lama butuh order lunas. Uji dengan §00.7. Proyek Expo `rimbalun/arasyarentcar`. |
+| **api-arasya-rentcar** | `main` (`fc37142`, satu rumus keuangan) | ✅ Migrasi terakhir di produksi: `20261006090000_order_cancellation_fields` (5 Okt 21.14 UTC). `/health` 200 (6 Okt) | Branch `claude/price-list` (`d7ee8b0`) belum di-merge. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (`9640cc9`, satu rumus keuangan) | ✅ dashboard.haikuy.com menyajikan build ini sejak 6 Okt ±09.00 UTC; salinan Vercel tidak dicek | Branch `claude/price-list` (`9b3d2f3`) belum di-merge. Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **mobile-arasya-rentcar** (aplikasi driver) | `main` (kartu e-toll + NFC; PR arasya-rentcar/mobile-arasya-rentcar#4, repo publik) | ✅ APK build `af651751-3348-4b9b-aae5-0904f9511a51` ("EAS Build (Android)" run #7). **Belum diuji di HP asli** | Uji dengan §00.7, TEST-PLAN §1.1 dan §1.2. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
 ## 2. Langkah rilis berikutnya (berurutan)
