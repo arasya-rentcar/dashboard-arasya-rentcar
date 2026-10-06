@@ -1,4 +1,4 @@
-# Serah terima — 6 Oktober 2026
+# Serah terima — 7 Oktober 2026
 
 Ringkasan kondisi semua repo Arasya Rent Car dan langkah berikutnya. Detail teknis per repo ada di `CLAUDE.md` masing-masing; pekerjaan yang ditunda ada di `docs/BACKLOG.md`.
 
@@ -40,7 +40,7 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 - **Rilis:** API `fc37142` di `main`; migrasi `20261006090000_order_cancellation_fields` tercatat di `_prisma_migrations` produksi 5 Okt 21.14 UTC (dicek SQL baca 6 Okt; kolom `cancellation_fee`, `cancelled_at`, `cancellation_reason` ada). Dashboard `9640cc9` di-push ke `main` 6 Okt ±09.00 UTC; dashboard.haikuy.com menyajikan build baru ±90 detik kemudian (teks "…tinggal finalisasi" ada di JS live). Salinan Vercel tidak dicek.
 - Dokumen review 5 Okt (seri A) hilang; diganti review ulang 6 Okt di bawah.
 
-**Review keuangan ulang 6 Okt (B1–B12), belum diperbaiki.** Dibaca dari kode API (`main` + working tree `claude/price-list`, yang tidak menyentuh logika uang) dan dashboard `main`. B1–B3 dicek ulang langsung di kode.
+**Review keuangan ulang 6 Okt (B1–B12).** B1.1, B1.3, B2, B7, B12 (pembulatan) dirilis 7 Okt (lihat "Status 7 Okt"); sisanya di bawah masih terbuka. Dibaca dari kode API (`main` + working tree `claude/price-list`, yang tidak menyentuh logika uang) dan dashboard `main`. B1–B3 dicek ulang langsung di kode.
 - **B1 (tinggi):** membatalkan hari lewat Edit Hari (`schedule.service.ts` `assignScheduleLine`) tidak lewat `cancelOrder`: tanpa denda, `cancellation_fee` kosong, invoice ISSUED tetap aktif. Bila semua hari batal, `order-derive.service.ts:72` menjadikan order CANCELLED. Pembatalan sebagian juga bisa menurunkan total di bawah nilai invoice (Edit Order menolak ini, Edit Hari tidak). **Perlu keputusan pemilik:** hari terakhir wajib lewat "Batalkan Order"? satu hari dari order multi-hari kena denda? tolak bila total < invoice?
 - **B2 (sedang–tinggi):** DP ≥ 20% hanya dicek saat invoice dibuat (`invoices.service.ts:371`); revisi DP dan `amount_received` (cukup > 0) tidak dicek, jadi DP_PAID dan penugasan driver bisa terjadi dengan Rp 1.
 - **B3 (sedang):** invoice ditandai terbayar dengan uang kurang → sisa tidak bisa ditagih lagi (tagihan dihitung dari nilai invoice, bukan uang masuk); "Mulai perjalanan" terkunci selamanya. **Perlu keputusan pemilik** (tolak jumlah beda, atau status kurang bayar).
@@ -55,10 +55,31 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 - **B12 (rendah):** denda dibulatkan ke sen, bukan rupiah; batas 10:00 menganggap 10:00:59 masih sebelum; GA4 `purchase` terkirim untuk invoice denda pembatalan.
 - Dicek benar: klik ganda Tandai Terbayar, revisi tidak mengubah status bayar, tier dan invoice sisa di `cancelOrder`, rumus Dashboard/Pendapatan/kartu order sama, Finalisasi menolak biaya "Menunggu dicek", bayar driver tidak dobel, aturan DP di semua jalur penugasan, GA4 sekali, hanya rekening BCA PT Ayomi Raya Karsa.
 
-**Sedang dikerjakan (belum di-merge): daftar harga resmi (BACKLOG §1).** Branch `claude/price-list` di API (`d7ee8b0`, migrasi `20261006120000_price_list`: `price_cars`, `price_zones`, …; belum ada di produksi) dan dashboard (`9b3d2f3`, halaman Daftar Harga per kota, ubah, riwayat, terbit ke website). Belum diuji.
+**Daftar harga resmi (BACKLOG §1): dirilis 7 Okt, belum diterbitkan ke website** (lihat "Status 7 Okt"). Catatan review di bawah ditulis sebelum perbaikan. Branch `claude/price-list` di API (`d7ee8b0`, migrasi `20261006120000_price_list`: `price_cars`, `price_zones`, …; belum ada di produksi) dan dashboard (`9b3d2f3`, halaman Daftar Harga per kota, ubah, riwayat, terbit ke website). Belum diuji.
 - **Review API (6 Okt):** tanpa blocker; `tsc` lolos; migrasi hanya menambah tabel, RLS menyala di 8 tabel baru; rute admin `ADMIN` saja; endpoint publik dibatasi laju dan tidak membocorkan biaya/RTR. Perlu diputuskan sebelum dipakai: (1) catatan paket di PDF berlaku mundur (kwitansi order XOPS lama berbeda dari invoice-nya); (2) dua admin mengedit bersamaan → simpanan lama menimpa tanpa peringatan; (3) harga usulan (`is_proposal`, PRICE.md §8) bisa diterbitkan tanpa penghalang. Kecil: catatan zona/extras ikut JSON publik, `client_ref` publish opsional, deploy hook gagal tidak dicoba ulang, persen overtime di PDF ditulis mati.
 - **Review dashboard (6 Okt):** bentuk request/response cocok dengan API; merge ke `main` bersih (`git merge-tree`, tanpa konflik; kunci id/en sama); `tsc`/`next build` di branch belum dijalankan. Perbaiki sebelum rilis: (1) dialog Terbitkan tidak memperingatkan harga usulan; (2) isian grid yang belum disimpan hilang saat pindah tab dan Terbitkan tetap bisa ditekan; (3) form tidak sinkron ulang setelah data berubah → simpanan admin lain tertimpa; (4) petunjuk "Hanya untuk admin" di kelas harga dan catatan zona/extras padahal ikut terbit. Segera sesudahnya: `RupiahInput` menempel "750.000,00" menjadi Rp 75.000.000; `client_ref` publish baru tiap dialog dibuka. Kecil: batas urutan mobil, pilihan tabel kota kosong, `ownTable` dari nama kota, refetch ganda, tampilan riwayat, paket default `EditOrderForm` masih "ALL-IN" (form lain "ALL-IN X PARKIR").
 - **Urutan rilis:** API → (opsional) `WEB_DEPLOY_HOOK_URL` di VPS → pemilik konfirmasi harga §8 → terbitkan sekali dari dashboard → baru merge `arasya-web` `claude/price-list` (`fetchPrices()` ketat di produksi; sebelum ada terbitan, semua build website gagal). Dashboard setelah API.
+
+**Status 7 Okt: rilis keuangan (B1.1, B1.3, B2, B7, B12) dan daftar harga, lewat PR.**
+1. Rilis
+   1.1. API arasya-rentcar/api-arasya-rentcar#5 (squash `20e4a85`): "Deploy API" run 37520554052 sukses; migrasi `20261006120000_price_list` tercatat 6 Okt 19.40 UTC (7 Okt 02.40 WIB, dicek SQL baca); `/health` 200, `/api/v1/prices` 401, `/api/v1/public/prices` 404 "Daftar harga belum diterbitkan". E2E 357 lolos, 0 gagal (Postgres Docker lokal).
+   1.2. Dashboard arasya-rentcar/dashboard-arasya-rentcar#11 (squash `a681258`): menu **Daftar Harga**. Kedua PR di-review dengan `/code-review` (10 temuan masing-masing, semua diperbaiki dan dibalas di PR) sebelum merge.
+2. Perilaku baru keuangan (keputusan pemilik 6–7 Okt)
+   2.1. Edit Hari menolak membatalkan hari terakhir yang masih aktif ("Pakai tombol Batalkan Pesanan…"); Edit Order juga, bila menghapus hari terakhir yang masih akan jalan.
+   2.2. Edit Hari menolak bila total order jadi di bawah invoice yang sudah terbit (revisi/batalkan invoice dulu). Sampai B1.2/B3 selesai, membatalkan satu hari pada order yang sudah lunas ikut tertolak.
+   2.3. "DP Terbayar" hanya bila uang yang benar-benar masuk ≥ 20% harga sewa hari yang tidak batal (untuk order batal: ≥ 20% biaya pembatalan; Terbayar bila menutup biaya). Revisi DP dicek minimal 20%. Produksi dicek: 3 order, semuanya Terbayar penuh, tidak ada yang berubah.
+   2.4. PDF: hari batal tercetak "(Dibatalkan)" Rp 0; order batal mendapat baris "Biaya Pembatalan — <tier>" sehingga baris = total. Denda, sisa, refund dibulatkan ke rupiah. Jatuh tempo pelunasan dari hari pertama yang tidak batal.
+   2.5. Persen overtime di PDF dibaca dari daftar harga yang **sudah diterbitkan** (10% bila belum ada terbitan).
+3. Daftar harga
+   3.1. Admin bisa mengubah harga; simpanan dari halaman lama ditolak (409); menerbitkan saat masih ada harga usulan (94 di data awal) wajib dicentang konfirmasi; `client_ref` mencegah terbit dobel.
+   3.2. **Belum diterbitkan.** Langkah: pemilik konfirmasi harga usulan (PRICE.md §8) → (opsional) `WEB_DEPLOY_HOOK_URL` di VPS → Terbitkan dari dashboard → baru merge `arasya-web` `claude/price-list`.
+4. Keputusan pemilik 7 Okt (belum dikerjakan)
+   4.1. B1.2: membatalkan satu hari kena denda per hari dengan tier yang sama, dihitung dari tanggal dan harga hari itu (sebelum hari itu 20%, hari itu sebelum 10.00 dan belum jalan 50%, sesudahnya 100%).
+   4.2. Kelebihan uang (dari pembatalan hari atau lebih transfer) menjadi **saldo lebih** di order: bawaan mengurangi tagihan berikutnya, admin bisa memilih mengembalikan.
+   4.3. B2+B3: "Tandai terbayar" mencatat uang yang benar-benar diterima; kurang bayar → sisa bisa ditagih dengan invoice penyesuaian; lebih bayar → saldo lebih (4.2).
+   4.4. Celah Batalkan Pesanan (100% semua hari pada hari H) lawan per hari: pemilik memilih mengikuti rekomendasi = samakan ke per hari. **Teks kebijakan di website, caption, dan PDF harus diubah**; draf teks diajukan ke pemilik dulu sebelum dirilis.
+5. Cara kerja git (pemilik, 7 Okt): kerja di branch → PR ke `main` → `/code-review` → merge (selalu dengan konfirmasi pemilik) → cek deploy. Repo belum punya CI di PR; gerbangnya `tsc`/`next build` dan e2e lokal.
+6. Perlu dicek: di checkout lokal API (branch `claude/price-list`) ada perubahan belum di-commit milik orang lain: foto sampai lokasi boleh tanpa GPS (`driver-app.service.ts`, e2e D5b). Tidak ikut rilis ini.
 
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
@@ -214,8 +235,8 @@ Permintaan pemilik sebelum uji ulang. **Status: dirilis 2 Okt malam.** API `02bb
 | Repo | Kode terbaru | Di produksi? | Catatan |
 |---|---|---|---|
 | **arasya-web** (website) | `main` (40bcf9b + CLAUDE.md) | ✅ Live di arasya-web.vercel.app | Konten Sanity sudah dimigrasi (`2026-10-01-sync`). Lead dikirim ke `https://api.haikuy.com` lewat `.env.production`. |
-| **api-arasya-rentcar** | `main` (`fc37142`, satu rumus keuangan) | ✅ Migrasi terakhir di produksi: `20261006090000_order_cancellation_fields` (5 Okt 21.14 UTC). `/health` 200 (6 Okt) | Branch `claude/price-list` (`d7ee8b0`) belum di-merge. `GA4_*` di `.env`. Push ke `main` men-deploy otomatis. |
-| **dashboard-arasya-rentcar** | `main` (`9640cc9`, satu rumus keuangan) | ✅ dashboard.haikuy.com menyajikan build ini sejak 6 Okt ±09.00 UTC; salinan Vercel tidak dicek | Branch `claude/price-list` (`9b3d2f3`) belum di-merge. Push ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
+| **api-arasya-rentcar** | `main` (`20e4a85`, PR #5: keuangan B + daftar harga) | ✅ "Deploy API" sukses 6 Okt ±19.40 UTC; migrasi terakhir `20261006120000_price_list`. `/health` 200 | `GA4_*` di `.env`. `WEB_DEPLOY_HOOK_URL` belum diisi (opsional). Rilis lewat PR; merge ke `main` men-deploy otomatis. |
+| **dashboard-arasya-rentcar** | `main` (`a681258`, PR #11: Daftar Harga) | ✅ Deploy Vercel + VPS dari merge PR #11 (lihat "Status 7 Okt") | Rilis lewat PR; merge ke `main` otomatis deploy ke Vercel dan VPS (workflow "Deploy Dashboard" lewat SSH). |
 | **mobile-arasya-rentcar** (aplikasi driver) | `main` (kartu e-toll + NFC; PR arasya-rentcar/mobile-arasya-rentcar#4, repo publik) | ✅ APK build `af651751-3348-4b9b-aae5-0904f9511a51` ("EAS Build (Android)" run #7). **Belum diuji di HP asli** | Uji dengan §00.7, TEST-PLAN §1.1 dan §1.2. Proyek Expo `rimbalun/arasyarentcar`. |
 | **wa-bot-arasya** | branch `development` | ❌ Dimatikan (2 Okt) | Dipensiunkan, jangan dikembangkan lagi. |
 
