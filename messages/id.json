@@ -40,7 +40,8 @@
     "items": "item",
     "waOpened": "WhatsApp dibuka — tekan kirim di WhatsApp",
     "dayLockedDone": "Order sudah selesai; hari tidak bisa diubah.",
-    "dayLockedCancelled": "Order sudah dibatalkan; hari tidak bisa diubah."
+    "dayLockedCancelled": "Order sudah dibatalkan; hari tidak bisa diubah.",
+    "rupiahTooLarge": "Maksimal Rp 100.000.000"
   },
   "terms": {
     "order": "Order",
@@ -112,7 +113,7 @@
     "leads": "Lead Website",
     "notifications": "Notifikasi",
     "etollCards": "Kartu E-Toll",
-  "priceList": "Daftar Harga"
+    "priceList": "Daftar Harga"
   },
   "language": {
     "label": "Bahasa",
@@ -2157,10 +2158,10 @@
     "slugHint": "Harus sama persis dengan slug mobil di website, supaya website bisa menampilkan harganya. Contoh: toyota-avanza.",
     "carName": "Nama mobil",
     "priceClass": "Kelas harga",
-    "priceClassHint": "Hanya untuk admin, mis. \"Avanza sekelas\". Mobil sekelas biasanya berharga sama.",
+    "priceClassHint": "Ikut diterbitkan ke website bersama daftar harga, mis. \"Avanza sekelas\". Mobil sekelas biasanya berharga sama.",
     "newCarHint": "Mobil baru mendapat harga kosong (\"Tanya admin\", ditandai usulan) di semua tabel sampai harganya diisi.",
     "errCarName": "Isi nama mobilnya",
-    "errOrder": "Urutan harus angka bulat, 0 atau lebih",
+    "errOrder": "Urutan harus angka bulat dari 0 sampai 10.000",
     "errSlug": "Slug hanya huruf kecil, angka, dan tanda -, mis. toyota-avanza",
     "okCarSaved": "Mobil disimpan",
     "okCarAdded": "Mobil ditambahkan",
@@ -2198,6 +2199,15 @@
       "quote": "Penawaran per perjalanan",
       "price_class": "Kelas harga",
       "sort_order": "Urutan"
-    }
+    },
+    "publishBlockedUnsaved": "Masih ada perubahan yang belum disimpan. Simpan atau batalkan dulu sebelum menerbitkan.",
+    "publishProposals": "{count} harga masih berstatus usulan (belum dikonfirmasi owner). Kalau diterbitkan, harga ini tampil di website sebagai harga resmi, tanpa tanda usulan.",
+    "publishProposalsConfirm": "Saya paham, {count} harga usulan ini ikut tampil di website sebagai harga resmi",
+    "leaveUnsaved": "Ada perubahan harga yang belum disimpan. Tetap tinggalkan halaman ini? Perubahan itu akan hilang.",
+    "errTooLarge": "Harga maksimal Rp 100.000.000",
+    "zoneTextsHint": "Nama tabel, \"sudah termasuk\", \"belum termasuk\", dan catatan ikut diterbitkan ke website.",
+    "shownOnWebsite": "Ikut diterbitkan ke website.",
+    "errMappingTables": "Pilih kedua tabel, atau centang penawaran per perjalanan.",
+    "loadMore": "Muat lebih banyak"
   }
 }

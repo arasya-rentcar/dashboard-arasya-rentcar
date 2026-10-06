@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { pricesApi } from '@/lib/api';
 import { parseResponse } from '@/lib/safeParse';
 import {
@@ -31,6 +31,8 @@ export function usePriceHistory(limit = 100, enabled = true) {
       return parseResponse<PriceHistory>(priceHistorySchema, res.data.data, 'price-history');
     },
     enabled,
+    // "Muat lebih banyak" keeps the current list on screen while the longer one loads.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -45,14 +47,25 @@ export function usePricePublications(limit = 20, enabled = true) {
   });
 }
 
-/** A write answers with the whole list: show it at once, then refresh history and publications. */
+/** After a 409 (changed by another admin): load the list again and return it. */
+export function useReloadPriceList() {
+  const qc = useQueryClient();
+  return async () => {
+    await qc.refetchQueries({ queryKey: KEY, exact: true });
+    return qc.getQueryData<PriceListData>(KEY);
+  };
+}
+
+/**
+ * A write answers with the whole list: show it as is (no second fetch of the
+ * list), then refresh history and publications.
+ */
 function usePriceMutation<V>(fn: (v: V) => Promise<PriceListData>) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSuccess: (data) => {
       qc.setQueryData(KEY, data);
-      qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: [...KEY, 'history'] });
       qc.invalidateQueries({ queryKey: [...KEY, 'publications'] });
     },
@@ -62,7 +75,14 @@ function usePriceMutation<V>(fn: (v: V) => Promise<PriceListData>) {
 const listOf = (res: { data: { data: unknown } }) =>
   parseResponse<PriceListData>(priceListSchema, res.data.data, 'price-list');
 
-export type RateUpdateInput = { id: string; amount: number | null; is_proposal?: boolean; note?: string | null };
+// expected_updated_at: the version the admin edited; the API answers 409 when the row changed since.
+export type RateUpdateInput = {
+  id: string;
+  amount: number | null;
+  is_proposal?: boolean;
+  note?: string | null;
+  expected_updated_at?: string;
+};
 
 export function useUpdatePriceRates() {
   return usePriceMutation(async (items: RateUpdateInput[]) => listOf(await pricesApi.updateRates({ items })));
@@ -75,25 +95,28 @@ export function useCreatePriceSurcharge() {
 }
 
 export function useUpdatePriceSurcharge() {
-  return usePriceMutation(async ({ id, data }: { id: string; data: { area?: string; amount?: number } }) =>
-    listOf(await pricesApi.updateSurcharge(id, data)),
+  return usePriceMutation(
+    async ({ id, data }: { id: string; data: { area?: string; amount?: number; expected_updated_at?: string } }) =>
+      listOf(await pricesApi.updateSurcharge(id, data)),
   );
 }
 
 export function useDeletePriceSurcharge() {
-  return usePriceMutation(async (id: string) => listOf(await pricesApi.removeSurcharge(id)));
+  return usePriceMutation(async ({ id, expected_updated_at }: { id: string; expected_updated_at?: string }) =>
+    listOf(await pricesApi.removeSurcharge(id, { expected_updated_at })),
+  );
 }
 
 export function useUpdatePriceZone() {
   return usePriceMutation(
-    async ({ id, data }: { id: string; data: { name?: string; included?: string; excluded?: string; note?: string | null } }) =>
+    async ({ id, data }: { id: string; data: { name?: string; included?: string; excluded?: string; note?: string | null; expected_updated_at?: string } }) =>
       listOf(await pricesApi.updateZone(id, data)),
   );
 }
 
 export function useUpdatePriceExtra() {
   return usePriceMutation(
-    async ({ id, data }: { id: string; data: { amount?: number | null; percent?: number | null; note?: string | null } }) =>
+    async ({ id, data }: { id: string; data: { amount?: number | null; percent?: number | null; note?: string | null; expected_updated_at?: string } }) =>
       listOf(await pricesApi.updateExtra(id, data)),
   );
 }
@@ -105,7 +128,7 @@ export function useUpdatePriceCity() {
       data,
     }: {
       id: string;
-      data: { driver_zone_id?: string | null; all_in_zone_id?: string | null; quote?: boolean };
+      data: { driver_zone_id?: string | null; all_in_zone_id?: string | null; quote?: boolean; expected_updated_at?: string };
     }) => listOf(await pricesApi.updateCity(id, data)),
   );
 }
@@ -123,7 +146,13 @@ export function useUpdatePriceCar() {
       data,
     }: {
       id: string;
-      data: { name?: string; price_class?: string | null; note?: string | null; sort_order?: number };
+      data: {
+        name?: string;
+        price_class?: string | null;
+        note?: string | null;
+        sort_order?: number;
+        expected_updated_at?: string;
+      };
     }) => listOf(await pricesApi.updateCar(id, data)),
   );
 }
@@ -132,7 +161,8 @@ export function useUpdatePriceCar() {
 export function usePublishPrices() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { note?: string; client_ref: string }) => {
+    // confirm_proposals: the admin ticked "harga usulan ikut tampil"; without it the API answers 409.
+    mutationFn: async (data: { note?: string; client_ref: string; confirm_proposals?: boolean }) => {
       const res = await pricesApi.publish(data);
       return parseResponse<PricePublishResult>(pricePublishResultSchema, res.data.data, 'price-publish');
     },

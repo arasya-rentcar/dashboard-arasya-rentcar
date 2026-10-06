@@ -40,7 +40,8 @@
     "items": "items",
     "waOpened": "WhatsApp opened — press send in WhatsApp",
     "dayLockedDone": "This order is finished; its days can no longer be changed.",
-    "dayLockedCancelled": "This order is cancelled; its days can no longer be changed."
+    "dayLockedCancelled": "This order is cancelled; its days can no longer be changed.",
+    "rupiahTooLarge": "Maximum Rp 100,000,000"
   },
   "terms": {
     "order": "Order",
@@ -112,7 +113,7 @@
     "leads": "Website leads",
     "notifications": "Notifications",
     "etollCards": "E-Toll Cards",
-  "priceList": "Price List"
+    "priceList": "Price List"
   },
   "language": {
     "label": "Language",
@@ -2157,10 +2158,10 @@
     "slugHint": "Must match the car slug on the website exactly, so the website can show its prices. Example: toyota-avanza.",
     "carName": "Car name",
     "priceClass": "Price class",
-    "priceClassHint": "For admins only, e.g. \"Avanza sekelas\". Cars of the same class usually cost the same.",
+    "priceClassHint": "Published to the website with the price list, e.g. \"Avanza sekelas\". Cars of the same class usually cost the same.",
     "newCarHint": "A new car gets empty prices (\"Ask admin\", marked as proposed) in every table until its prices are filled in.",
     "errCarName": "Enter the car name",
-    "errOrder": "Order must be a whole number, 0 or more",
+    "errOrder": "Order must be a whole number from 0 to 10,000",
     "errSlug": "Slug may only contain lowercase letters, numbers, and -, e.g. toyota-avanza",
     "okCarSaved": "Car saved",
     "okCarAdded": "Car added",
@@ -2198,6 +2199,15 @@
       "quote": "Quote per trip",
       "price_class": "Price class",
       "sort_order": "Order"
-    }
+    },
+    "publishBlockedUnsaved": "There are unsaved changes. Save or discard them before publishing.",
+    "publishProposals": "{count, plural, one {# price is} other {# prices are}} still a proposal (not confirmed by the owner). If you publish, {count, plural, one {it appears} other {they appear}} on the website as official, without any proposal mark.",
+    "publishProposalsConfirm": "I understand that {count, plural, one {this proposed price} other {these # proposed prices}} will appear on the website as official",
+    "leaveUnsaved": "There are unsaved price changes. Leave this page anyway? They will be lost.",
+    "errTooLarge": "The maximum price is Rp 100,000,000",
+    "zoneTextsHint": "The table name, \"included\", \"not included\" and the note are published to the website.",
+    "shownOnWebsite": "Published to the website.",
+    "errMappingTables": "Choose both tables, or tick priced per trip.",
+    "loadMore": "Load more"
   }
 }

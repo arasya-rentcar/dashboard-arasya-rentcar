@@ -278,13 +278,22 @@ export const etollCardsApi = {
 export const pricesApi = {
   get: () => api.get("/prices"),
   updateRates: (data: {
-    items: { id: string; amount: number | null; is_proposal?: boolean; note?: string | null }[];
+    items: {
+      id: string;
+      amount: number | null;
+      is_proposal?: boolean;
+      note?: string | null;
+      expected_updated_at?: string;
+    }[];
   }) => api.patch("/prices/rates", data),
   createSurcharge: (data: { zone_id: string; area: string; amount: number }) =>
     api.post("/prices/surcharges", data),
-  updateSurcharge: (id: string, data: { area?: string; amount?: number }) =>
+  // expected_updated_at on every PATCH/DELETE: 409 when another admin changed the row since.
+  updateSurcharge: (id: string, data: { area?: string; amount?: number; expected_updated_at?: string }) =>
     api.patch(`/prices/surcharges/${id}`, data),
-  removeSurcharge: (id: string) => api.delete(`/prices/surcharges/${id}`),
+  // In the query string: some proxies drop DELETE bodies.
+  removeSurcharge: (id: string, params: { expected_updated_at?: string } = {}) =>
+    api.delete(`/prices/surcharges/${id}`, { params }),
   updateZone: (id: string, data: object) => api.patch(`/prices/zones/${id}`, data),
   updateExtra: (id: string, data: object) => api.patch(`/prices/extras/${id}`, data),
   updateCity: (id: string, data: object) => api.patch(`/prices/cities/${id}`, data),
@@ -294,7 +303,9 @@ export const pricesApi = {
   history: (params: { limit?: number } = {}) => api.get("/prices/history", { params }),
   publications: (params: { limit?: number } = {}) => api.get("/prices/publications", { params }),
   // 201 published, 200 resend of the same client_ref.
-  publish: (data: { note?: string; client_ref?: string }) => api.post("/prices/publish", data),
+  // 409 while proposal prices exist and confirm_proposals is not true.
+  publish: (data: { note?: string; client_ref: string; confirm_proposals?: boolean }) =>
+    api.post("/prices/publish", data),
 };
 
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────

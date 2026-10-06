@@ -1595,6 +1595,7 @@ export interface PriceCar {
   price_class: string | null;
   note: string | null;
   sort_order: number;
+  updated_at: string;
 }
 
 export interface PriceRate {
@@ -1633,6 +1634,7 @@ export interface PriceZone {
   // The table for cities that have none of their own.
   default_for_unlisted: boolean;
   sort_order: number;
+  updated_at: string;
   rates: PriceRate[];
   surcharges: PriceSurcharge[];
 }
@@ -1646,6 +1648,7 @@ export interface PriceCity {
   // Priced per trip (abroad): no tables.
   quote: boolean;
   sort_order: number;
+  updated_at: string;
 }
 
 export interface PriceExtra {
@@ -1682,6 +1685,9 @@ export interface PriceListData {
   last_publication: PricePublication | null;
   // Changes logged since the last publication.
   unpublished_changes: number;
+  // Rates still marked "usulan"; publishing shows them on the website as official.
+  // Optional until every API copy sends it (the dashboard counts them itself then).
+  proposal_count?: number;
   // Admin user id → email.
   users: Record<string, string>;
 }

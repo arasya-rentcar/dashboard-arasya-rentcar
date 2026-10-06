@@ -1,5 +1,6 @@
 'use client';
 
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -120,12 +121,14 @@ export function DialogActions({
   onConfirm,
   label,
   danger,
+  disabled,
 }: {
   busy: boolean;
   onClose: () => void;
   onConfirm: () => void;
   label: string;
   danger?: boolean;
+  disabled?: boolean;
 }) {
   const t = useTranslations('priceList');
   return (
@@ -133,7 +136,7 @@ export function DialogActions({
       <Button variant="outline" onClick={onClose} disabled={busy}>
         {t('cancel')}
       </Button>
-      <Button variant={danger ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy}>
+      <Button variant={danger ? 'destructive' : 'default'} onClick={onConfirm} disabled={busy || disabled}>
         {busy && <Loader2 className="h-4 w-4 animate-spin" />}
         {label}
       </Button>
@@ -146,3 +149,59 @@ export const segmentClass = (active: boolean) =>
   `shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
     active ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'
   }`;
+
+/** 409: someone else changed the row since this page loaded it (expected_updated_at). */
+export const isConflict = (err: unknown) =>
+  !!err && typeof err === 'object' && (err as { response?: { status?: number } }).response?.status === 409;
+
+// ─── Unsaved edits ──────────────────────────────────────────────────────────
+
+type DirtyReporter = (key: string, dirty: boolean) => void;
+
+/** The price list page listens: unsaved edits block publishing and warn before leaving. */
+export const DirtyContext = createContext<DirtyReporter | null>(null);
+
+/** Tell the page whether this form has unsaved edits (cleared when it unmounts). */
+export function useReportDirty(key: string, dirty: boolean) {
+  const report = useContext(DirtyContext);
+  useEffect(() => {
+    report?.(key, dirty);
+  }, [report, key, dirty]);
+  useEffect(() => () => report?.(key, false), [report, key]);
+}
+
+const sameValues = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Local copy of one server row for a form. It follows the row whenever the row
+ * changes on the server (another admin, or this admin's own save) unless the
+ * admin has unsaved edits; those are kept, and `expectedAt` stays the version
+ * they started from, so saving answers 409 instead of silently overwriting.
+ */
+export function useRowForm<R extends { updated_at: string }, T>(row: R, toForm: (r: R) => T) {
+  const [form, setForm] = useState<T>(() => toForm(row));
+  const [base, setBase] = useState(() => ({ at: row.updated_at, values: toForm(row) }));
+  const dirty = !sameValues(form, base.values);
+  if (row.updated_at !== base.at) {
+    const fresh = toForm(row);
+    // Adjusting state while rendering: React re-renders at once with the new row.
+    if (!dirty || sameValues(form, fresh)) {
+      setForm(fresh);
+      setBase({ at: row.updated_at, values: fresh });
+    }
+  }
+  return {
+    form,
+    setForm,
+    dirty,
+    expectedAt: base.at,
+    /** After a save: take the saved row as answered by the API (trimmed, normalised). */
+    adopt: (saved: R) => {
+      const values = toForm(saved);
+      setForm(values);
+      setBase({ at: saved.updated_at, values });
+    },
+    /** Drop the edits; the form then follows the (refetched) server row. */
+    discard: () => setForm(base.values),
+  };
+}

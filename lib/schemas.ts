@@ -180,7 +180,9 @@ const pricePublicationSchema = z
 export const priceListSchema = z
   .object({
     cars: z.array(
-      z.object({ id: z.string(), slug: z.string(), name: z.string(), sort_order: z.number() }).passthrough(),
+      z
+        .object({ id: z.string(), slug: z.string(), name: z.string(), sort_order: z.number(), updated_at: z.string() })
+        .passthrough(),
     ),
     zones: z.array(
       z
@@ -191,6 +193,7 @@ export const priceListSchema = z
           service_package: z.string(),
           included: z.string(),
           excluded: z.string(),
+          updated_at: z.string(),
           rates: z.array(
             z
               .object({
@@ -199,11 +202,14 @@ export const priceListSchema = z
                 duration: z.string(),
                 amount: z.number().nullable(),
                 is_proposal: z.boolean(),
+                updated_at: z.string(),
               })
               .passthrough(),
           ),
           surcharges: z.array(
-            z.object({ id: z.string(), zone_id: z.string(), area: z.string(), amount: z.number() }).passthrough(),
+            z
+              .object({ id: z.string(), zone_id: z.string(), area: z.string(), amount: z.number(), updated_at: z.string() })
+              .passthrough(),
           ),
         })
         .passthrough(),
@@ -218,6 +224,7 @@ export const priceListSchema = z
             driver_zone_id: nullableStr,
             all_in_zone_id: nullableStr,
             quote: z.boolean(),
+            updated_at: z.string(),
           })
           .passthrough(),
       ),
@@ -230,11 +237,13 @@ export const priceListSchema = z
           amount: z.number().nullable(),
           percent: z.number().nullable(),
           unit: z.string(),
+          updated_at: z.string(),
         })
         .passthrough(),
     ),
     last_publication: pricePublicationSchema.nullable(),
     unpublished_changes: z.number(),
+    proposal_count: z.number().optional(),
     users: priceUsers,
   })
   .passthrough();

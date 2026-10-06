@@ -9,12 +9,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreatePriceCar, useUpdatePriceCar } from '@/hooks/usePriceList';
+import { useCreatePriceCar, useReloadPriceList, useUpdatePriceCar } from '@/hooks/usePriceList';
 import { getErrorMessage } from '@/lib/utils';
 import type { PriceCar } from '@/types';
-import { DialogActions, DialogShell } from './common';
+import { DialogActions, DialogShell, isConflict } from './common';
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// Same limit as the API.
+const ORDER_MAX = 10_000;
 
 /** The website fleet: the cars that have a row in every price table. */
 export default function CarsTab({ cars }: { cars: PriceCar[] }) {
@@ -68,6 +70,7 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
   const t = useTranslations('priceList');
   const create = useCreatePriceCar();
   const update = useUpdatePriceCar();
+  const reload = useReloadPriceList();
   const [slug, setSlug] = useState('');
   const [name, setName] = useState(car?.name ?? '');
   const [priceClass, setPriceClass] = useState(car?.price_class ?? '');
@@ -81,11 +84,19 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
     try {
       if (car) {
         const sortOrder = Number(order);
-        if (!Number.isInteger(sortOrder) || sortOrder < 0) return setError(t('errOrder'));
+        if (order === '' || !Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > ORDER_MAX) {
+          return setError(t('errOrder'));
+        }
         setError(null);
         await update.mutateAsync({
           id: car.id,
-          data: { name: name.trim(), price_class: priceClass.trim() || null, note: note.trim() || null, sort_order: sortOrder },
+          data: {
+            name: name.trim(),
+            price_class: priceClass.trim() || null,
+            note: note.trim() || null,
+            sort_order: sortOrder,
+            expected_updated_at: car.updated_at,
+          },
         });
         toast.success(t('okCarSaved'));
       } else {
@@ -98,6 +109,8 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
       onClose();
     } catch (err) {
       setError(getErrorMessage(err));
+      // Edit: another admin changed this car meanwhile; reopen it to see their version.
+      if (car && isConflict(err)) void reload();
     }
   }
 
@@ -137,7 +150,7 @@ function CarDialog({ car, onClose }: { car: PriceCar | null; onClose: () => void
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="car_order">{t('order')}</Label>
-            <Input id="car_order" inputMode="numeric" className="w-28 tabular-nums" value={order} onChange={(e) => setOrder(e.target.value.replace(/\D/g, '').slice(0, 5))} />
+            <Input id="car_order" inputMode="numeric" className="w-28 tabular-nums" value={order} onChange={(e) => setOrder(e.target.value.replace(/\D/g, '').slice(0, 5))} max={ORDER_MAX} aria-invalid={Number(order) > ORDER_MAX || undefined} />
             <p className="text-xs text-gray-500">{t('orderHint')}</p>
           </div>
         </>

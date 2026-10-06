@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import QueryError from '@/components/dashboard/QueryError';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePriceHistory, usePricePublications } from '@/hooks/usePriceList';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
@@ -26,17 +28,22 @@ const FIELDS = [
   'sort_order',
 ];
 const MONEY_FIELDS = new Set(['amount']);
+// The API returns at most 500 changes per request.
+const HISTORY_STEP = 100;
+const HISTORY_MAX = 500;
 
 /** Change log (newest first) and the list of publications. */
 export default function HistoryTab({ data }: { data: PriceListData }) {
   const t = useTranslations('priceList');
-  const history = usePriceHistory(100);
+  const [limit, setLimit] = useState(HISTORY_STEP);
+  const history = usePriceHistory(limit);
   const publications = usePricePublications(20);
   const zoneName = (id: string) => data.zones.find((z) => z.id === id)?.name ?? id;
 
   /** A stored value as the admin reads it: rupiah, yes/no, table names. */
   function show(entry: PriceChangeEntry, v: string | null): string {
-    if (v == null) return entry.entity === 'rate' && entry.field === 'amount' ? t('askAdmin') : '—';
+    // No amount = "Tanya admin" for rates and fixed-amount extras.
+    if (v == null) return (entry.entity === 'rate' || entry.entity === 'extra') && entry.field === 'amount' ? t('askAdmin') : '—';
     if (MONEY_FIELDS.has(entry.field) && Number.isFinite(Number(v))) return formatCurrency(Number(v));
     if (entry.field === 'percent') return `${v}%`;
     if (entry.field === 'is_proposal' || entry.field === 'quote') return v === 'true' ? t('yes') : t('no');
@@ -45,6 +52,16 @@ export default function HistoryTab({ data }: { data: PriceListData }) {
   }
 
   const fieldName = (f: string) => (FIELDS.includes(f) ? t(`field.${f}`) : f);
+
+  /** A whole row added or removed. Surcharges are logged as "Bekasi: 100000". */
+  function rowText(entry: PriceChangeEntry, v: string | null): string {
+    if (v == null) return '—';
+    const m = entry.entity === 'surcharge' ? /^(.*): (\d+(?:\.\d+)?)$/.exec(v) : null;
+    return m ? `${m[1]}: +${formatCurrency(Number(m[2]))}` : v;
+  }
+
+  const items = history.data?.items ?? [];
+  const canLoadMore = items.length >= limit && limit < HISTORY_MAX;
 
   return (
     <div className="space-y-4">
@@ -77,7 +94,7 @@ export default function HistoryTab({ data }: { data: PriceListData }) {
                       <p className="text-xs text-gray-600">
                         {c.field === 'created' ? t('rowCreated') : t('rowDeleted')}
                         {': '}
-                        {(c.field === 'created' ? c.new_value : c.old_value) ?? '—'}
+                        {rowText(c, c.field === 'created' ? c.new_value : c.old_value)}
                       </p>
                     ) : (
                       <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-gray-600">
@@ -91,6 +108,19 @@ export default function HistoryTab({ data }: { data: PriceListData }) {
                 );
               })}
             </ul>
+          )}
+          {canLoadMore && !history.isError && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={history.isFetching}
+                onClick={() => setLimit((l) => Math.min(l + HISTORY_STEP, HISTORY_MAX))}
+              >
+                {history.isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t('loadMore')}
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

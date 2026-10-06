@@ -8,10 +8,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUpdatePriceCity } from '@/hooks/usePriceList';
+import { useReloadPriceList, useUpdatePriceCity } from '@/hooks/usePriceList';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import type { PriceCity, PriceExtra, PriceListData, PriceZone } from '@/types';
-import { Amount, ProposalBadge, RateGrid, citiesUsing, isAllInZone, isDriverZone, rateOf, zoneDurations } from './common';
+import {
+  Amount,
+  ProposalBadge,
+  RateGrid,
+  citiesUsing,
+  isAllInZone,
+  isConflict,
+  isDriverZone,
+  rateOf,
+  useReportDirty,
+  useRowForm,
+  zoneDurations,
+} from './common';
 
 /** What the owner reviews: the prices a website city page shows. */
 export default function CityTab({ data }: { data: PriceListData }) {
@@ -78,7 +90,10 @@ function ZoneCard({ label, zone, city, data }: { label: string; zone: PriceZone;
   const t = useTranslations('priceList');
   const others = citiesUsing(zone, data.cities).filter((c) => c.id !== city.id);
   // Area surcharges extend a rental of the city that owns the table (JAKARTA, BANDUNG, SURABAYA).
-  const ownTable = zone.code === city.name.toUpperCase();
+  // Same rule as the website (arasya-web surchargesFor): all-in table whose code is the
+  // city name. The price list has no stable city -> owned table link, so a renamed city
+  // loses its surcharges here and on the website alike.
+  const ownTable = isAllInZone(zone) && zone.code === city.name.trim().toUpperCase();
   return (
     <Card className="shadow-none">
       <CardHeader className="pb-0">
@@ -116,11 +131,11 @@ function ZoneCard({ label, zone, city, data }: { label: string; zone: PriceZone;
             <p className="text-gray-500">{t('alsoUsedBy', { cities: others.map((c) => c.name).join(', ') })}</p>
           )}
         </div>
-        {ownTable && zone.surcharges.length > 0 && (
+        {ownTable && zone.surcharges.some((s) => s.amount > 0) && (
           <div className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
             <p className="font-semibold">{t('surchargeTitle', { city: city.name })}</p>
             <ul className="mt-1 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
-              {zone.surcharges.map((s) => (
+              {zone.surcharges.filter((s) => s.amount > 0).map((s) => (
                 <li key={s.id} className="flex justify-between gap-3">
                   <span>{s.area}</span>
                   <span className="font-medium tabular-nums">+{formatCurrency(s.amount)}</span>
@@ -169,28 +184,39 @@ const NONE = '__none__';
 function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
   const t = useTranslations('priceList');
   const update = useUpdatePriceCity();
-  const [driver, setDriver] = useState(city.driver_zone_id ?? NONE);
-  const [allIn, setAllIn] = useState(city.all_in_zone_id ?? NONE);
-  const [quote, setQuote] = useState(city.quote);
+  const reload = useReloadPriceList();
+  const { form, setForm, expectedAt, adopt, discard } = useRowForm(city, (c) => ({
+    driver: c.driver_zone_id ?? NONE,
+    allIn: c.all_in_zone_id ?? NONE,
+    quote: c.quote,
+  }));
+  const { driver, allIn, quote } = form;
   const dirty =
     quote !== city.quote ||
     (!quote && (driver !== (city.driver_zone_id ?? NONE) || allIn !== (city.all_in_zone_id ?? NONE)));
+  // Without "penawaran" the city page needs both tables (the API refuses otherwise).
+  const missingTable = !quote && (driver === NONE || allIn === NONE);
+  useReportDirty('city-mapping', dirty);
 
   async function save() {
+    if (missingTable) return;
     try {
-      await update.mutateAsync({
+      const list = await update.mutateAsync({
         id: city.id,
         data: quote
-          ? { quote: true }
-          : {
-              quote: false,
-              driver_zone_id: driver === NONE ? null : driver,
-              all_in_zone_id: allIn === NONE ? null : allIn,
-            },
+          ? { quote: true, expected_updated_at: expectedAt }
+          : { quote: false, driver_zone_id: driver, all_in_zone_id: allIn, expected_updated_at: expectedAt },
       });
+      const saved = list.cities.find((c) => c.id === city.id);
+      if (saved) adopt(saved);
       toast.success(t('okCitySaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
+      // Changed by another admin: show their version.
+      if (isConflict(err)) {
+        discard();
+        void reload();
+      }
     }
   }
 
@@ -213,7 +239,7 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
             type="checkbox"
             className="h-4 w-4 rounded border-gray-300"
             checked={quote}
-            onChange={(e) => setQuote(e.target.checked)}
+            onChange={(e) => setForm((f) => ({ ...f, quote: e.target.checked }))}
           />
           {t('mappingQuote')}
         </label>
@@ -221,7 +247,7 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>{t('packageDriver')}</Label>
-              <Select value={driver} onValueChange={setDriver}>
+              <Select value={driver} onValueChange={(v) => setForm((f) => ({ ...f, driver: v }))}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t('selectTable')} />
                 </SelectTrigger>
@@ -230,7 +256,7 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
             </div>
             <div className="space-y-1.5">
               <Label>{t('packageAllIn')}</Label>
-              <Select value={allIn} onValueChange={setAllIn}>
+              <Select value={allIn} onValueChange={(v) => setForm((f) => ({ ...f, allIn: v }))}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t('selectTable')} />
                 </SelectTrigger>
@@ -239,8 +265,9 @@ function CityMapping({ city, zones }: { city: PriceCity; zones: PriceZone[] }) {
             </div>
           </div>
         )}
-        <div className="flex justify-end">
-          <Button onClick={save} disabled={!dirty || update.isPending}>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {dirty && missingTable && <span className="mr-auto text-xs text-red-600">{t('errMappingTables')}</span>}
+          <Button onClick={save} disabled={!dirty || missingTable || update.isPending}>
             {update.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('save')}
           </Button>

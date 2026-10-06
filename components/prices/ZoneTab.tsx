@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { RupiahInput, rupiahValue } from '@/components/forms/RupiahInput';
+import { RupiahInput, rupiahTooLarge, rupiahValue } from '@/components/forms/RupiahInput';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   useCreatePriceSurcharge,
   useDeletePriceSurcharge,
+  useReloadPriceList,
   useUpdatePriceRates,
   useUpdatePriceSurcharge,
   useUpdatePriceZone,
@@ -21,9 +22,20 @@ import {
 } from '@/hooks/usePriceList';
 import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import type { PriceListData, PriceSurcharge, PriceZone } from '@/types';
-import { DialogActions, DialogShell, RateGrid, citiesUsing, rateOf, zoneDurations } from './common';
+import {
+  DialogActions,
+  DialogShell,
+  RateGrid,
+  citiesUsing,
+  isConflict,
+  rateOf,
+  useReportDirty,
+  useRowForm,
+  zoneDurations,
+} from './common';
 
-type Edit = { amount: string; proposal: boolean };
+// at: the rate's updated_at when the admin started editing it (expected_updated_at).
+type Edit = { amount: string; proposal: boolean; at: string };
 
 const amountText = (v: number | null | undefined) => (v == null ? '' : String(v));
 
@@ -34,19 +46,26 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
   // Unsaved cells by rate id. They stay while another table is shown.
   const [edits, setEdits] = useState<Record<string, Edit>>({});
   const saveRates = useUpdatePriceRates();
+  const reload = useReloadPriceList();
   const zone = data.zones.find((z) => z.id === zoneId) ?? data.zones[0];
+  const changedCount = Object.keys(edits).length;
+  useReportDirty('rates', changedCount > 0);
 
   if (!zone) return <p className="py-10 text-center text-sm text-gray-400">{t('noZones')}</p>;
 
   const users = citiesUsing(zone, data.cities);
-  const changedCount = Object.keys(edits).length;
 
   /** Keep only cells that really differ from what is saved. */
-  function setCell(rateId: string, original: { amount: number | null; is_proposal: boolean }, patch: Partial<Edit>) {
+  function setCell(
+    rateId: string,
+    original: { amount: number | null; is_proposal: boolean; updated_at: string },
+    patch: Partial<Pick<Edit, 'amount' | 'proposal'>>,
+  ) {
     setEdits((prev) => {
       const next: Edit = {
         amount: prev[rateId]?.amount ?? amountText(original.amount),
         proposal: prev[rateId]?.proposal ?? original.is_proposal,
+        at: prev[rateId]?.at ?? original.updated_at,
         ...patch,
       };
       const copy = { ...prev };
@@ -57,10 +76,12 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
   }
 
   async function save() {
+    if (Object.values(edits).some((e) => rupiahTooLarge(e.amount))) return toast.error(t('errTooLarge'));
     const items: RateUpdateInput[] = Object.entries(edits).map(([id, e]) => ({
       id,
       amount: rupiahValue(e.amount) ?? null,
       is_proposal: e.proposal,
+      expected_updated_at: e.at,
     }));
     try {
       await saveRates.mutateAsync(items);
@@ -68,6 +89,13 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
       toast.success(t('okRatesSaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
+      if (!isConflict(err)) return;
+      // Nothing was saved. Drop only the cells another admin changed meanwhile
+      // (they now show the new price); the other edits stay for a second save.
+      const fresh = await reload();
+      if (!fresh) return;
+      const at = new Map(fresh.zones.flatMap((z) => z.rates.map((r) => [r.id, r.updated_at] as const)));
+      setEdits((prev) => Object.fromEntries(Object.entries(prev).filter(([id, e]) => at.get(id) === e.at)));
     }
   }
 
@@ -157,23 +185,40 @@ export default function ZoneTab({ data }: { data: PriceListData }) {
 function ZoneTexts({ zone }: { zone: PriceZone }) {
   const t = useTranslations('priceList');
   const update = useUpdatePriceZone();
-  const [name, setName] = useState(zone.name);
-  const [included, setIncluded] = useState(zone.included);
-  const [excluded, setExcluded] = useState(zone.excluded);
-  const [note, setNote] = useState(zone.note ?? '');
-  const dirty =
-    name !== zone.name || included !== zone.included || excluded !== zone.excluded || note !== (zone.note ?? '');
+  const reload = useReloadPriceList();
+  const { form, setForm, dirty, expectedAt, adopt, discard } = useRowForm(zone, (z) => ({
+    name: z.name,
+    included: z.included,
+    excluded: z.excluded,
+    note: z.note ?? '',
+  }));
+  const { name, included, excluded, note } = form;
+  const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
+  useReportDirty('zone-texts', dirty);
 
   async function save() {
     if (!name.trim() || !included.trim() || !excluded.trim()) return toast.error(t('errZoneTexts'));
     try {
-      await update.mutateAsync({
+      const list = await update.mutateAsync({
         id: zone.id,
-        data: { name: name.trim(), included: included.trim(), excluded: excluded.trim(), note: note.trim() || null },
+        data: {
+          name: name.trim(),
+          included: included.trim(),
+          excluded: excluded.trim(),
+          note: note.trim() || null,
+          expected_updated_at: expectedAt,
+        },
       });
+      const saved = list.zones.find((z) => z.id === zone.id);
+      if (saved) adopt(saved);
       toast.success(t('okZoneSaved'));
     } catch (err) {
       toast.error(getErrorMessage(err));
+      // Changed by another admin: show their version.
+      if (isConflict(err)) {
+        discard();
+        void reload();
+      }
     }
   }
 
@@ -183,23 +228,25 @@ function ZoneTexts({ zone }: { zone: PriceZone }) {
         <CardTitle className="text-sm">{t('zoneTextsTitle')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        <p className="text-xs text-gray-500">{t('zoneTextsHint')}</p>
         <div className="space-y-1.5">
           <Label htmlFor="zone_name">{t('zoneName')}</Label>
-          <Input id="zone_name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+          <Input id="zone_name" maxLength={80} value={name} onChange={(e) => set({ name: e.target.value })} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="zone_included">{t('included')}</Label>
-            <Textarea id="zone_included" rows={3} maxLength={500} value={included} onChange={(e) => setIncluded(e.target.value)} />
+            <Textarea id="zone_included" rows={3} maxLength={500} value={included} onChange={(e) => set({ included: e.target.value })} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="zone_excluded">{t('excluded')}</Label>
-            <Textarea id="zone_excluded" rows={3} maxLength={500} value={excluded} onChange={(e) => setExcluded(e.target.value)} />
+            <Textarea id="zone_excluded" rows={3} maxLength={500} value={excluded} onChange={(e) => set({ excluded: e.target.value })} />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="zone_note">{t('noteOptional')}</Label>
-          <Textarea id="zone_note" rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+          <Textarea id="zone_note" rows={2} maxLength={300} value={note} onChange={(e) => set({ note: e.target.value })} />
+          <p className="text-xs text-gray-500">{t('shownOnWebsite')}</p>
         </div>
         <div className="flex justify-end">
           <Button onClick={save} disabled={!dirty || update.isPending}>
@@ -271,6 +318,7 @@ function SurchargeDialog({
   const t = useTranslations('priceList');
   const create = useCreatePriceSurcharge();
   const update = useUpdatePriceSurcharge();
+  const reload = useReloadPriceList();
   const [area, setArea] = useState(surcharge?.area ?? '');
   const [amount, setAmount] = useState(amountText(surcharge?.amount));
   const [error, setError] = useState<string | null>(null);
@@ -280,15 +328,24 @@ function SurchargeDialog({
     const value = rupiahValue(amount);
     if (!area.trim()) return setError(t('errArea'));
     if (value == null) return setError(t('errAmount'));
+    if (rupiahTooLarge(amount)) return setError(t('errTooLarge'));
     setError(null);
     try {
-      if (surcharge) await update.mutateAsync({ id: surcharge.id, data: { area: area.trim(), amount: value } });
-      else await create.mutateAsync({ zone_id: zone.id, area: area.trim(), amount: value });
+      if (surcharge) {
+        await update.mutateAsync({
+          id: surcharge.id,
+          data: { area: area.trim(), amount: value, expected_updated_at: surcharge.updated_at },
+        });
+      } else {
+        await create.mutateAsync({ zone_id: zone.id, area: area.trim(), amount: value });
+      }
       toast.success(t('okSurchargeSaved'));
       onClose();
     } catch (err) {
-      // e.g. 409: the area already exists in this table.
+      // 409: the area already exists in this table, or another admin changed
+      // this area meanwhile (then the list is loaded again; reopen to retry).
       setError(getErrorMessage(err));
+      if (surcharge && isConflict(err)) void reload();
     }
   }
 
@@ -312,13 +369,15 @@ function SurchargeDialog({
 function DeleteSurchargeDialog({ surcharge, onClose }: { surcharge: PriceSurcharge; onClose: () => void }) {
   const t = useTranslations('priceList');
   const remove = useDeletePriceSurcharge();
+  const reload = useReloadPriceList();
 
   async function confirm() {
     try {
-      await remove.mutateAsync(surcharge.id);
+      await remove.mutateAsync({ id: surcharge.id, expected_updated_at: surcharge.updated_at });
       toast.success(t('okSurchargeDeleted'));
     } catch (err) {
       toast.error(getErrorMessage(err));
+      if (isConflict(err)) void reload();
     }
     onClose();
   }
