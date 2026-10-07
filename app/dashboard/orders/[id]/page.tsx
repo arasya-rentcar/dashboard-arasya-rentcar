@@ -444,8 +444,13 @@ export default function OrderDetailPage({
       .filter((d): d is string => !!d)
       .map((d) => isoToWibDate(d))
       .sort();
+    // Same as the API's dayBillable: a cancelled day counts at its fee.
     const total = items.reduce(
-      (sum, it) => sum + Number(it.total_price || 0),
+      (sum, it) =>
+        sum +
+        Number(
+          it.line_status === "CANCELLED" ? it.cancel_fee ?? 0 : it.total_price || 0,
+        ),
       0,
     );
     const first = dates[0];
