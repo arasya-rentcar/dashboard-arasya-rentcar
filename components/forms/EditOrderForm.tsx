@@ -70,6 +70,7 @@ export default function EditOrderForm({
   isLoading,
 }: Props) {
   const tEdit = useTranslations("editOrderForm");
+  const tDay = useTranslations("dayCancel");
   const originalPrice = Number(order.final_price);
   const initialCustomers = order.customers?.length
     ? order.customers.map((c, index) => ({
@@ -159,10 +160,32 @@ export default function EditOrderForm({
   const charges = (order.adjustments ?? [])
     .filter((a) => a.is_billable)
     .reduce((sum, a) => sum + Number(a.amount || 0) * (a.quantity ?? 1), 0);
+  // A cancelled day counts with its cancellation fee (A3), the others with their price.
   const newPrice =
-    days
-      .filter((d) => d.line_status !== "CANCELLED")
-      .reduce((sum, d) => sum + Number(d.unit_price || 0), 0) + charges;
+    days.reduce(
+      (sum, d) =>
+        sum +
+        (d.line_status === "CANCELLED"
+          ? Number((d.id && original.get(d.id)?.cancel_fee) || 0)
+          : Number(d.unit_price || 0)),
+      0,
+    ) + charges;
+  // Once the order has money or invoices, removing a day that counts toward
+  // the total goes through Edit Hari, so its cancellation fee is charged
+  // (the API answers 409 DAY_DELETE_NEEDS_CANCEL otherwise).
+  const money = order.money;
+  const hasMoney =
+    (money?.net_paid ?? 0) !== 0 ||
+    (money?.open_billed ?? 0) > 0 ||
+    (order.invoices ?? []).some((i) => i.status === "PAID");
+  const removeLock = (index: number) => {
+    if (!hasMoney) return null;
+    const before = items?.[index]?.id ? original.get(items[index].id) : undefined;
+    if (!before) return null;
+    const counts =
+      before.line_status !== "CANCELLED" || Number(before.cancel_fee || 0) > 0;
+    return counts ? tDay("dayDeleteNeedsCancel") : null;
+  };
   // A reason is asked exactly when a price was edited (as the API checks): a
   // day's price changed, a priced day added, or a priced open day removed.
   const sentIds = new Set(days.map((d) => d.id).filter(Boolean));
@@ -182,7 +205,11 @@ export default function EditOrderForm({
         l.line_status !== "CANCELLED" &&
         Number(l.total_price || 0) !== 0,
     );
-  const belowInvoiceTotal = priceChanged && newPrice < activeInvoiceTotal;
+  // INV-6 (A3): unpaid invoices may ask at most what is still owed at the new
+  // total, max(0, total − covered). Money beyond the total becomes saldo lebih.
+  const maxOpenBilled = Math.max(0, newPrice - (money?.covered ?? 0));
+  const belowInvoiceTotal =
+    priceChanged && (money?.open_billed ?? 0) > maxOpenBilled;
   function setPrimary(index: number) {
     customers.forEach((_, i) =>
       setValue(`customers.${i}.is_primary`, i === index),
@@ -330,6 +357,7 @@ export default function EditOrderForm({
           setValue={setValue}
           watch={watch}
           errors={errors}
+          removeLock={removeLock}
         />
 
         {priceChanged && (
@@ -348,7 +376,10 @@ export default function EditOrderForm({
                 </p>
                 {belowInvoiceTotal && (
                   <p className="font-medium text-red-600">
-                    {tEdit("belowInvoiceTotal")}
+                    {tEdit("belowInvoiceTotal", {
+                      open: formatCurrency(money?.open_billed ?? 0),
+                      max: formatCurrency(maxOpenBilled),
+                    })}
                   </p>
                 )}
               </div>

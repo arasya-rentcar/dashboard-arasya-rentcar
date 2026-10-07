@@ -27,10 +27,26 @@ import {
   useCreateVendor,
   useAddVendorCar,
 } from '@/hooks/useExternalVendors';
-import { useAssignScheduleLine, useBusyUnits } from '@/hooks/useSchedule';
+import Link from 'next/link';
+import { useAssignScheduleLine, useBusyUnits, useLineCancelQuote } from '@/hooks/useSchedule';
 import { useDriverFeePresets } from '@/hooks/useTripCosts';
-import { dayLockReason, formatCurrency, formatDate, getErrorMessage, isoToWibDate } from '@/lib/utils';
-import { ScheduleLine } from '@/types';
+import {
+  apiErrorBody,
+  dayLockReason,
+  formatCurrency,
+  formatDate,
+  getErrorMessage,
+  isoToWibDate,
+  openInvoiceExceeds,
+  wibDateTimeToIso,
+} from '@/lib/utils';
+import { LineCancelQuote, ScheduleLine } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  CancelFeeBadge,
+  CustomerCancelTimeInput,
+  useTierReason,
+} from '@/components/orders/DayCancellation';
 import { Plus, Loader2, Lock } from 'lucide-react';
 
 const num = (v?: string | number | null) =>
@@ -40,13 +56,18 @@ export default function ScheduleLineDialog({
   line,
   open,
   onClose,
+  onCancelOrder,
 }: {
   line: ScheduleLine | null;
   open: boolean;
   onClose: () => void;
+  /** Opens "Batalkan Pesanan" (order page); elsewhere the hint links to the order. */
+  onCancelOrder?: () => void;
 }) {
   const t = useTranslations('scheduleLine');
   const tc = useTranslations('common');
+  const td = useTranslations('dayCancel');
+  const tierReason = useTierReason();
   const mutation = useAssignScheduleLine();
   const createVendor = useCreateVendor();
   const addVendorCar = useAddVendorCar();
@@ -78,6 +99,21 @@ export default function ScheduleLineDialog({
   const [partnerDriver, setPartnerDriver] = useState('');
   const [partnerPhone, setPartnerPhone] = useState('');
   const [partnerPlate, setPartnerPlate] = useState('');
+  // Cancelling the day (A3): a required reason, the optional time the
+  // customer asked (WIB, at most 3 days back) and the fee quote it gives.
+  const [cancelReason, setCancelReason] = useState('');
+  const [requestedLocal, setRequestedLocal] = useState('');
+  // The quote a 409 CANCEL_FEE_CHANGED returned: shown until the admin saves again.
+  const [changedQuote, setChangedQuote] = useState<LineCancelQuote | null>(null);
+  const [invoiceConflict, setInvoiceConflict] = useState<ReturnType<typeof openInvoiceExceeds>>(null);
+  const cancelling = status === 'CANCELLED' && !!line && line.line_status !== 'CANCELLED';
+  const requestedIso = wibDateTimeToIso(requestedLocal);
+  const quoteQuery = useLineCancelQuote(
+    line?.id,
+    requestedIso,
+    open && cancelling && !dayLockReason(line?.order?.order_status),
+  );
+  const quote = changedQuote ?? quoteQuery.data;
 
   const { data: vendorDetail } = useExternalVendor(
     vendorId || '',
@@ -106,6 +142,10 @@ export default function ScheduleLineDialog({
     setPartnerDriver(line.driver_name_raw || '');
     setPartnerPhone(line.driver_phone_raw || '');
     setPartnerPlate(line.plate_raw || line.external_car?.plate_number || '');
+    setCancelReason('');
+    setRequestedLocal('');
+    setChangedQuote(null);
+    setInvoiceConflict(null);
   }, [line]);
 
   if (!line) return null;
@@ -169,7 +209,15 @@ export default function ScheduleLineDialog({
     });
   };
 
+  // A cancel waits for its quote, a reason, and no blocking rule.
+  const cancelBlocked =
+    cancelling && (!quote || !!quote.blocked || !cancelReason.trim() || quoteQuery.isFetching);
+
   async function save() {
+    if (cancelling && !cancelReason.trim()) {
+      toast.error(td('reasonRequired'));
+      return;
+    }
     try {
       await mutation.mutateAsync({
         id: line!.id,
@@ -189,12 +237,33 @@ export default function ScheduleLineDialog({
                 plate_raw: partnerPlate.trim() || null,
               }
             : {}),
+          ...(cancelling && quote
+            ? {
+                cancel_reason: cancelReason.trim(),
+                expected_cancel_fee: quote.fee,
+                ...(requestedIso ? { cancel_requested_at: requestedIso } : {}),
+              }
+            : {}),
         },
       });
       toast.success(t('savedToast'));
       onClose();
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const body = apiErrorBody(err);
+      const conflict = openInvoiceExceeds(err);
+      if (body?.code === 'CANCEL_FEE_CHANGED' && body.quote) {
+        // The fee moved (e.g. the save crossed 10:00): show it, save again to confirm.
+        setChangedQuote(body.quote as LineCancelQuote);
+        toast.error(td('feeChangedToast'));
+      } else if (conflict) {
+        setInvoiceConflict(conflict);
+      } else if (body?.code === 'DONE_DAY' || body?.code === 'LAST_OPEN_DAY') {
+        setChangedQuote(null);
+        void quoteQuery.refetch();
+        toast.error(body.code === 'DONE_DAY' ? td('blockedDoneDay') : td('blockedLastOpenDay'));
+      } else {
+        toast.error(getErrorMessage(err));
+      }
     }
   }
 
@@ -617,7 +686,14 @@ export default function ScheduleLineDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="line-status">{t('status')}</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={(v) => {
+                setStatus(v);
+                setChangedQuote(null);
+                setInvoiceConflict(null);
+              }}
+            >
               <SelectTrigger id="line-status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -630,6 +706,143 @@ export default function ScheduleLineDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {line.line_status === 'CANCELLED' && (
+            <div className="space-y-1">
+              <CancelFeeBadge line={line} />
+              {status !== 'CANCELLED' && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {td('reopenHint')}
+                </p>
+              )}
+            </div>
+          )}
+
+          {cancelling && (
+            <div className="space-y-3 rounded-lg border border-red-200 bg-red-50/50 p-3 text-xs">
+              {quoteQuery.isError && !changedQuote ? (
+                <p className="text-red-700">{getErrorMessage(quoteQuery.error)}</p>
+              ) : !quote ? (
+                <p className="flex items-center gap-2 text-gray-500">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {td('quoteLoading')}
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {changedQuote && (
+                    <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 font-medium text-amber-900">
+                      {td('feeChanged', { fee: formatCurrency(changedQuote.fee), pct: changedQuote.pct })}
+                    </p>
+                  )}
+                  {quote.blocked !== 'DONE_DAY' && (
+                    <p className="font-semibold text-red-800">
+                      {td('feeLine', {
+                        pct: quote.pct,
+                        price: formatCurrency(quote.price),
+                        fee: formatCurrency(quote.fee),
+                        reason: tierReason(quote.tier, quote.started),
+                      })}
+                    </p>
+                  )}
+                  {!quote.blocked && (
+                    <dl className="space-y-1 text-gray-700">
+                      <div className="flex justify-between gap-3">
+                        <dt>{td('newTotal')}</dt>
+                        <dd className="font-medium tabular-nums">{formatCurrency(quote.new_total)}</dd>
+                      </div>
+                      {quote.credit_release > 0 && (
+                        <div className="flex justify-between gap-3">
+                          <dt>{td('creditRelease')}</dt>
+                          <dd className="font-medium tabular-nums text-emerald-700">
+                            {formatCurrency(quote.credit_release)}
+                          </dd>
+                        </div>
+                      )}
+                      <div className="flex justify-between gap-3">
+                        <dt>{td('owedAfter')}</dt>
+                        <dd className="font-medium tabular-nums">{formatCurrency(quote.owed_after)}</dd>
+                      </div>
+                      <p className="text-[11px] text-gray-500">{td('extraChargesNote')}</p>
+                    </dl>
+                  )}
+                  {quote.blocked === 'LAST_OPEN_DAY' && (
+                    <div className="space-y-2 rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
+                      <p>{td('blockedLastOpenDay')}</p>
+                      {onCancelOrder ? (
+                        <Button type="button" size="sm" variant="outline" onClick={onCancelOrder}>
+                          {td('openCancelOrder')}
+                        </Button>
+                      ) : line.order?.id ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/dashboard/orders/${line.order.id}?cancel=1`}>
+                            {td('openCancelOrder')}
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  )}
+                  {quote.blocked === 'DONE_DAY' && (
+                    <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
+                      {td('blockedDoneDay')}
+                    </p>
+                  )}
+                  {quote.blocked === 'OPEN_INVOICE_EXCEEDS' && (
+                    <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
+                      {td('openInvoiceExceeds', {
+                    open: formatCurrency(quote.open_billed),
+                    max: formatCurrency(quote.max_open_billed),
+                    total: formatCurrency(quote.new_total),
+                  })}
+                    </p>
+                  )}
+                </div>
+              )}
+              {invoiceConflict && (
+                <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
+                  {td('openInvoiceExceeds', {
+                    open: formatCurrency(invoiceConflict.open_billed),
+                    max: formatCurrency(invoiceConflict.max_open_billed),
+                    total: formatCurrency(invoiceConflict.new_total),
+                  })}
+                </p>
+              )}
+              {quote?.blocked !== 'LAST_OPEN_DAY' && quote?.blocked !== 'DONE_DAY' && (
+                <>
+                  <div className="space-y-1">
+                    <Label htmlFor="line-cancel-reason" className="text-xs text-gray-600">
+                      {td('reasonLabel')} <span className="text-red-600">*</span>
+                    </Label>
+                    <Textarea
+                      id="line-cancel-reason"
+                      rows={2}
+                      maxLength={500}
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder={td('reasonPlaceholder')}
+                    />
+                  </div>
+                  <CustomerCancelTimeInput
+                    id="line-cancel-requested-at"
+                    value={requestedLocal}
+                    onChange={(v) => {
+                      setRequestedLocal(v);
+                      setChangedQuote(null);
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          {!cancelling && invoiceConflict && (
+            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              {td('openInvoiceExceeds', {
+                    open: formatCurrency(invoiceConflict.open_billed),
+                    max: formatCurrency(invoiceConflict.max_open_billed),
+                    total: formatCurrency(invoiceConflict.new_total),
+                  })}
+            </p>
+          )}
 
           <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between gap-3">
             <span className="min-w-0 text-xs text-gray-500">
@@ -651,7 +864,7 @@ export default function ScheduleLineDialog({
             type="button"
             className="w-full"
             onClick={save}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || cancelBlocked}
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             {mutation.isPending ? t('saving') : t('saveRecompute')}

@@ -672,7 +672,7 @@
       },
       {
         "t": "Pembatalan dan refund",
-        "d": "<b>Batalkan Pesanan</b> menghitung biaya pembatalan sesuai kebijakan dan membuat invoice pembatalan hanya untuk sisa yang belum dibayar. Uang pelanggan yang melebihi tagihan menjadi <b>saldo lebih</b>; kembalikan lewat <b>Kembalikan Dana</b> beserta bukti transfer balik. Pengembalian bisa lebih dari sekali, masing-masing paling banyak sebesar saldo lebih."
+        "d": "<b>Batalkan Pesanan</b> menghitung biaya pembatalan per hari dan hanya membatalkan invoice yang belum dibayar; invoice biaya pembatalan dibuat hanya untuk yang masih terutang. Uang pelanggan yang melebihi tagihan menjadi <b>saldo lebih</b>; kembalikan lewat <b>Kembalikan Dana</b> beserta bukti transfer balik. Pengembalian bisa lebih dari sekali, masing-masing paling banyak sebesar saldo lebih."
       }
     ],
     "driverAppTitle": "Aplikasi driver & notifikasi",
@@ -769,7 +769,7 @@
       },
       {
         "t": "Biaya pembatalan",
-        "d": "Sebelum hari perjalanan: 20% dari total order. Hari H sebelum pukul 10.00 WIB dan perjalanan belum dimulai: 50%. Setelah itu: 100%. Batalkan order dengan <b>Batalkan Pesanan</b>; order yang semua harinya sudah selesai ditutup dengan <b>Finalisasi Pesanan</b>, bukan dibatalkan."
+        "d": "Dihitung per hari sewa dari harga hari itu: sebelum tanggalnya 20%; pada tanggalnya sebelum pukul 10.00 WIB dan driver belum berangkat 50%; selain itu 100%. Biaya tambahan tetap ditagih penuh. Batalkan satu hari lewat <b>Edit Hari</b>, seluruh order lewat <b>Batalkan Pesanan</b>; order yang semua harinya sudah selesai ditutup dengan <b>Finalisasi Pesanan</b>, bukan dibatalkan."
       },
       {
         "t": "Driver setelah DP",
@@ -781,7 +781,7 @@
       },
       {
         "t": "Mengubah atau membatalkan hari",
-        "d": "Hari yang sudah punya driver tidak bisa dihapus lewat <b>Edit Order</b>; batalkan lewat <b>Edit Hari</b>. Hari terakhir yang masih aktif tidak bisa dibatalkan lewat <b>Edit Hari</b>; pakai <b>Batalkan Pesanan</b>. <b>Edit Hari</b> juga menolak perubahan yang membuat total order di bawah invoice yang sudah terbit; revisi invoicenya dulu."
+        "d": "Setelah order punya uang masuk atau invoice, hari tidak bisa dihapus lewat <b>Edit Order</b>; batalkan lewat <b>Edit Hari</b> supaya biaya pembatalannya dihitung (alasan wajib; jam pelanggan membatalkan boleh diisi, paling lama 3 hari ke belakang). Hari yang sudah selesai tidak bisa dibatalkan, dan hari terakhir yang masih aktif dibatalkan lewat <b>Batalkan Pesanan</b>. Bila invoice yang belum dibayar menagih lebih dari yang masih terutang, revisi invoicenya dulu."
       },
       {
         "t": "Order selesai atau dibatalkan",
@@ -797,6 +797,31 @@
       "Mencatat overtime atau parkir tanpa <b>Tambah Biaya</b>, sehingga <b>Invoice Tambahan</b> tidak punya sisa untuk ditagih.",
       "Membiarkan biaya perjalanan berstatus <b>Menunggu dicek</b>, sehingga order tidak bisa difinalisasi.",
       "Membiarkan trip lama terbuka. Cek chip <b>Belum ditutup</b> di <b>{menuTrip}</b> secara berkala."
+    ],
+    "cancelPolicyTitle": "Kebijakan pembatalan (sama dengan website)",
+    "cancelPolicyHeading": "Biaya pembatalan dihitung untuk setiap hari sewa, dari harga hari tersebut.",
+    "cancelPolicyWhenHeader": "Waktu pembatalan",
+    "cancelPolicyFeeHeader": "Biaya",
+    "cancelPolicyRows": [
+      {
+        "w": "Paling lambat sehari sebelum tanggal sewa (sampai pukul 23.59 WIB)",
+        "f": "20%"
+      },
+      {
+        "w": "Pada tanggal sewa, sebelum pukul 10.00 WIB dan driver belum berangkat menjemput",
+        "f": "50%"
+      },
+      {
+        "w": "Pada tanggal sewa mulai pukul 10.00 WIB, atau driver sudah berangkat menjemput",
+        "f": "100% (hari itu dibayar penuh)"
+      }
+    ],
+    "cancelPolicyNote": "Biaya tambahan yang sudah terpakai (misalnya overtime, parkir, tol) tetap dibayar penuh. Jika pembayaran Anda melebihi tagihan, kelebihannya dipakai untuk tagihan berikutnya atau kami kembalikan ke rekening Anda bila diminta.",
+    "cancelPolicyExampleTitle": "Contoh: sewa 3 hari, 10–12 Okt, Rp 1.000.000/hari",
+    "cancelPolicyExamples": [
+      "Batal 9 Okt = Rp 600.000",
+      "Batal 10 Okt pukul 08.00, driver belum berangkat = Rp 900.000",
+      "Batal 10 Okt pukul 11.00 = Rp 1.400.000"
     ]
   },
   "orderDetail": {
@@ -941,7 +966,7 @@
     "finalizeConfirmHint": "Semua hari layanan sudah selesai. Finalisasi akan menutup pesanan (menandai Selesai). Pastikan biaya operasional dan fee driver sudah dicatat lebih dulu.",
     "finalizeAdditionalWarning": "Pesanan ini memiliki biaya tambahan. Sebelum finalisasi, periksa kembali item tambahan, biaya operasional, dan fee driver sudah benar — finalisasi akan menutup pesanan.",
     "okOrderFinalized": "Pesanan difinalisasi",
-    "cancelWarning": "Ini membatalkan seluruh pesanan: semua hari mendatang dibatalkan, driver/mobil dilepas, invoice aktif dibatalkan, dan biaya pembatalan dihitung sesuai kebijakan Arasya. Invoice pembatalan hanya dibuat untuk sisa yang belum dibayar. Tindakan ini tidak dapat dibatalkan.",
+    "cancelWarning": "Semua hari yang masih aktif dibatalkan dan driver/mobilnya dilepas. Biaya pembatalan dihitung per hari dari tanggal dan harga hari itu. Hanya invoice yang belum dibayar yang dibatalkan; invoice yang sudah dibayar tetap. Tindakan ini tidak dapat dibatalkan.",
     "cancelReasonLabel": "Alasan pembatalan",
     "cancelReasonPlaceholder": "mis. Pelanggan membatalkan pesanan",
     "cancelReasonRequired": "Mohon isi alasan pembatalan",
@@ -965,7 +990,28 @@
     "okMarkedPaidShort": "{number} ditandai terbayar, kurang {amount}. Tagih lewat Invoice Penyesuaian.",
     "okMarkedPaidOver": "{number} ditandai terbayar. Lebih {amount} masuk saldo lebih.",
     "okInvoicePaidByCredit": "Invoice dibuat dan langsung terbayar dari saldo lebih.",
-    "invoiceAdjustment": "Invoice Penyesuaian"
+    "invoiceAdjustment": "Invoice Penyesuaian",
+    "cqDate": "Tanggal",
+    "cqPrice": "Harga",
+    "cqStarted": "Berangkat?",
+    "cqTier": "Tarif",
+    "cqFee": "Biaya",
+    "cqNoDate": "Tanpa tanggal",
+    "cqEarlierFees": "Biaya hari yang dibatalkan sebelumnya",
+    "cqFeeTotal": "Total biaya pembatalan",
+    "cqDoneTotal": "Hari yang sudah selesai (dibayar penuh)",
+    "cqCharges": "Biaya tambahan (tetap ditagih)",
+    "cqTotal": "Total order",
+    "cqNewTotal": "Total order baru",
+    "cqVoided": "Invoice belum dibayar yang dibatalkan",
+    "cqVoidedCredit": "saldo lebih {amount} kembali",
+    "cqFeeInvoice": "Invoice biaya pembatalan dibuat sebesar {amount}.",
+    "cqFeeInvoiceCredit": "(sudah dipotong saldo lebih {amount})",
+    "cqCreditAfter": "Tidak ada invoice baru. Saldo lebih sesudahnya {amount}: dipakai untuk tagihan berikutnya atau dikembalikan lewat Kembalikan Dana.",
+    "cqSettled": "Tidak ada invoice baru dan tidak ada saldo lebih.",
+    "cqFeeChanged": "Biaya pembatalan berubah menjadi {fee}. Periksa rinciannya, lalu konfirmasi lagi.",
+    "cqConfirmAgain": "Konfirmasi lagi",
+    "cqResultVoided": "Invoice yang dibatalkan: {numbers}."
   },
   "invoicesPage": {
     "expandRow": "Buka detail invoice",
@@ -1586,7 +1632,7 @@
     "priceChange": "Perubahan harga",
     "activeInvoiceTotal": "Sudah dibayar + ditagih",
     "invoicesWontChange": "Invoice yang ada tidak akan berubah otomatis. Sinkronkan/revisi invoice setelah menyimpan jika perlu.",
-    "belowInvoiceTotal": "Harga final baru tidak boleh di bawah uang yang sudah dibayar ditambah invoice yang belum dibayar.",
+    "belowInvoiceTotal": "Invoice yang belum dibayar menagih {open}, lebih dari yang masih terutang dengan harga baru ({max}). Revisi invoice dulu, lalu simpan.",
     "reasonForChange": "Alasan Perubahan Harga",
     "reasonPlaceholder": "pelanggan menambah rute / overtime / koreksi diskon",
     "finalPrice": "Harga final",
@@ -2453,5 +2499,34 @@
       "UNAPPLIED": "Kembali dari invoice",
       "REFUND": "Dikembalikan ke pelanggan"
     }
+  },
+  "dayCancel": {
+    "badge": "Dibatalkan · biaya {fee} ({pct}%)",
+    "badgeNoTier": "Dibatalkan · biaya {fee}",
+    "reason1": "sebelum hari H",
+    "reason2": "hari H sebelum pukul 10.00, driver belum berangkat",
+    "reason3Started": "driver sudah berangkat",
+    "reason3": "hari H mulai pukul 10.00 atau sesudahnya",
+    "feeLine": "Biaya pembatalan: {pct}% × {price} = {fee} ({reason})",
+    "newTotal": "Total order baru",
+    "creditRelease": "Saldo lebih yang dilepas",
+    "owedAfter": "Masih harus dibayar",
+    "extraChargesNote": "Biaya tambahan (overtime, parkir, tol, dll.) tetap ditagih penuh.",
+    "reasonLabel": "Alasan pembatalan",
+    "reasonPlaceholder": "mis. Pelanggan membatalkan perjalanan hari ini",
+    "reasonRequired": "Mohon isi alasan pembatalan",
+    "requestedAtLabel": "Jam pelanggan membatalkan (WIB)",
+    "requestedAtHint": "Opsional. Isi bila pelanggan sudah membatalkan lebih awal, paling lama 3 hari ke belakang. Biaya dihitung dari jam ini; kosong = jam simpan.",
+    "requestedAtClear": "Hapus",
+    "quoteLoading": "Menghitung biaya pembatalan…",
+    "feeChanged": "Biaya pembatalan berubah menjadi {fee} ({pct}%), misalnya karena sudah lewat pukul 10.00. Periksa angkanya, lalu simpan lagi untuk konfirmasi.",
+    "feeChangedToast": "Biaya pembatalan berubah. Periksa angka barunya, lalu konfirmasi lagi.",
+    "blockedLastOpenDay": "Ini hari aktif terakhir di order ini, jadi tidak bisa dibatalkan lewat Edit Hari. Pakai Batalkan Pesanan.",
+    "openCancelOrder": "Buka Batalkan Pesanan",
+    "blockedDoneDay": "Hari yang sudah selesai tidak bisa dibatalkan.",
+    "openInvoiceExceeds": "Invoice yang belum dibayar masih menagih {open}, padahal dengan total baru ({total}) yang masih terutang tinggal {max}. Revisi invoice dulu menjadi paling banyak {max} (atau batalkan invoicenya), lalu simpan lagi.",
+    "reopenHint": "Membuka lagi hari ini menghapus biaya pembatalannya, jadi total order naik lagi. Saldo lebih yang sudah ada tetap tersimpan.",
+    "dayDeleteNeedsCancel": "Batalkan hari lewat Edit Hari supaya biaya pembatalan dihitung.",
+    "notStarted": "Belum"
   }
 }

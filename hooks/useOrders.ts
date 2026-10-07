@@ -53,6 +53,8 @@ import {
   WaManualResult,
   OrdersSearchResult,
   OrdersSearchParams,
+  OrderCancelQuote,
+  OrderCancelQuoteDay,
 } from "@/types";
 
 export function useOrders() {
@@ -200,14 +202,43 @@ export function useReassignOrder() {
   });
 }
 
+/** POST /orders/:id/cancel (A3, per day). Rupiah. */
 export interface CancelOrderResult {
+  /** Highest tier among the days cancelled now. */
   tier: 1 | 2 | 3;
+  /** Σ fees of every cancelled day (= feeTotal). */
   penalty: number;
   originalFinalPrice: number;
+  /** Money received. */
   paidToDate: number;
+  /** Saldo lebih afterwards (refunded through Pengembalian dana). */
   refundDue: number;
+  /** What the cancellation-fee invoice asks (0 when money already covers it). */
   stillOwed: number;
   cancellationInvoiceNumber: string | null;
+  rule?: string;
+  days?: OrderCancelQuoteDay[];
+  earlierFeeTotal?: number;
+  feeTotal?: number;
+  newTotal?: number;
+  netPaid?: number;
+  creditBalance?: number;
+  creditApplied?: number;
+  creditReleased?: number;
+  voidedInvoices?: { id: string; number: string; amount: number; credit_applied: number }[];
+  decidedAt?: string;
+}
+
+/** "Batalkan Pesanan": the per-day quote now, or at the customer's request time (ISO). */
+export function useOrderCancelQuote(id: string, requestedAt: string | undefined, enabled: boolean) {
+  return useQuery<OrderCancelQuote>({
+    queryKey: ["order-cancel-quote", id, requestedAt ?? null],
+    queryFn: async () => (await ordersApi.cancelQuote(id, requestedAt)).data.data,
+    enabled,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
+  });
 }
 
 export function useCancelOrder() {
@@ -215,16 +246,23 @@ export function useCancelOrder() {
   return useMutation({
     mutationFn: async ({
       id,
-      reason,
+      ...data
     }: {
       id: string;
       reason: string;
+      expected_fee_total?: number;
+      requested_at?: string;
+      client_ref?: string;
     }): Promise<CancelOrderResult> => {
-      const res = await ordersApi.cancel(id, { reason });
+      const res = await ordersApi.cancel(id, data);
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
       invalidateMoneyViews(queryClient, variables.id);
+      // Its days are cancelled too: schedule, payables and the day margins move.
+      for (const key of ["schedule", "schedule-week", "payables", "payables-summary"]) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
     },
   });
 }

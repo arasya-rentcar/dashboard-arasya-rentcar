@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertCircle,
+  Ban,
   CalendarDays,
   CheckCircle2,
   FileText,
@@ -171,6 +172,40 @@ export default function GuidePage() {
             <Button asChild variant="outline" className="h-auto min-h-9 whitespace-normal">
               <Link href="/dashboard/price-list">{rich("priceListLink")}</Link>
             </Button>
+          </div>
+        </Card>
+
+        {/* Same text as the website's cancellation policy (owner, 7 Oct 2026). */}
+        <Card title={t("cancelPolicyTitle")} icon={Ban}>
+          <div className="space-y-3 text-sm text-gray-700">
+            <p className="font-medium text-gray-900">{t("cancelPolicyHeading")}</p>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 text-xs text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">{t("cancelPolicyWhenHeader")}</th>
+                    <th className="px-3 py-2 font-medium">{t("cancelPolicyFeeHeader")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {keysOf("cancelPolicyRows").map((k) => (
+                    <tr key={k} className="align-top">
+                      <td className="px-3 py-2">{t(`${k}.w`)}</td>
+                      <td className="px-3 py-2 font-semibold text-gray-900">{t(`${k}.f`)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p>{t("cancelPolicyNote")}</p>
+            <div className="rounded-lg border p-3">
+              <b className="text-gray-900">{t("cancelPolicyExampleTitle")}</b>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {keysOf("cancelPolicyExamples").map((k) => (
+                  <li key={k}>{t(k)}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Card>
 

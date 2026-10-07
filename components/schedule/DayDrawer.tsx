@@ -21,6 +21,7 @@ import {
 import QueryError from '@/components/dashboard/QueryError';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { CancelFeeBadge } from '@/components/orders/DayCancellation';
 import {
   Select,
   SelectContent,
@@ -174,12 +175,16 @@ function LineCard({ line, date }: { line: ScheduleLine; date: string }) {
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          <Badge
-            variant="outline"
-            className={`text-[10px] ${STATUS_STYLES[line.line_status] || ''}`}
-          >
-            {STATUS_KEYS[line.line_status] ? ts(STATUS_KEYS[line.line_status]) : line.line_status}
-          </Badge>
+          {cancelled && line.cancel_fee != null ? (
+            <CancelFeeBadge line={line} className="max-w-40 text-right" />
+          ) : (
+            <Badge
+              variant="outline"
+              className={`text-[10px] ${STATUS_STYLES[line.line_status] || ''}`}
+            >
+              {STATUS_KEYS[line.line_status] ? ts(STATUS_KEYS[line.line_status]) : line.line_status}
+            </Badge>
+          )}
           {/* The trip with the customer waits for full payment (driver app). */}
           {!cancelled && !line.is_external && line.order?.start_ready === false && line.line_status !== 'DONE' && (
             <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-200">

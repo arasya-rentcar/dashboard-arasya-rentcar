@@ -146,6 +146,33 @@ export function isMoneyConflict(error: unknown): boolean {
   return res?.status === 409;
 }
 
+/**
+ * The body of an API error ({ status: "error", message, code?, ...detail }),
+ * or null when the request did not reach the API. `code` is the stable key
+ * (CANCEL_FEE_CHANGED, OPEN_INVOICE_EXCEEDS, …); branch on it, not on text.
+ */
+export function apiErrorBody(
+  error: unknown,
+): ({ code?: string; message?: string } & Record<string, unknown>) | null {
+  const data = (error as { response?: { data?: unknown } } | null)?.response?.data;
+  return data && typeof data === 'object' ? (data as Record<string, unknown>) : null;
+}
+
+/** Rupiah numbers of a 409 OPEN_INVOICE_EXCEEDS (INV-6), or null for any other error. */
+export function openInvoiceExceeds(
+  error: unknown,
+): { new_total: number; covered: number; open_billed: number; max_open_billed: number } | null {
+  const body = apiErrorBody(error);
+  if (body?.code !== 'OPEN_INVOICE_EXCEEDS') return null;
+  const n = (k: string) => Number(body[k] ?? 0);
+  return {
+    new_total: n('new_total'),
+    covered: n('covered'),
+    open_billed: n('open_billed'),
+    max_open_billed: n('max_open_billed'),
+  };
+}
+
 // Service days of a DONE or CANCELLED order are read-only (the API answers 409).
 // Returns the `common` i18n key with the reason, or null when days can be edited.
 export function dayLockReason(
