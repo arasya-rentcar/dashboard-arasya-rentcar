@@ -27,16 +27,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Invoice, InvoiceType, PaymentMethod, InvoiceStatus } from '@/types';
+import { Invoice, InvoiceType, OrderMoney, PaymentMethod, InvoiceStatus } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import {
+  adjustmentRoom,
+  invoiceCredit,
+  invoiceGross,
+  invoiceOverpayment,
+  invoiceReceived,
+  invoiceShortfall,
+  isActiveInvoice,
+  paidFromCredit,
+} from '@/lib/invoiceMoney';
 
-const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined' | 'typeCancellationFee'> = {
+const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined' | 'typeCancellationFee' | 'typeAdjustment'> = {
   DP: 'typeDP',
   SETTLEMENT: 'typeSettlement',
   FULL: 'typeFull',
   ADDITIONAL: 'typeAdditional',
   COMBINED: 'typeCombined',
   CANCELLATION_FEE: 'typeCancellationFee',
+  ADJUSTMENT: 'typeAdjustment',
 };
 
 const TYPE_STYLES: Record<InvoiceType, string> = {
@@ -46,6 +57,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
   COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
   CANCELLATION_FEE: 'border-red-200 text-red-700 bg-red-50',
+  ADJUSTMENT: 'border-teal-200 text-teal-700 bg-teal-50',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -66,9 +78,12 @@ const WRAP_BTN = 'h-auto min-h-9 whitespace-normal py-1.5 text-center leading-ti
 
 interface Props {
   invoices: Invoice[];
-  finalPrice: number;
+  // The order's money (API rule set v3): every total / paid / owed figure.
+  money: OrderMoney;
   orderId: string;
   onOpenGenerate: () => void;
+  // "Tagih kekurangan": an Invoice Penyesuaian for an underpaid invoice.
+  onBillShortfall?: (invoice: Invoice, room: number) => void;
   onOpenAdditional?: () => void;
   onOpenCombined?: () => void;
   onOpenRevise: (invoice: Invoice) => void;
@@ -78,10 +93,6 @@ interface Props {
   sendingInvoiceId?: string | null;
   sendingReceiptId?: string | null;
   payingInvoiceId?: string | null;
-}
-
-function isActiveInvoice(invoice: Invoice) {
-  return !['REVISED', 'CANCELLED'].includes(invoice.status);
 }
 
 function latestActiveInvoice(invoices: Invoice[]) {
@@ -96,9 +107,10 @@ function shortInvoiceNumber(invoiceNumber: string) {
 
 export default function InvoiceSection({
   invoices,
-  finalPrice,
+  money,
   orderId,
   onOpenGenerate,
+  onBillShortfall,
   onOpenAdditional,
   onOpenCombined,
   onOpenRevise,
@@ -200,33 +212,107 @@ export default function InvoiceSection({
     }
   }
 
-  const activeInvoices = invoices.filter(isActiveInvoice);
   const currentInvoice = latestActiveInvoice(invoices);
-  const totalPaid = activeInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
-  const remaining = finalPrice - totalPaid;
-  const isFullyPaid = remaining <= 0;
-  const isOverInvoiced = totalPaid > finalPrice;
+  // Every figure from the API's money model, never from invoice amounts.
+  const billable = Math.max(0, money.billable_remaining);
+  const isFullyPaid = billable <= 0;
+  // INV-6 (paid + billed ≤ total) broken: the API refuses this, so it only
+  // shows up on data from before the money model.
+  const isOverInvoiced = money.covered + money.open_billed > money.total;
   const hasInvoice = invoices.length > 0;
+  const numberOf = (id?: string | null) => invoices.find((i) => i.id === id)?.invoice_number ?? '';
+
+  const summaryRow = (label: string, value: number, cls = 'font-medium text-gray-700') => (
+    <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
+      <span className="text-gray-500">{label}</span>
+      <span className={cn('tabular-nums', cls)}>{formatCurrency(value)}</span>
+    </div>
+  );
+
+  // Per-invoice money: saldo lebih used, money received, short / over paid.
+  function moneyLines(inv: Invoice, compact: boolean) {
+    const credit = invoiceCredit(inv);
+    const received = invoiceReceived(inv);
+    const short = invoiceShortfall(inv);
+    const over = invoiceOverpayment(inv);
+    const room = short > 0 ? adjustmentRoom(inv, invoices) : 0;
+    const lines: React.ReactNode[] = [];
+    if (credit > 0) {
+      lines.push(
+        <p key="credit" className="text-[11px] text-sky-700">
+          {paidFromCredit(inv)
+            ? t('paidFromCredit', { amount: formatCurrency(credit) })
+            : t('creditDeducted', { gross: formatCurrency(invoiceGross(inv)), amount: formatCurrency(credit) })}
+        </p>,
+      );
+    }
+    if (received != null && !paidFromCredit(inv) && (short > 0 || over > 0 || !compact)) {
+      lines.push(
+        <p key="received" className="text-[11px] text-gray-500">
+          {t('received', { amount: formatCurrency(received) })}
+        </p>,
+      );
+    }
+    if (over > 0) {
+      lines.push(
+        <p key="over" className="text-[11px] font-medium text-sky-700">
+          {t('overpaid', { amount: formatCurrency(over) })}
+        </p>,
+      );
+    }
+    if (inv.invoice_type === 'ADJUSTMENT' && inv.adjusts_invoice_id) {
+      lines.push(
+        <p key="adj" className="break-all text-[11px] text-teal-700">
+          {t('adjusts', { number: numberOf(inv.adjusts_invoice_id) })}
+        </p>,
+      );
+    }
+    if (short > 0) {
+      lines.push(
+        <div key="short" className="space-y-1.5">
+          <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-800">
+            {t('shortBadge', { amount: formatCurrency(short) })}
+          </Badge>
+          {room > 0 && onBillShortfall ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={cn('w-full border-teal-200 text-teal-700 hover:bg-teal-50', WRAP_BTN)}
+              onClick={() => onBillShortfall(inv, room)}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {t('billShortfall')}
+            </Button>
+          ) : room <= 0 ? (
+            <p className="text-[11px] text-gray-500">{t('shortfallBilled')}</p>
+          ) : null}
+        </div>,
+      );
+    }
+    return lines.length ? <div className="space-y-1">{lines}</div> : null;
+  }
 
   return (
     <div className="@container space-y-4">
       {/* Payment summary */}
       <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
-          <span className="text-gray-500">{t('orderTotal')}</span>
-          <span className="font-semibold text-gray-900 tabular-nums">{formatCurrency(finalPrice)}</span>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
-          <span className="text-gray-500">{t('activeInvoice')}</span>
-          <span className="font-medium text-gray-700 tabular-nums">{formatCurrency(totalPaid)}</span>
-        </div>
+        {summaryRow(t('orderTotal'), money.total, 'font-semibold text-gray-900')}
+        {summaryRow(t('receivedLabel'), money.received)}
+        {summaryRow(t('refundedLabel'), money.refunded)}
+        {summaryRow(t('creditLabel'), money.credit_balance, money.credit_balance > 0 ? 'font-medium text-sky-700' : 'font-medium text-gray-700')}
         <Separator />
-        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
-          <span className="text-gray-500">{t('remaining')}</span>
-          <span className={`font-semibold tabular-nums ${isOverInvoiced ? 'text-red-600' : isFullyPaid ? 'text-emerald-600' : 'text-gray-900'}`}>
-            {formatCurrency(remaining)}
-          </span>
-        </div>
+        {summaryRow(
+          t('outstandingLabel'),
+          money.outstanding,
+          money.outstanding > 0 ? 'font-semibold text-amber-700' : 'font-semibold text-emerald-600',
+        )}
+        {summaryRow(t('billableLabel'), billable, 'font-semibold text-gray-900')}
+        {money.open_billed > 0 && (
+          <p className="text-[11px] text-gray-500">
+            {t('openBilledHint', { amount: formatCurrency(money.open_billed) })}
+          </p>
+        )}
       </div>
 
       {isOverInvoiced && (
@@ -280,7 +366,7 @@ export default function InvoiceSection({
         </Button>
       )}
 
-      {hasInvoice && remaining > 0 && !isOverInvoiced && (
+      {hasInvoice && billable > 0 && !isOverInvoiced && (
         <div className="rounded-lg border border-amber-100 bg-amber-50 p-2 text-xs text-amber-700">
           {t.rich('syncHint', { b: (chunks) => <span className="font-medium">{chunks}</span> })}
         </div>
@@ -335,6 +421,7 @@ export default function InvoiceSection({
                       )}
                     </div>
                     <p className="mt-0.5 text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
+                    {active && <div className="mt-1">{moneyLines(inv, true)}</div>}
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     <span className="text-sm font-semibold text-gray-900 tabular-nums">
@@ -432,6 +519,7 @@ export default function InvoiceSection({
                     </div>
                     <p className="text-xs text-gray-500 text-right">{t('via', { method: methodLabel(inv.payment_method) })}</p>
                   </div>
+                  {active && <div className="mt-1.5">{moneyLines(inv, false)}</div>}
                 </div>
 
                 {/* Kwitansi / receipt(s) tied to THIS invoice. Makes the
@@ -532,7 +620,8 @@ export default function InvoiceSection({
                       {t('viewInvoice')}
                     </Button>
                   )}
-                  {inv.status === 'PAID' && (
+                  {/* Paid from saldo lebih: no transfer, so no proof on file. */}
+                  {inv.status === 'PAID' && !paidFromCredit(inv) && (
                     <Button
                       type="button"
                       variant="outline"
@@ -575,7 +664,7 @@ export default function InvoiceSection({
                       {paying ? t('saving') : t('markPaid')}
                     </Button>
                   )}
-                  {active && (
+                  {active && inv.status !== 'PAID' && (
                     <Button
                       type="button"
                       variant="outline"

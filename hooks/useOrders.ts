@@ -11,6 +11,8 @@ import {
   orderListSchema,
   orderDetailSchema,
   ordersSearchResultSchema,
+  markPaidResultSchema,
+  createRefundResultSchema,
 } from "@/lib/schemas";
 
 // Invalidate EVERY order-related view in one place. The list page uses
@@ -21,7 +23,24 @@ function invalidateOrderViews(queryClient: QueryClient, id?: string) {
   queryClient.invalidateQueries({ queryKey: ["orders-search"] });
   if (id) queryClient.invalidateQueries({ queryKey: ["orders", id] });
 }
+
+// Anything that moves an order's money (invoice made/revised/paid, refund,
+// cancellation, a new total) also changes the invoice list, the dashboard
+// (cash, piutang, saldo lebih) and the revenue report.
+function invalidateMoneyViews(queryClient: QueryClient, id?: string) {
+  invalidateOrderViews(queryClient, id);
+  for (const key of [
+    "invoices-search",
+    "dashboard-v2",
+    "dashboard-analytics",
+    "revenue-report",
+  ]) {
+    queryClient.invalidateQueries({ queryKey: [key] });
+  }
+}
 import {
+  CreateRefundResult,
+  MarkPaidResult,
   OrderListItem,
   Order,
   CreateOrderInput,
@@ -98,12 +117,14 @@ export function useAddAdjustment(id: string) {
       amount: number;
       quantity?: number;
       is_billable?: boolean;
+      // B8: a resend with the same client_ref returns the charge already made.
+      client_ref?: string;
     }) => {
       const res = await ordersApi.addAdjustment(id, data);
       return res.data.data;
     },
     onSuccess: () => {
-      invalidateOrderViews(queryClient, id);
+      invalidateMoneyViews(queryClient, id);
     },
   });
 }
@@ -122,7 +143,8 @@ export function useUpdateOrder() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      // A new price moves the total, piutang and saldo lebih.
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }
@@ -202,7 +224,7 @@ export function useCancelOrder() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }
@@ -236,7 +258,7 @@ export function useGenerateInvoice() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }
@@ -257,7 +279,7 @@ export function useReviseInvoice() {
       return res.data.data;
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }
@@ -321,19 +343,21 @@ export function useMarkInvoicePaid() {
         payment_method?: string;
         paid_at?: string;
         amount_received?: number;
+        amount_mismatch_ack?: boolean;
       };
-    }) => {
+    }): Promise<MarkPaidResult> => {
       const res = await ordersApi.markInvoicePaid(id, invoiceId, data);
-      return res.data.data;
+      return parseResponse<MarkPaidResult>(markPaidResultSchema, res.data.data, "useMarkInvoicePaid");
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }
 
-// Sprint 5: mark refund settled (refund proof file REQUIRED).
-export function useMarkRefunded() {
+// A refund of saldo lebih (several per order). Proof REQUIRED; client_ref
+// makes a resend a no-op (200 with the same refund).
+export function useCreateRefund() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -341,13 +365,13 @@ export function useMarkRefunded() {
       data,
     }: {
       id: string;
-      data: { proof: File; amount?: number; note?: string };
-    }) => {
-      const res = await ordersApi.markRefunded(id, data);
-      return res.data.data;
+      data: { proof: File; amount: number; note?: string; client_ref: string };
+    }): Promise<CreateRefundResult> => {
+      const res = await ordersApi.createRefund(id, data);
+      return parseResponse<CreateRefundResult>(createRefundResultSchema, res.data.data, "useCreateRefund");
     },
     onSuccess: (_data, variables) => {
-      invalidateOrderViews(queryClient, variables.id);
+      invalidateMoneyViews(queryClient, variables.id);
     },
   });
 }

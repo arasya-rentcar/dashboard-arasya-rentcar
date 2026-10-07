@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -13,44 +13,59 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RupiahInput } from "@/components/forms/RupiahInput";
+import RefundList from "@/components/orders/RefundList";
+import { useClientRef } from "@/hooks/useClientRef";
 import { formatCurrency } from "@/lib/utils";
+import type { OrderMoney, OrderRefund } from "@/types";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const MAX_BYTES = 10 * 1024 * 1024;
 
 export interface RefundPayload {
   proof: File;
-  amount?: number;
+  amount: number;
   note?: string;
+  client_ref: string;
 }
 
-// Sprint 5: settle a refund owed to the customer. Refund proof REQUIRED — every
-// cash-flow movement must be evidenced.
+// Return saldo lebih to the customer (POST /orders/:id/refunds). Several
+// refunds per order, each at most the saldo lebih. Proof REQUIRED: every
+// cash movement must be evidenced.
 export default function RefundDialog({
-  refundDue,
+  orderId,
+  money,
+  refunds,
   open,
   onOpenChange,
   onConfirm,
   isSubmitting,
 }: {
-  refundDue: number;
+  orderId: string;
+  money: OrderMoney;
+  refunds: OrderRefund[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onConfirm: (payload: RefundPayload) => Promise<void> | void;
+  // Resolves true when the refund was recorded.
+  onConfirm: (payload: RefundPayload) => Promise<boolean>;
   isSubmitting?: boolean;
 }) {
   const t = useTranslations("refund");
   const tc = useTranslations("common");
+  const credit = money.credit_balance;
   const [proof, setProof] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [amount, setAmount] = useState<string>("");
   const [note, setNote] = useState<string>("");
-  // Clear the form whenever the dialog closes (also when the parent closes it
-  // after a successful submit). A failed submit keeps the picked file.
+  // A new client_ref each time the dialog opens, the same one on a retry.
+  const [clientRef, renewClientRef] = useClientRef(open);
+  // Prefill the whole saldo lebih when the dialog opens; clear on close (also
+  // when the parent closes it after a success). A failed submit keeps input.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
-    if (!open) reset();
+    if (open) setAmount(credit > 0 ? String(credit) : "");
+    else reset();
   }
 
   function reset() {
@@ -77,17 +92,21 @@ export default function RefundDialog({
     setProof(f);
   }
 
+  const value = Number(amount || 0);
+  const tooMuch = value > credit;
+  // Refunding while the customer still owes (a prepayment) leaves piutang.
+  const owedAfter = Math.max(0, money.total - (money.net_paid - value));
+  const createsDebt = value > 0 && !tooMuch && owedAfter > 0;
+  const canSubmit = !!proof && value > 0 && !tooMuch && !isSubmitting;
+
   async function submit() {
     if (!proof) {
       setFileError(t("proofRequired"));
       return;
     }
-    if (isSubmitting) return;
-    await onConfirm({
-      proof,
-      amount: amount ? Number(amount) : undefined,
-      note: note || undefined,
-    });
+    if (!canSubmit) return;
+    const ok = await onConfirm({ proof, amount: value, note: note.trim() || undefined, client_ref: clientRef });
+    if (ok) renewClientRef();
   }
 
   return (
@@ -98,27 +117,38 @@ export default function RefundDialog({
         onOpenChange(v);
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-1rem)] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="rounded-lg bg-red-50 border border-red-100 p-3 text-sm">
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
             <div className="flex flex-wrap justify-between gap-x-3">
-              <span className="text-red-700">{t("due")}</span>
-              <span className="font-semibold text-red-700">
-                {formatCurrency(refundDue)}
-              </span>
+              <span className="text-sky-900">{t("due")}</span>
+              <span className="font-semibold tabular-nums text-sky-900">{formatCurrency(credit)}</span>
             </div>
-            <p className="text-[11px] text-red-500/80 mt-1">
-              {t("dueHint")}
-            </p>
+            <p className="mt-1 text-[11px] text-sky-800/80">{t("dueHint")}</p>
           </div>
 
-          <p className="text-sm text-gray-500">
-            {t("intro")}
-          </p>
+          <p className="text-sm text-gray-500">{t("intro")}</p>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="refund_amount">{t("amount")}</Label>
+            <RupiahInput id="refund_amount" value={amount} onChange={setAmount} />
+            {tooMuch ? (
+              <p className="text-xs text-red-600">{t("errTooMuch", { amount: formatCurrency(credit) })}</p>
+            ) : (
+              <p className="text-[11px] text-gray-400">{t("amountHint", { amount: formatCurrency(credit) })}</p>
+            )}
+          </div>
+
+          {createsDebt && (
+            <div className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{t("createsDebt", { amount: formatCurrency(owedAfter) })}</p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="refund_proof">
@@ -139,30 +169,22 @@ export default function RefundDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="refund_amount">{t("amount")}</Label>
-            <Input
-              id="refund_amount"
-              type="number"
-              min="0"
-              inputMode="numeric"
-              placeholder={refundDue ? String(refundDue) : "0"}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <p className="text-[11px] text-gray-400">
-              {t("amountHint", { amount: formatCurrency(refundDue) })}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
             <Label htmlFor="refund_note">{t("noteLabel")}</Label>
             <Input
               id="refund_note"
               placeholder={t("notePlaceholder")}
               value={note}
+              maxLength={500}
               onChange={(e) => setNote(e.target.value)}
             />
           </div>
+
+          {refunds.length > 0 && (
+            <div className="space-y-1.5 border-t border-gray-100 pt-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{t("earlier")}</p>
+              <RefundList orderId={orderId} refunds={refunds} />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -174,7 +196,7 @@ export default function RefundDialog({
           >
             {tc("cancel")}
           </Button>
-          <Button type="button" onClick={submit} disabled={!proof || isSubmitting}>
+          <Button type="button" onClick={submit} disabled={!canSubmit}>
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmitting ? t("processing") : t("submitBtn")}
           </Button>

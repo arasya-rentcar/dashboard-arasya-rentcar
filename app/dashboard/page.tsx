@@ -36,9 +36,13 @@ import type { DashboardV2, DashV2OverdueAR, DashV2OverdueAP } from '@/types';
 //     nothing); extra charges by the date they were added; cancellation fees
 //     by the cancellation date. Trip costs billed back at cost (pass-through)
 //     are neither revenue nor cost.
-//   • Cash rows (Collected, Paid out, Net cash) use Receipt.payment_date and
-//     Payable.paid_at. Each card explicitly labels its basis.
-//   • Outstanding + Overdue are a NOW snapshot (not period-scoped); overdue
+//   • Cash rows (rule set v3): Collected by Receipt.payment_date, Refunded by
+//     OrderRefund.refunded_at, Paid out by Payable.paid_at;
+//     net cash = collected − refunded − paid out. Using saldo lebih on an
+//     invoice is not cash. Each card explicitly labels its basis.
+//   • Outstanding + Overdue are a NOW snapshot (not period-scoped); piutang is
+//     total − (received − refunded). Saldo lebih pelanggan (customer_credit)
+//     is money held for customers: neither piutang nor revenue. Overdue
 //     means service has started but the invoice / payable is still unsettled
 //     (Arasya rule: rental due day-1 of service).
 //   • Δ vs prior period uses the same-length window immediately before [from,to].
@@ -161,7 +165,11 @@ function HealthRow({ data }: { data: DashboardV2 }) {
           label={t('netCash')}
           basis={t('basisNetCash')}
           value={formatCurrency(c.net_cash)}
-          sub={t('cashInOut', { in: formatCurrency(c.collected), out: formatCurrency(c.paid_out) })}
+          sub={t('cashInOut', {
+            in: formatCurrency(c.collected),
+            refunded: formatCurrency(c.refunded ?? 0),
+            out: formatCurrency(c.paid_out),
+          })}
           delta={c.delta.net_cash}
         />
         <OutstandingKPI o={o} />
@@ -504,6 +512,13 @@ function OutstandingKPI({ o }: { o: DashboardV2['outstanding'] }) {
               {t('overdueCount', { count: o.ap_overdue_count })}
             </p>
           </div>
+        </div>
+        <div className="border-t border-gray-100 pt-2">
+          <p className="text-[11px] text-gray-500">{t('customerCredit')}</p>
+          <p className="break-words text-sm font-semibold tabular-nums text-sky-700">
+            {formatCurrency(o.customer_credit ?? 0)}
+          </p>
+          <p className="text-[11px] text-gray-400">{t('customerCreditHint')}</p>
         </div>
       </CardContent>
     </Card>

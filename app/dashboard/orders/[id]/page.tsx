@@ -46,8 +46,11 @@ import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import ArrivalEvidence from "@/components/orders/ArrivalEvidence";
 import TripCostsPanel from "@/components/orders/TripCostsPanel";
 import InvoiceSection from "@/components/orders/InvoiceSection";
+import OrderCreditCard from "@/components/orders/OrderCreditCard";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
-import GenerateInvoiceForm from "@/components/forms/GenerateInvoiceForm";
+import GenerateInvoiceForm, {
+  type AdjustmentTarget,
+} from "@/components/forms/GenerateInvoiceForm";
 import AdditionalInvoiceForm from "@/components/forms/AdditionalInvoiceForm";
 import CombinedInvoiceForm from "@/components/forms/CombinedInvoiceForm";
 import ScheduleLineDialog from "@/components/schedule/ScheduleLineDialog";
@@ -68,7 +71,7 @@ import {
   useSendInvoiceWhatsapp,
   useSendReceiptWhatsapp,
   useMarkInvoicePaid,
-  useMarkRefunded,
+  useCreateRefund,
   useCancelOrder,
   useFinalizeOrder,
   type CancelOrderResult,
@@ -79,6 +82,7 @@ import {
   formatDate,
   formatDateTime,
   getErrorMessage,
+  isMoneyConflict,
   isoToWibDate,
 } from "@/lib/utils";
 import {
@@ -89,6 +93,7 @@ import {
 } from "@/types";
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from "@/lib/statusStyles";
 import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
+import { useClientRef } from "@/hooks/useClientRef";
 
 const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
   CREATED: "statusCreated",
@@ -123,6 +128,8 @@ export default function OrderDetailPage({
   const [assignLine, setAssignLine] = useState<ScheduleLine | null>(null);
   const [markPaidInvoice, setMarkPaidInvoice] = useState<Invoice | null>(null);
   const [refundOpen, setRefundOpen] = useState(false);
+  // "Tagih kekurangan": the invoice form opened as an Invoice Penyesuaian.
+  const [adjustTarget, setAdjustTarget] = useState<AdjustmentTarget | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -132,6 +139,8 @@ export default function OrderDetailPage({
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
+  // One client_ref per opening of "Tambah Biaya", reused on a retry.
+  const [adjClientRef, renewAdjClientRef] = useClientRef(additionalOpen);
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const reassignMutation = useReassignOrder();
@@ -144,7 +153,7 @@ export default function OrderDetailPage({
   const sendInvoiceMutation = useSendInvoiceWhatsapp();
   const sendReceiptMutation = useSendReceiptWhatsapp();
   const markInvoicePaidMutation = useMarkInvoicePaid();
-  const markRefundedMutation = useMarkRefunded();
+  const createRefundMutation = useCreateRefund();
 
   async function handleSendInvoice(invoice: Invoice) {
     const phone =
@@ -213,20 +222,30 @@ export default function OrderDetailPage({
     payment_method?: string;
     paid_at?: string;
     amount_received?: number;
+    amount_mismatch_ack?: boolean;
   }) {
     if (!markPaidInvoice) return;
     try {
-      await markInvoicePaidMutation.mutateAsync({
+      const result = await markInvoicePaidMutation.mutateAsync({
         id,
         invoiceId: markPaidInvoice.id,
         data: payload,
       });
+      const number = markPaidInvoice.invoice_number;
+      const p = result.payment;
       toast.success(
-        t("okMarkedPaid", { number: markPaidInvoice.invoice_number }),
+        p && p.shortfall > 0
+          ? t("okMarkedPaidShort", { number, amount: formatCurrency(p.shortfall) })
+          : p && p.credit_added > 0
+            ? t("okMarkedPaidOver", { number, amount: formatCurrency(p.credit_added) })
+            : t("okMarkedPaid", { number }),
       );
       setMarkPaidInvoice(null);
     } catch (err) {
+      // AMOUNT_MISMATCH etc.: the API message says what to do; the dialog
+      // stays open with what was entered.
       toast.error(getErrorMessage(err));
+      if (isMoneyConflict(err)) refetch();
     }
   }
 
@@ -262,7 +281,9 @@ export default function OrderDetailPage({
         amount: amt,
         quantity: 1,
         is_billable: true,
+        client_ref: adjClientRef,
       });
+      renewAdjClientRef();
       toast.success(t("okAdditionalAdded"));
       setAdditionalOpen(false);
       setAdjType("OVERTIME");
@@ -273,17 +294,16 @@ export default function OrderDetailPage({
     }
   }
 
-  const alreadyPaid =
-    order?.invoices
-      .filter((inv) => !["REVISED", "CANCELLED"].includes(inv.status))
-      .reduce((sum, inv) => sum + Number(inv.amount), 0) ?? 0;
-  const orderFinalPrice = Number(order?.final_price ?? 0);
-  const invoiceDifference = orderFinalPrice - alreadyPaid;
-  // Sprint 5: refund owed = actual money received (paid_to_date) beyond the
-  // order total. paid_to_date is the source of truth for cash received.
-  const paidToDate = Number(order?.paid_to_date ?? 0);
-  const refundDue = Math.max(paidToDate - orderFinalPrice, 0);
-  const isRefunded = Boolean(order?.is_refunded);
+  // Every money figure comes from the API's money model (order.money, rule
+  // set v3); the page never adds up invoice amounts itself.
+  const money = order?.money;
+  // Paid toward the total, or billed and not paid yet.
+  const billedSoFar = money ? money.covered + money.open_billed : 0;
+  // > 0: part of the total has no invoice yet; < 0: paid + billed exceed it.
+  const invoiceDifference = money ? money.total - billedSoFar : 0;
+  // Saldo lebih can be refunded whenever there is some (several refunds per order).
+  const creditBalance = money?.credit_balance ?? 0;
+  const refundedTotal = money?.refunded ?? 0;
   // Terminal orders are read-only for STRUCTURAL data (fields, service lines,
   // driver assignment, price adjustments). Billing/closure (invoices, payment,
   // receipt, refund) stays available because it happens after DONE / on a
@@ -317,10 +337,9 @@ export default function OrderDetailPage({
   const awaitingDp = order?.payment_status === "UNPAID";
   // Owner rule: the trip with the customer begins only when the order is paid
   // in full (driver app "Mulai perjalanan"); driving to the pickup is allowed.
-  const startPayment = order?.start_payment;
   const waitsForFullPayment =
-    !!startPayment &&
-    !startPayment.ready &&
+    !!money &&
+    !money.start_ready &&
     order?.order_status !== "CANCELLED" &&
     (order?.service_items ?? []).some(
       (item) =>
@@ -579,7 +598,7 @@ export default function OrderDetailPage({
         customer_name: order.customer_name,
         order_status: order.order_status,
         payment_status: order.payment_status,
-        start_ready: order.start_payment?.ready,
+        start_ready: order.money?.start_ready,
       },
       driver: item.driver ?? null,
       car: item.car
@@ -612,28 +631,46 @@ export default function OrderDetailPage({
     }
   }
 
-  async function handleGenerateInvoice(data: GenerateInvoiceInput) {
+  // Resolves true when the invoice was made, so the form renews its client_ref;
+  // on an error the dialog stays open and a retry reuses it.
+  async function handleGenerateInvoice(data: GenerateInvoiceInput): Promise<boolean> {
     try {
-      await generateInvoiceMutation.mutateAsync({ id, data });
-      toast.success(t("okInvoiceGenerated"));
+      const inv = await generateInvoiceMutation.mutateAsync({ id, data });
+      // Saldo lebih covered it all: the API made it PAID at once.
+      toast.success(
+        inv?.status === "PAID" ? t("okInvoicePaidByCredit") : t("okInvoiceGenerated"),
+      );
       setInvoiceOpen(false);
+      setAdjustTarget(null);
+      return true;
     } catch (err) {
+      // CREDIT_CHANGED or a cap: show the API message, keep the form open and
+      // refetch so it shows the new numbers (same client_ref on the retry).
       toast.error(getErrorMessage(err));
+      if (isMoneyConflict(err)) refetch();
+      return false;
     }
   }
 
-  async function handleMarkRefunded(payload: RefundPayload) {
+  async function handleCreateRefund(payload: RefundPayload): Promise<boolean> {
     try {
-      await markRefundedMutation.mutateAsync({ id, data: payload });
-      toast.success(t("okRefundMarked"));
+      const result = await createRefundMutation.mutateAsync({ id, data: payload });
+      toast.success(
+        result.outstanding_after > 0
+          ? t("okRefundOwed", { amount: formatCurrency(result.outstanding_after) })
+          : t("okRefundMarked"),
+      );
       setRefundOpen(false);
+      return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
+      if (isMoneyConflict(err)) refetch();
+      return false;
     }
   }
 
-  async function handleReviseInvoice(data: ReviseInvoiceInput) {
-    if (!revisionInvoice) return;
+  async function handleReviseInvoice(data: ReviseInvoiceInput): Promise<boolean> {
+    if (!revisionInvoice) return false;
     try {
       await reviseInvoiceMutation.mutateAsync({
         id,
@@ -642,8 +679,11 @@ export default function OrderDetailPage({
       });
       toast.success(t("okRevisionCreated"));
       setRevisionInvoice(null);
+      return true;
     } catch (err) {
       toast.error(getErrorMessage(err));
+      if (isMoneyConflict(err)) refetch();
+      return false;
     }
   }
 
@@ -708,20 +748,20 @@ export default function OrderDetailPage({
               >
                 {paymentStatusLabel(order.payment_status)}
               </Badge>
-              {refundDue > 0 && !isRefunded && (
+              {creditBalance > 0 && (
                 <Badge
                   variant="outline"
-                  className="text-xs bg-red-50 text-red-700 border-red-200"
+                  className="text-xs bg-sky-50 text-sky-800 border-sky-200"
                 >
-                  {t('refundDue')}
+                  {t('creditBadge', { amount: formatCurrency(creditBalance) })}
                 </Badge>
               )}
-              {isRefunded && (
+              {refundedTotal > 0 && (
                 <Badge
                   variant="outline"
                   className="text-xs bg-gray-100 text-gray-600 border-gray-200"
                 >
-                  {t('refunded')}
+                  {t('refundedBadge', { amount: formatCurrency(refundedTotal) })}
                 </Badge>
               )}
               {order.awaiting_finalization && (
@@ -745,12 +785,12 @@ export default function OrderDetailPage({
                 {t('editOrder')}
               </Button>
             )}
-            {refundDue > 0 && !isRefunded && (
+            {creditBalance > 0 && (
               <Button
                 onClick={() => setRefundOpen(true)}
                 size="sm"
                 variant="outline"
-                className="border-red-200 text-red-700 hover:bg-red-50"
+                className="border-sky-300 text-sky-800 hover:bg-sky-50"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
                 {t('markRefund')}
@@ -839,8 +879,8 @@ export default function OrderDetailPage({
               </p>
               <p>
                 {t('diffLine', {
-                  orderTotal: formatCurrency(orderFinalPrice),
-                  invoiceTotal: formatCurrency(alreadyPaid),
+                  orderTotal: formatCurrency(money?.total ?? 0),
+                  invoiceTotal: formatCurrency(billedSoFar),
                   difference: formatCurrency(invoiceDifference),
                 })}
               </p>
@@ -1053,12 +1093,10 @@ export default function OrderDetailPage({
                     )}
                   </div>
                 </div>
-                {waitsForFullPayment && startPayment && (
+                {waitsForFullPayment && money && (
                   <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     {t('notPaidForTrip', {
-                      left: formatCurrency(
-                        Math.max(0, startPayment.rental_total - startPayment.paid_to_date),
-                      ),
+                      left: formatCurrency(Math.max(0, money.base - money.net_paid)),
                     })}
                   </p>
                 )}
@@ -1470,9 +1508,16 @@ export default function OrderDetailPage({
               <CardContent>
                 <InvoiceSection
                   invoices={order.invoices}
-                  finalPrice={orderFinalPrice}
+                  money={order.money}
                   orderId={order.id}
-                  onOpenGenerate={() => setInvoiceOpen(true)}
+                  onOpenGenerate={() => {
+                    setAdjustTarget(null);
+                    setInvoiceOpen(true);
+                  }}
+                  onBillShortfall={(inv, room) => {
+                    setAdjustTarget({ invoiceId: inv.id, invoiceNumber: inv.invoice_number, room });
+                    setInvoiceOpen(true);
+                  }}
                   onOpenAdditional={() => setAdditionalInvoiceOpen(true)}
                   onOpenCombined={() => setCombinedInvoiceOpen(true)}
                   onOpenRevise={setRevisionInvoice}
@@ -1497,6 +1542,14 @@ export default function OrderDetailPage({
                 />
               </CardContent>
             </Card>
+
+            <OrderCreditCard
+              orderId={order.id}
+              money={order.money}
+              refunds={order.refunds ?? []}
+              entries={order.credit_entries ?? []}
+              onRefund={() => setRefundOpen(true)}
+            />
           </div>
         </div>
       </div>
@@ -1579,7 +1632,7 @@ export default function OrderDetailPage({
           </DialogHeader>
           <EditOrderForm
             order={order}
-            activeInvoiceTotal={alreadyPaid}
+            activeInvoiceTotal={billedSoFar}
             onSubmit={handleUpdateOrder}
             isLoading={updateOrderMutation.isPending}
           />
@@ -1602,14 +1655,20 @@ export default function OrderDetailPage({
       </Dialog>
 
       {/* Generate Rental Invoice Dialog */}
-      <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
-        <DialogContent className="max-w-md">
+      <Dialog
+        open={invoiceOpen}
+        onOpenChange={(open) => {
+          setInvoiceOpen(open);
+          if (!open) setAdjustTarget(null);
+        }}
+      >
+        <DialogContent className="max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t('invoiceRental')}</DialogTitle>
+            <DialogTitle>{adjustTarget ? t('invoiceAdjustment') : t('invoiceRental')}</DialogTitle>
           </DialogHeader>
           <GenerateInvoiceForm
-            finalPrice={orderFinalPrice}
-            alreadyPaid={alreadyPaid}
+            money={order.money}
+            adjustment={adjustTarget}
             onSubmit={handleGenerateInvoice}
             isLoading={generateInvoiceMutation.isPending}
           />
@@ -1633,12 +1692,12 @@ export default function OrderDetailPage({
             <DialogTitle>{t('invoiceAdditional')}</DialogTitle>
           </DialogHeader>
           <AdditionalInvoiceForm
-            finalPrice={orderFinalPrice}
-            alreadyPaid={alreadyPaid}
+            money={order.money}
             adjustments={order.adjustments ?? []}
             onSubmit={async (data) => {
-              await handleGenerateInvoice(data);
-              setAdditionalInvoiceOpen(false);
+              const ok = await handleGenerateInvoice(data);
+              if (ok) setAdditionalInvoiceOpen(false);
+              return ok;
             }}
             isLoading={generateInvoiceMutation.isPending}
           />
@@ -1655,8 +1714,9 @@ export default function OrderDetailPage({
             rentalBase={rentalBase}
             adjustments={order.adjustments ?? []}
             onSubmit={async (data) => {
-              await handleGenerateInvoice(data);
-              setCombinedInvoiceOpen(false);
+              const ok = await handleGenerateInvoice(data);
+              if (ok) setCombinedInvoiceOpen(false);
+              return ok;
             }}
             isLoading={generateInvoiceMutation.isPending}
           />
@@ -1675,6 +1735,7 @@ export default function OrderDetailPage({
           {revisionInvoice && (
             <ReviseInvoiceForm
               invoice={revisionInvoice}
+              money={order.money}
               onSubmit={handleReviseInvoice}
               isLoading={reviseInvoiceMutation.isPending}
             />
@@ -1685,6 +1746,7 @@ export default function OrderDetailPage({
       {/* Sprint 3: Mark Paid (requires payment proof) */}
       <MarkPaidDialog
         invoice={markPaidInvoice}
+        money={order.money}
         open={!!markPaidInvoice}
         onOpenChange={(v) => {
           if (!v) setMarkPaidInvoice(null);
@@ -1694,11 +1756,13 @@ export default function OrderDetailPage({
       />
 
       <RefundDialog
-        refundDue={refundDue}
+        orderId={order.id}
+        money={order.money}
+        refunds={order.refunds ?? []}
         open={refundOpen}
         onOpenChange={setRefundOpen}
-        onConfirm={handleMarkRefunded}
-        isSubmitting={markRefundedMutation.isPending}
+        onConfirm={handleCreateRefund}
+        isSubmitting={createRefundMutation.isPending}
       />
 
       {/* Cancel Order Dialog (applies the Arasya cancellation-fee policy) */}

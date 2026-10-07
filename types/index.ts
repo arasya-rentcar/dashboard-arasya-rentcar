@@ -35,7 +35,9 @@ export type InvoiceType =
   | "FULL"
   | "ADDITIONAL"
   | "COMBINED"
-  | "CANCELLATION_FEE";
+  | "CANCELLATION_FEE"
+  // "Invoice Penyesuaian": bills the shortfall of an underpaid PAID invoice.
+  | "ADJUSTMENT";
 
 export type PaymentMethod = "CASH" | "BANK_TRANSFER" | "QRIS" | "OTHER";
 
@@ -123,7 +125,18 @@ export interface Invoice {
   issue_date: string;
   due_date?: string | null;
   paid_at?: string | null;
+  // Cash asked from the customer (gross − credit_applied).
   amount: string;
+  // Saldo lebih used to pay part of this invoice.
+  credit_applied?: string | number | null;
+  // Money actually taken on mark-paid (may differ from `amount`).
+  amount_received?: string | number | null;
+  // ADJUSTMENT: the underpaid invoice whose shortfall this one bills.
+  adjusts_invoice_id?: string | null;
+  // Part of the order total this invoice covers (amount + credit_applied).
+  gross?: number;
+  // PAID invoices: amount − amount_received when positive, else 0.
+  shortfall?: number;
   note?: string;
   file_url?: string;
   receipt_url?: string | null;
@@ -134,6 +147,76 @@ export interface Invoice {
   delivery_logs?: InvoiceDeliveryLog[];
   receipts?: Receipt[];
 }
+
+/**
+ * The money of one order, computed by the API (`money` on GET /orders/:id,
+ * `order_money` on the money endpoints). The dashboard shows these numbers
+ * and never recomputes them. Rupiah.
+ */
+export interface OrderMoney {
+  /** Order total (final_price). */
+  total: number;
+  /** DP and "lunas" base: rental price of the days not cancelled (on a cancelled order: the fee). */
+  base: number;
+  min_dp: number;
+  charges: number;
+  /** Money received. */
+  received: number;
+  /** Money refunded. */
+  refunded: number;
+  net_paid: number;
+  /** Saldo lebih. */
+  credit_balance: number;
+  /** Part of the total settled with money (net_paid − credit_balance). */
+  covered: number;
+  /** Cash asked on unpaid invoices. */
+  open_billed: number;
+  /** The most a new invoice may cover (gross). */
+  billable_remaining: number;
+  /** Piutang: max(0, total − net_paid). */
+  outstanding: number;
+  payment_status: PaymentStatus;
+  start_ready: boolean;
+  rule: string;
+}
+
+export interface OrderRefund {
+  id: string;
+  amount: string | number;
+  refunded_at: string;
+  note?: string | null;
+  has_proof: boolean;
+}
+
+export type CreditEntryKind =
+  | "OPENING"
+  | "OVERPAYMENT"
+  | "RELEASE"
+  | "APPLIED"
+  | "UNAPPLIED"
+  | "REFUND";
+
+export interface OrderCreditEntry {
+  kind: CreditEntryKind;
+  /** Positive adds saldo lebih, negative uses it. */
+  amount: string | number;
+  created_at: string;
+  note?: string | null;
+  invoice_number?: string | null;
+}
+
+/** POST /orders/:id/refunds (201 made, 200 resend of the same client_ref). */
+export interface CreateRefundResult {
+  refund: OrderRefund;
+  order_money: OrderMoney | null;
+  outstanding_after: number;
+}
+
+/** POST …/mark-paid: the invoice plus what the payment did. */
+export type MarkPaidResult = Invoice & {
+  payment?: { received: number; shortfall: number; overpayment: number; credit_added: number };
+  order_money?: OrderMoney | null;
+};
 
 export interface OrderServiceItem {
   id?: string;
@@ -222,7 +305,14 @@ export interface Order {
   // FINALIZATION badge + Finalize button + "Needs Finalization" list filter.
   awaiting_finalization?: boolean;
   payment_status: PaymentStatus;
-  // Sprint 5: refund settlement.
+  // One money model for every screen (rule set v3). Use this, not the
+  // invoice amounts, for every total / paid / owed figure.
+  money: OrderMoney;
+  // Refunds (several per order) and the saldo lebih ledger, oldest first.
+  refunds?: OrderRefund[];
+  credit_entries?: OrderCreditEntry[];
+  // Old single-refund columns (cumulative total / latest refund); kept by the
+  // API for older clients. Read `money` and `refunds` instead.
   is_refunded?: boolean;
   refunded_at?: string | null;
   refund_amount?: string | number | null;
@@ -582,6 +672,12 @@ export interface OrderListItem {
   service_start_at?: string | null;
   service_end_at?: string | null;
   final_price: string;
+  // Money received, refunded and held as saldo lebih (Decimal strings). The
+  // list shows Diterima = paid_to_date − refunded_total from these, never
+  // from invoice amounts.
+  paid_to_date?: string | number | null;
+  refunded_total?: string | number | null;
+  credit_balance?: string | number | null;
   order_status: OrderStatus;
   payment_status: PaymentStatus;
   is_final?: boolean;
@@ -853,12 +949,22 @@ export interface GenerateInvoiceInput {
   note?: string;
   // Sprint 5: optional back-dated issue date (ISO). Defaults to now on the API.
   issue_date?: string;
+  // Made when the form opens, reused on a retry: a resend returns the invoice
+  // already made instead of a second one.
+  client_ref?: string;
+  // Saldo lebih reduces the cash asked (API default true). `amount` is the gross.
+  apply_credit?: boolean;
+  // ADJUSTMENT only: the underpaid invoice it bills.
+  adjusts_invoice_id?: string;
 }
 
 export interface ReviseInvoiceInput {
+  // Gross, as on generate.
   amount: number;
   payment_method?: PaymentMethod;
   note?: string;
+  client_ref?: string;
+  apply_credit?: boolean;
 }
 
 export interface SendInvoiceWhatsappInput {
@@ -1355,7 +1461,10 @@ export interface DashV2Accrual extends Partial<DashV2OrderLevel> {
 }
 export interface DashV2Cash {
   collected: number;
+  // Refunds to customers, by refunded_at (WIB).
+  refunded: number;
   paid_out: number;
+  // collected − refunded − paid_out
   net_cash: number;
 }
 export interface DashV2InternalChannel {
@@ -1393,6 +1502,8 @@ export interface DashV2OverdueAP {
 }
 export interface DashV2Outstanding {
   ar_outstanding: number;
+  // Σ saldo lebih over all orders: customers' money held (not piutang, not revenue).
+  customer_credit: number;
   ap_outstanding: number;
   ar_overdue_count: number;
   ap_overdue_count: number;
