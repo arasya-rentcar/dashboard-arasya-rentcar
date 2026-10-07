@@ -76,3 +76,8 @@ Kolom lama `drivers.etoll_card` (teks bebas) tidak dipakai lagi; bisa dihapus se
 3. Alur kerja
    3.1. CI di pull request untuk API (build + e2e dengan Postgres) dan dashboard (`tsc` + `next build`). Sekarang belum ada cek otomatis di PR.
    3.2. `npm run build` API gagal di Windows (`copy:assets` lewat cmd.exe); buat lintas platform.
+
+## 7. Import Google Sheet di halaman Order
+
+- Tombol "Preview Sheet" dan "Import Sheet" tetap dipakai (pemilik, 7 Okt), tetapi format sheet yang dibaca importer belum sesuai dengan data order yang sekarang (pelanggan/PIC, baris layanan per hari, unit, rekanan, invoice).
+- Perlu: contoh sheet yang dipakai tim (atau template baru yang disepakati), lalu sesuaikan pemetaan kolom di API (`/sheet-imports/preview`, `/sheet-imports/import`) dan tampilan pratinjau di dashboard.

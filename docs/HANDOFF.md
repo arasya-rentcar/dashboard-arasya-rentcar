@@ -81,6 +81,13 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 5. Cara kerja git (pemilik, 7 Okt): kerja di branch → PR ke `main` → `/code-review` → merge (selalu dengan konfirmasi pemilik) → cek deploy. Repo belum punya CI di PR; gerbangnya `tsc`/`next build` dan e2e lokal.
 6. Perlu dicek: di checkout lokal API (branch `claude/price-list`) ada perubahan belum di-commit milik orang lain: foto sampai lokasi boleh tanpa GPS (`driver-app.service.ts`, e2e D5b). Tidak ikut rilis ini.
 
+**Status 7 Okt sore: audit UI/UX dashboard (PR arasya-rentcar/dashboard-arasya-rentcar#13, belum di-merge).**
+1. Laporan pemilik: modal pratinjau invoice terlalu kecil (akar: `DialogContent` `sm:max-w-lg` tidak bisa ditimpa), teks tombol kolom invoice keluar dari tombol, foto driver membuka tab baru. Semua diperbaiki; viewer baru `components/preview/FilePreview.tsx` untuk invoice, kwitansi, bukti bayar, foto driver, struk, foto mobil, dokumen pelanggan.
+2. Audit semua halaman di 390/820/1440/1920 px: tabel jadi kartu/scroll di HP, target sentuh, state error, cegah klik ganda, teks i18n, tanggal WIB. Beberapa bug ikut diperbaiki (Edit Order bisa diam menolak simpan, Tandai Terbayar selalu default Tunai, Import Sheet tidak menyegarkan daftar order).
+3. Menu sidebar dikelompokkan (Ringkasan, Penjualan, Operasional, Keuangan, Bantuan); Pendapatan kembali di menu; bahasa default Indonesia; halaman Agen (data bot lama) dan redirect Final Orders dihapus; Panduan ditulis ulang tanpa materi bot.
+4. Uji: `tsc` + `next build` lolos; sweep Playwright lokal dengan mock API (di luar repo, `E:Arasya RentCar.ui-check`). Belum: render PDF di viewer pada browser asli dan HP fisik. Rilis = merge PR (tidak butuh rilis API).
+5. Import Sheet tetap dipakai, formatnya belum sesuai data order sekarang → BACKLOG §7.
+
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
 Permintaan pemilik (3 Okt) dan yang dikerjakan. Semua sudah di `main` ketiga repo setelah review (lihat §1 untuk status deploy). Aplikasi driver **perlu APK baru** (ada modul native baru: kamera, lokasi, view-shot).
