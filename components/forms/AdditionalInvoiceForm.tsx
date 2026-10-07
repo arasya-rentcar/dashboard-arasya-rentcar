@@ -13,7 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { InvoiceType, PaymentMethod, OrderAdjustment } from '@/types';
+import CreditApplyField from '@/components/invoices/CreditApplyField';
+import { useClientRef } from '@/hooks/useClientRef';
+import { GenerateInvoiceInput, PaymentMethod, OrderAdjustment, OrderMoney } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 const METHOD_OPTIONS: { value: PaymentMethod; labelKey: string }[] = [
@@ -24,27 +26,26 @@ const METHOD_OPTIONS: { value: PaymentMethod; labelKey: string }[] = [
 ];
 
 interface Props {
-  finalPrice: number;
-  alreadyPaid: number;
+  money: OrderMoney;
   adjustments: OrderAdjustment[];
-  onSubmit: (data: {
-    invoice_type: InvoiceType;
-    payment_method: PaymentMethod;
-    amount: number;
-    note?: string;
-  }) => Promise<void>;
+  // Resolves true when the invoice was made (the next one gets a new client_ref).
+  onSubmit: (data: GenerateInvoiceInput) => Promise<boolean>;
   isLoading: boolean;
 }
 
 export default function AdditionalInvoiceForm({
-  finalPrice,
-  alreadyPaid,
+  money,
   adjustments,
   onSubmit,
   isLoading,
 }: Props) {
   const t = useTranslations('additionalInvoice');
-  const remaining = Math.max(finalPrice - alreadyPaid, 0);
+  // Mounted only while the dialog is open: one client_ref per opening.
+  const [clientRef, renewClientRef] = useClientRef(true);
+  const [applyCredit, setApplyCredit] = useState(true);
+  // The most a new invoice may cover, from the API's money model.
+  const remaining = Math.max(money.billable_remaining, 0);
+  const alreadyBilled = money.covered + money.open_billed;
   const billableAdjustments = adjustments.filter((a) => a.is_billable);
 
   const [selectedId, setSelectedId] = useState<string>('custom');
@@ -79,12 +80,15 @@ export default function AdditionalInvoiceForm({
       setError(t('errExceedsBalance', { amount: formatCurrency(remaining) }));
       return;
     }
-    await onSubmit({
+    const ok = await onSubmit({
       invoice_type: 'ADDITIONAL',
       payment_method: method,
       amount: amt,
       note: note.trim() || t('defaultNote'),
+      client_ref: clientRef,
+      apply_credit: applyCredit,
     });
+    if (ok) renewClientRef();
   }
 
   return (
@@ -93,11 +97,11 @@ export default function AdditionalInvoiceForm({
       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
         <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('orderTotal')}</span>
-          <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
+          <span className="font-semibold text-gray-900">{formatCurrency(money.total)}</span>
         </div>
         <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('alreadyInvoiced')}</span>
-          <span className="font-medium text-gray-700">{formatCurrency(alreadyPaid)}</span>
+          <span className="font-medium text-gray-700">{formatCurrency(alreadyBilled)}</span>
         </div>
         <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('availableToBill')}</span>
@@ -164,6 +168,14 @@ export default function AdditionalInvoiceForm({
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
+
+      <CreditApplyField
+        id="additional_apply_credit"
+        credit={money.credit_balance}
+        gross={Number(amount || 0)}
+        checked={applyCredit}
+        onCheckedChange={setApplyCredit}
+      />
 
       {/* Note / label */}
       <div className="space-y-1.5">

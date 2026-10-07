@@ -660,7 +660,7 @@
       },
       {
         "t": "Tandai Terbayar",
-        "d": "Setelah uang masuk, klik <b>Tandai Terbayar</b> dan unggah <b>Bukti Pembayaran</b> (wajib; untuk tunai, foto saat uang diterima). Kosongkan <b>Jumlah Diterima</b> bila sama dengan nilai invoice. Invoice yang sudah terbayar menjadi <b>Kwitansi</b>."
+        "d": "Setelah uang masuk, klik <b>Tandai Terbayar</b> dan unggah <b>Bukti Pembayaran</b> (wajib; untuk tunai, foto saat uang diterima). <b>Jumlah Diterima</b> terisi nilai invoice; ubah bila uang yang masuk berbeda, lalu centang konfirmasi selisih. Kurang bayar: invoice tetap Terbayar dengan tanda <b>Kurang</b>, sisanya ditagih lewat <b>Tagih kekurangan</b> (Invoice Penyesuaian). Lebih bayar: kelebihannya menjadi <b>saldo lebih</b> yang otomatis memotong invoice berikutnya. Invoice yang sudah terbayar menjadi <b>Kwitansi</b>."
       },
       {
         "t": "Kirim lewat WhatsApp",
@@ -672,7 +672,7 @@
       },
       {
         "t": "Pembatalan dan refund",
-        "d": "<b>Batalkan Pesanan</b> menghitung biaya pembatalan sesuai kebijakan dan membuat invoice pembatalan hanya untuk sisa yang belum dibayar. Bila pelanggan sudah membayar lebih, kembalikan kelebihannya lalu catat dengan <b>Tandai Refund</b> beserta bukti transfer balik."
+        "d": "<b>Batalkan Pesanan</b> menghitung biaya pembatalan sesuai kebijakan dan membuat invoice pembatalan hanya untuk sisa yang belum dibayar. Uang pelanggan yang melebihi tagihan menjadi <b>saldo lebih</b>; kembalikan lewat <b>Kembalikan Dana</b> beserta bukti transfer balik. Pengembalian bisa lebih dari sekali, masing-masing paling banyak sebesar saldo lebih."
       }
     ],
     "driverAppTitle": "Aplikasi driver & notifikasi",
@@ -769,7 +769,7 @@
       },
       {
         "t": "Biaya pembatalan",
-        "d": "Sebelum hari perjalanan: 20% dari total order. Hari H sampai pukul 10.00 WIB dan perjalanan belum dimulai: 50%. Setelah itu: 100%. Batalkan order dengan <b>Batalkan Pesanan</b>; order yang semua harinya sudah selesai ditutup dengan <b>Finalisasi Pesanan</b>, bukan dibatalkan."
+        "d": "Sebelum hari perjalanan: 20% dari total order. Hari H sebelum pukul 10.00 WIB dan perjalanan belum dimulai: 50%. Setelah itu: 100%. Batalkan order dengan <b>Batalkan Pesanan</b>; order yang semua harinya sudah selesai ditutup dengan <b>Finalisasi Pesanan</b>, bukan dibatalkan."
       },
       {
         "t": "Driver setelah DP",
@@ -809,7 +809,7 @@
     "refunded": "Sudah refund",
     "editOrder": "Edit Order",
     "assignDriver": "Tugaskan Driver",
-    "markRefund": "Tandai Refund",
+    "markRefund": "Kembalikan Dana",
     "statusCreated": "Dibuat",
     "statusAssigned": "Ditugaskan",
     "statusInProgress": "Berjalan",
@@ -820,9 +820,9 @@
     "payPaid": "Terbayar",
     "serviceStartedUnpaidTitle": "Layanan sudah mulai tapi sewa belum lunas",
     "serviceStartedUnpaidBody": "Pembayaran sewa penuh jatuh tempo di hari pertama layanan. Status saat ini: {status}. Terbitkan/lunasi sisa tagihan.",
-    "priceHigher": "Harga order lebih tinggi dari total invoice aktif",
-    "invoiceExceeds": "Total invoice aktif melebihi harga order",
-    "diffLine": "Total order: {orderTotal} | Total invoice aktif: {invoiceTotal} | Selisih: {difference}",
+    "priceHigher": "Sebagian total order belum ditagih",
+    "invoiceExceeds": "Uang diterima dan invoice belum dibayar melebihi total order",
+    "diffLine": "Total order: {orderTotal} | Sudah dibayar + ditagih: {invoiceTotal} | Selisih: {difference}",
     "priceHigherHint": "Buat invoice lain untuk sisa jumlah, atau revisi invoice terakhir jika ini koreksi.",
     "invoiceExceedsHint": "Naikkan harga order atau revisi/batalkan invoice sebelum membuat invoice baru.",
     "orders": "Order",
@@ -912,7 +912,7 @@
     "reassignAllHint": "Menimpa driver & mobil pada setiap hari layanan yang belum dimulai. Hari yang sedang berjalan, selesai, atau dibatalkan tidak diubah.",
     "okOrderUpdated": "Order berhasil diperbarui",
     "okInvoiceGenerated": "Invoice berhasil dibuat",
-    "okRefundMarked": "Refund ditandai sudah dibayar",
+    "okRefundMarked": "Pengembalian dana tercatat",
     "okRevisionCreated": "Revisi invoice berhasil dibuat",
     "okTripAdvanced": "Trip dilanjutkan ke: {status}",
     "actualStart": "Mulai",
@@ -952,13 +952,20 @@
     "cancelPaid": "Sudah dibayar",
     "cancelRefundDue": "Refund ke pelanggan",
     "cancelStillOwed": "Pelanggan masih berhutang",
-    "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Proses refund melalui alur Mark Refund.",
+    "cancelRefundHint": "Pelanggan membayar lebih dari biaya pembatalan. Kelebihannya menjadi saldo lebih; kembalikan lewat tombol Kembalikan Dana.",
     "cancelSettled": "Uang yang sudah diterima menutup biaya pembatalan, jadi tidak ada invoice pembatalan.",
     "cancelInvoiceIssued": "Invoice pembatalan {number} dibuat untuk sisa {amount}.",
     "partnerDriver": "Driver rekanan",
     "awaitingDpAssign": "Driver baru bisa ditugaskan setelah pelanggan membayar DP. Buat invoice Uang Muka (DP), lalu tandai terbayar dengan bukti transfer. Hari yang memakai rekanan tetap bisa diatur.",
     "actualOnboard": "Pelanggan naik",
-    "notPaidForTrip": "Order belum lunas (sisa sewa {left}). Driver tetap bisa berangkat dan menandai sampai di lokasi jemput, tetapi \"Mulai perjalanan\" di aplikasi baru aktif setelah pelunasan tercatat (invoice ditandai terbayar)."
+    "notPaidForTrip": "Order belum lunas (sisa sewa {left}). Driver tetap bisa berangkat dan menandai sampai di lokasi jemput, tetapi \"Mulai perjalanan\" di aplikasi baru aktif setelah pelunasan tercatat (invoice ditandai terbayar).",
+    "creditBadge": "Saldo lebih {amount}",
+    "refundedBadge": "Dikembalikan {amount}",
+    "okRefundOwed": "Pengembalian dana tercatat. Sisa tagihan pelanggan sekarang {amount}.",
+    "okMarkedPaidShort": "{number} ditandai terbayar, kurang {amount}. Tagih lewat Invoice Penyesuaian.",
+    "okMarkedPaidOver": "{number} ditandai terbayar. Lebih {amount} masuk saldo lebih.",
+    "okInvoicePaidByCredit": "Invoice dibuat dan langsung terbayar dari saldo lebih.",
+    "invoiceAdjustment": "Invoice Penyesuaian"
   },
   "invoicesPage": {
     "expandRow": "Buka detail invoice",
@@ -1023,7 +1030,8 @@
     "viewPdf": "Lihat PDF",
     "customerFallback": "Pelanggan",
     "errPhoneRequired": "Nomor WhatsApp tujuan wajib diisi",
-    "okSent": "PDF invoice terkirim ke WhatsApp"
+    "okSent": "PDF invoice terkirim ke WhatsApp",
+    "typeAdjustment": "Penyesuaian"
   },
   "schedule": {
     "title": "Trip",
@@ -1325,12 +1333,12 @@
     "orderTotal": "Total Order",
     "activeInvoice": "Invoice Aktif",
     "remaining": "Sisa",
-    "overInvoiced": "Total invoice aktif melebihi harga final order. Revisi invoice atau ubah harga order.",
+    "overInvoiced": "Uang yang sudah diterima ditambah invoice yang belum dibayar melebihi total order. Revisi invoice yang belum dibayar atau ubah harga order.",
     "invoiceRental": "Invoice Sewa",
     "invoiceAdditional": "Invoice Tambahan",
     "invoiceCombined": "Invoice Gabungan (Sewa + Tambahan)",
     "statementCombinedPick": "Statement Gabungan (Pilih Invoice)",
-    "syncHint": "Total order lebih tinggi dari total invoice. Tagih sisanya lewat Invoice Sewa (Pelunasan) atau Invoice Tambahan, atau klik <b>Revisi</b> pada invoice aktif untuk menyesuaikan jumlahnya.",
+    "syncHint": "Sebagian total order belum ditagih. Tagih sisanya lewat Invoice Sewa (Pelunasan) atau Invoice Tambahan, atau klik <b>Revisi</b> pada invoice yang belum dibayar untuk menyesuaikan jumlahnya.",
     "status": {
       "DRAFT": "Draft",
       "ISSUED": "Diterbitkan",
@@ -1382,7 +1390,22 @@
     "creating": "Membuat…",
     "createStatement": "Buat Statement",
     "invoicePreview": "Pratinjau Invoice",
-    "openDownload": "Buka / Unduh"
+    "openDownload": "Buka / Unduh",
+    "typeAdjustment": "Penyesuaian",
+    "receivedLabel": "Diterima",
+    "refundedLabel": "Dikembalikan",
+    "creditLabel": "Saldo lebih",
+    "outstandingLabel": "Sisa tagihan (piutang)",
+    "billableLabel": "Bisa ditagih",
+    "openBilledHint": "{amount} sudah ada di invoice yang belum dibayar.",
+    "paidFromCredit": "Dibayar dari saldo lebih ({amount}), tanpa transfer",
+    "creditDeducted": "Nilai {gross}, dipotong saldo lebih {amount}",
+    "received": "Diterima {amount}",
+    "overpaid": "Lebih bayar {amount} → masuk saldo lebih",
+    "adjusts": "Penyesuaian untuk {number}",
+    "shortBadge": "Kurang {amount}",
+    "billShortfall": "Tagih kekurangan",
+    "shortfallBilled": "Kekurangannya sudah ditagih lewat Invoice Penyesuaian."
   },
   "generateInvoice": {
     "errAmountRequired": "Jumlah wajib diisi",
@@ -1395,14 +1418,14 @@
     "typeSettlement": "Pelunasan (Sisa Tagihan)",
     "typeFull": "Pembayaran Penuh",
     "orderTotal": "Total Order",
-    "alreadyPaid": "Sudah Terbayar",
-    "remaining": "Sisa",
+    "alreadyPaid": "Sudah dibayar",
+    "remaining": "Bisa ditagih",
     "invoiceType": "Tipe Invoice",
     "selectType": "Pilih tipe",
     "paymentMethod": "Metode Pembayaran",
     "selectMethod": "Pilih metode",
-    "amountIDR": "Jumlah (IDR)",
-    "dpHint": "Minimum {amount} (20% dari sewa). Customer boleh bayar lebih.",
+    "amountIDR": "Nilai Invoice (Rp)",
+    "dpHint": "Minimal {amount} (20% dari harga sewa {base}). Pelanggan boleh membayar lebih.",
     "settlementHint": "Sisa tagihan sewa, jatuh tempo di hari ke-1 layanan.",
     "additionalHint": "Menagih sisa dari biaya tambahan. Tambahkan biaya di Biaya Tambahan dulu agar total order mencerminkannya.",
     "issueDate": "Tanggal Invoice (opsional)",
@@ -1410,7 +1433,16 @@
     "noteLabel": "Catatan (opsional)",
     "notePlaceholder": "mis. Transfer via BCA",
     "fullyInvoiced": "Order ini sudah ter-invoice penuh. Ubah harga final order dulu jika perlu menagih biaya tambahan.",
-    "generateBtn": "Buat Invoice"
+    "generateBtn": "Buat Invoice",
+    "typeAdjustment": "Invoice Penyesuaian (kekurangan bayar)",
+    "openBilled": "Sudah ditagih, belum dibayar",
+    "maxHint": "Maksimal {amount}.",
+    "errExceedsBillable": "Melebihi yang masih bisa ditagih ({amount}).",
+    "errDpMin": "DP minimal {amount} (20% dari harga sewa).",
+    "adjustsInvoice": "Kekurangan dari invoice",
+    "shortfallLeft": "Kekurangan yang belum ditagih",
+    "adjustmentHint": "Invoice Penyesuaian menagih kekurangan pembayaran invoice ini. Boleh di bawah DP minimal, tetapi tidak boleh melebihi kekurangannya.",
+    "generateAdjustmentBtn": "Buat Invoice Penyesuaian"
   },
   "customerPicker": {
     "noPhone": "Tanpa no. HP",
@@ -1430,20 +1462,27 @@
     "freelanceNote": "Order eksternal tanpa vendor (freelance). Detail mobil/biaya dicatat via finance/payable nanti."
   },
   "refund": {
-    "title": "Tandai Sudah Refund",
-    "due": "Refund yang harus dibayar",
-    "dueHint": "Kelebihan pembayaran customer di atas total order.",
-    "intro": "Bukti refund wajib diupload (transfer balik / tanda terima). Semua arus kas harus tercatat.",
-    "proofLabel": "Bukti Refund",
-    "amount": "Jumlah Refund",
-    "amountHint": "Kosongkan untuk pakai nilai default ({amount}).",
+    "title": "Kembalikan Dana",
+    "due": "Saldo lebih yang bisa dikembalikan",
+    "dueHint": "Uang pelanggan yang melebihi tagihan order ini.",
+    "intro": "Bukti pengembalian wajib diunggah (bukti transfer balik atau tanda terima). Semua arus kas harus tercatat.",
+    "proofLabel": "Bukti Pengembalian",
+    "amount": "Jumlah Dikembalikan",
+    "amountHint": "Maksimal {amount} (seluruh saldo lebih).",
     "noteLabel": "Catatan (opsional)",
     "notePlaceholder": "mis. Transfer balik via BCA a.n. ...",
     "fileTypeError": "File harus JPEG, PNG, WebP, atau PDF.",
     "fileSizeError": "Ukuran file maksimal 10MB.",
     "proofRequired": "Bukti refund wajib diupload.",
     "processing": "Memproses…",
-    "submitBtn": "Tandai Sudah Refund"
+    "submitBtn": "Catat Pengembalian",
+    "errTooMuch": "Melebihi saldo lebih ({amount}).",
+    "createsDebt": "Pelanggan masih punya tagihan: setelah pengembalian ini sisa tagihan (piutang) menjadi {amount}.",
+    "earlier": "Pengembalian sebelumnya",
+    "proof": "Bukti",
+    "proofTitle": "Bukti pengembalian dana #{n}",
+    "viewProofAria": "Lihat bukti pengembalian dana #{n}",
+    "proofNotFound": "Bukti pengembalian tidak ditemukan."
   },
   "confirmation": {
     "notSent": "Belum dikirim",
@@ -1475,9 +1514,9 @@
     "defaultNote": "Revisi dari {number}",
     "defaultNoteWith": "Revisi dari {number}: {note}",
     "currentInvoice": "Invoice saat ini",
-    "currentAmount": "Jumlah saat ini",
+    "currentAmount": "Nilai saat ini",
     "reviseHint": "Ini akan menandai invoice saat ini sebagai REVISI dan membuat invoice baru. Gunakan jumlah order terbaru secara penuh saat menyesuaikan perubahan harga.",
-    "newAmount": "Jumlah Baru (IDR)",
+    "newAmount": "Nilai Baru (Rp)",
     "paymentMethod": "Metode Pembayaran",
     "selectMethod": "Pilih metode",
     "revisionNote": "Catatan Revisi",
@@ -1486,7 +1525,12 @@
     "methodCash": "Tunai",
     "methodBankTransfer": "Transfer Bank",
     "methodQris": "QRIS",
-    "methodOther": "Lainnya"
+    "methodOther": "Lainnya",
+    "currentCredit": "Dipotong saldo lebih",
+    "dpHint": "Minimal {amount} (20% dari harga sewa {base}). Pelanggan boleh membayar lebih.",
+    "maxHint": "Maksimal {amount}.",
+    "errExceedsBillable": "Melebihi yang masih bisa ditagih ({amount}).",
+    "errDpMin": "DP minimal {amount} (20% dari harga sewa)."
   },
   "combinedInvoice": {
     "intro": "Satu invoice yang menagih sewa beserta seluruh biaya tambahan yang dapat ditagih. Saat dibayar, Kwitansinya juga digabung. Gunakan ini daripada menerbitkan invoice Sewa + Tambahan terpisah.",
@@ -1540,9 +1584,9 @@
     "phone": "Telepon",
     "orderDateNote": "Tanggal Order / Waktu Booking dipertahankan dari pembuatan order asli. Hari 1 adalah baris Detail Layanan pertama di bawah. Untuk sewa 1 hari, perbarui baris pertama saja.",
     "priceChange": "Perubahan harga",
-    "activeInvoiceTotal": "Total invoice aktif",
+    "activeInvoiceTotal": "Sudah dibayar + ditagih",
     "invoicesWontChange": "Invoice yang ada tidak akan berubah otomatis. Sinkronkan/revisi invoice setelah menyimpan jika perlu.",
-    "belowInvoiceTotal": "Harga final baru tidak boleh di bawah total invoice aktif.",
+    "belowInvoiceTotal": "Harga final baru tidak boleh di bawah uang yang sudah dibayar ditambah invoice yang belum dibayar.",
     "reasonForChange": "Alasan Perubahan Harga",
     "reasonPlaceholder": "pelanggan menambah rute / overtime / koreksi diskon",
     "finalPrice": "Harga final",
@@ -1557,7 +1601,8 @@
       "FULL": "Penuh",
       "ADDITIONAL": "Tambahan",
       "COMBINED": "Gabungan",
-      "CANCELLATION_FEE": "Biaya Pembatalan"
+      "CANCELLATION_FEE": "Biaya Pembatalan",
+      "ADJUSTMENT": "Penyesuaian"
     },
     "status": {
       "DRAFT": "Draft",
@@ -1691,14 +1736,23 @@
     "proofLabel": "Bukti Pembayaran",
     "method": "Metode Pembayaran",
     "amountReceived": "Jumlah Diterima",
-    "amountHint": "Kosongkan jika sama dengan nilai invoice. Isi jika lebih (kelebihan dicatat).",
+    "amountHint": "Nilai invoice {amount}. Ubah bila uang yang masuk berbeda.",
     "paymentDate": "Tanggal Bayar",
     "paymentDateHint": "Kosongkan untuk sekarang.",
     "fileTypeError": "File harus JPEG, PNG, WebP, atau PDF.",
     "fileSizeError": "Ukuran file maksimal 10MB.",
     "proofRequired": "Bukti pembayaran wajib diupload.",
     "processing": "Memproses…",
-    "markPaidBtn": "Tandai Terbayar"
+    "markPaidBtn": "Tandai Terbayar",
+    "underpaid": "Kurang {amount} → status order: {status}",
+    "underpaidHint": "Invoice tetap ditandai Terbayar dengan tanda kurang bayar. Sisanya bisa ditagih lewat Invoice Penyesuaian (tombol Tagih kekurangan).",
+    "overpaid": "Lebih {amount} → masuk saldo lebih",
+    "overpaidHint": "Kelebihannya menjadi saldo lebih order ini: otomatis memotong invoice berikutnya, atau bisa dikembalikan. Status order: {status}.",
+    "ackLabel": "Sudah saya periksa: uang yang diterima {received}, berbeda dari nilai invoice {invoice}.",
+    "dpMinHint": "DP minimal order ini {amount}. Status order setelah pembayaran ini dicatat: {status}.",
+    "statusUnpaid": "Belum Terbayar",
+    "statusDpPaid": "DP Terbayar",
+    "statusPaid": "Terbayar"
   },
   "cars": {
     "viewPhoto": "Lihat foto",
@@ -1765,8 +1819,8 @@
     "revenueCharges": "termasuk biaya tambahan {amount}",
     "revenueCancellation": "biaya pembatalan {amount}",
     "netCash": "Arus Kas Bersih",
-    "basisNetCash": "Kas · uang masuk − uang keluar",
-    "cashInOut": "Masuk {in} · Keluar {out}",
+    "basisNetCash": "Kas · masuk − dikembalikan − keluar",
+    "cashInOut": "Masuk {in} · Dikembalikan {refunded} · Keluar {out}",
     "moneyFlowTitle": "Ke mana uang mengalir",
     "moneyFlowSub": "Pendapatan dibagi menjadi biaya dan margin untuk periode ini.",
     "channelTitle": "Per jalur",
@@ -1800,7 +1854,9 @@
     "arLabel": "AR (piutang)",
     "apLabel": "AP (utang)",
     "overdueCount": "{count} jatuh tempo",
-    "deltaVsPrev": "vs sebelumnya"
+    "deltaVsPrev": "vs sebelumnya",
+    "customerCredit": "Saldo lebih pelanggan",
+    "customerCreditHint": "Uang pelanggan yang kami pegang; bukan piutang, bukan pendapatan."
   },
   "revenue": {
     "title": "Pendapatan",
@@ -2368,5 +2424,32 @@
     "next": "Berikutnya",
     "loadFailed": "File tidak bisa ditampilkan di sini.",
     "pdfNotSupported": "Browser ini tidak bisa menampilkan PDF di dalam halaman. Buka di tab baru untuk melihatnya."
+  },
+  "invoiceCredit": {
+    "useCredit": "Pakai saldo lebih ({amount})",
+    "useCreditHint": "Saldo lebih order ini memotong tagihan.",
+    "keepCreditHint": "Saldo lebih disimpan, misalnya untuk dikembalikan ke pelanggan.",
+    "invoiceValue": "Nilai invoice",
+    "creditUsed": "Dipotong saldo lebih",
+    "toTransfer": "Yang harus ditransfer",
+    "paidByCredit": "Seluruhnya tertutup saldo lebih: invoice langsung Terbayar, pelanggan tidak perlu transfer."
+  },
+  "orderCredit": {
+    "title": "Saldo lebih & pengembalian dana",
+    "balance": "Saldo lebih",
+    "balanceHint": "Otomatis memotong invoice berikutnya, atau kembalikan ke pelanggan.",
+    "refundBtn": "Kembalikan Dana",
+    "refunds": "Pengembalian dana",
+    "refundedTotal": "Total {amount}",
+    "noRefunds": "Belum ada pengembalian dana.",
+    "history": "Riwayat saldo lebih ({count})",
+    "kind": {
+      "OPENING": "Saldo awal",
+      "OVERPAYMENT": "Lebih bayar",
+      "RELEASE": "Total order turun",
+      "APPLIED": "Dipakai untuk invoice",
+      "UNAPPLIED": "Kembali dari invoice",
+      "REFUND": "Dikembalikan ke pelanggan"
+    }
   }
 }

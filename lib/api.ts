@@ -80,6 +80,9 @@ export const ordersApi = {
       payment_method?: string;
       paid_at?: string;
       amount_received?: number;
+      // Required by the API when amount_received differs from the invoice
+      // amount (409 AMOUNT_MISMATCH otherwise).
+      amount_mismatch_ack?: boolean;
     },
   ) => {
     const fd = new FormData();
@@ -88,26 +91,32 @@ export const ordersApi = {
     if (data.paid_at) fd.append("paid_at", data.paid_at);
     if (data.amount_received != null)
       fd.append("amount_received", String(data.amount_received));
+    if (data.amount_mismatch_ack) fd.append("amount_mismatch_ack", "true");
     return api.post(`/orders/${id}/invoice/${invoiceId}/mark-paid`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
   getPaymentProof: (id: string, invoiceId: string) =>
     api.get(`/orders/${id}/invoice/${invoiceId}/payment-proof`),
-  // Sprint 5: mark refund settled — multipart, refund proof REQUIRED.
-  markRefunded: (
+  // A refund of saldo lebih (several per order, each at most the saldo lebih).
+  // Multipart, proof REQUIRED. client_ref: made when the dialog opens and
+  // reused on a retry; a resend answers 200 with the same refund.
+  createRefund: (
     id: string,
-    data: { proof: File; amount?: number; note?: string },
+    data: { proof: File; amount: number; note?: string; client_ref: string },
   ) => {
     const fd = new FormData();
     fd.append("proof", data.proof);
-    if (data.amount != null) fd.append("amount", String(data.amount));
+    fd.append("amount", String(data.amount));
+    fd.append("client_ref", data.client_ref);
     if (data.note) fd.append("note", data.note);
-    return api.post(`/orders/${id}/mark-refunded`, fd, {
+    return api.post(`/orders/${id}/refunds`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
-  getRefundProof: (id: string) => api.get(`/orders/${id}/refund-proof`),
+  // Fresh 5-minute signed URL for one refund's proof; fetch per click.
+  getRefundProof: (id: string, refundId: string) =>
+    api.get(`/orders/${id}/refunds/${refundId}/proof`),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
   getStatement: (id: string, invoiceIds?: string[]) =>
     invoiceIds && invoiceIds.length > 0

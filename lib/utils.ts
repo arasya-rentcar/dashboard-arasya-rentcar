@@ -135,6 +135,17 @@ export function getErrorMessage(error: unknown): string {
   return 'An error occurred';
 }
 
+/**
+ * True when a money action was refused because the order's numbers moved
+ * under it (409: CREDIT_CHANGED, AMOUNT_MISMATCH, a cap such as
+ * billable_remaining or the saldo lebih). The caller keeps its form open,
+ * shows the API message and refetches the order so the form shows fresh numbers.
+ */
+export function isMoneyConflict(error: unknown): boolean {
+  const res = (error as { response?: { status?: number } } | null)?.response;
+  return res?.status === 409;
+}
+
 // Service days of a DONE or CANCELLED order are read-only (the API answers 409).
 // Returns the `common` i18n key with the reason, or null when days can be edited.
 export function dayLockReason(

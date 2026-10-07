@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { InvoiceType, PaymentMethod, OrderAdjustment } from '@/types';
+import { useClientRef } from '@/hooks/useClientRef';
+import { GenerateInvoiceInput, PaymentMethod, OrderAdjustment } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 const METHOD_OPTIONS: { value: PaymentMethod; labelKey: string }[] = [
@@ -27,12 +28,8 @@ interface Props {
   // Rental base = order final price minus billable additionals already folded in.
   rentalBase: number;
   adjustments: OrderAdjustment[];
-  onSubmit: (data: {
-    invoice_type: InvoiceType;
-    payment_method: PaymentMethod;
-    amount: number;
-    note?: string;
-  }) => Promise<void>;
+  // Resolves true when the invoice was made (the next one gets a new client_ref).
+  onSubmit: (data: GenerateInvoiceInput) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -43,6 +40,8 @@ export default function CombinedInvoiceForm({
   isLoading,
 }: Props) {
   const t = useTranslations('combinedInvoice');
+  // Mounted only while the dialog is open: one client_ref per opening.
+  const [clientRef, renewClientRef] = useClientRef(true);
   const billable = adjustments.filter((a) => a.is_billable);
   const additionalsTotal = billable.reduce(
     (sum, a) => sum + Number(a.amount) * (a.quantity || 1),
@@ -55,12 +54,14 @@ export default function CombinedInvoiceForm({
 
   async function handleSubmit() {
     if (isLoading) return;
-    await onSubmit({
+    const ok = await onSubmit({
       invoice_type: 'COMBINED',
       payment_method: method,
       amount: grandTotal,
       note: note.trim() || undefined,
+      client_ref: clientRef,
     });
+    if (ok) renewClientRef();
   }
 
   return (
