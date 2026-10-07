@@ -62,7 +62,9 @@ export default function ArrivalEvidence({
   const fix: GeoPoint | null = lat != null && lng != null ? { lat, lng } : null;
   const point = fix ? `${fix.lat.toFixed(6)},${fix.lng.toFixed(6)}` : null;
   // Straight-line distance from the driver's fix to the customer's point.
-  const distance = fix && pickupPoint ? distanceMeters(fix, pickupPoint) : null;
+  // Whole metres, so the text, the km switch and the warning agree (999.6 m
+  // reads "1,0 km", and 300.4 m reads "300 m" without "more than 300 m").
+  const distance = fix && pickupPoint ? Math.round(distanceMeters(fix, pickupPoint)) : null;
   const far = distance != null && distance > ARRIVAL_TOLERANCE_M;
   const accuracy = withFix?.location_accuracy_m ?? null;
   const distanceText =
@@ -72,7 +74,7 @@ export default function ArrivalEvidence({
         ? t('distanceKm', {
             km: format.number(distance / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
           })
-        : t('distanceM', { m: format.number(Math.round(distance)) });
+        : t('distanceM', { m: format.number(distance) });
   const tolerance = format.number(ARRIVAL_TOLERANCE_M);
 
   function showPhoto() {
