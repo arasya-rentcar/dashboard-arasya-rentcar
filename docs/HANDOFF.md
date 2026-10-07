@@ -87,6 +87,9 @@ Uji API otomatis: `scripts/e2e/run-local.sh` di repo API (154 lolos). Data produ
 3. Menu sidebar dikelompokkan (Ringkasan, Penjualan, Operasional, Keuangan, Bantuan); Pendapatan kembali di menu; bahasa default Indonesia; halaman Agen (data bot lama) dan redirect Final Orders dihapus; Panduan ditulis ulang tanpa materi bot.
 4. Uji: `tsc` + `next build` lolos; sweep Playwright lokal dengan mock API (di luar repo, `E:Arasya RentCar.ui-check`). Belum: render PDF di viewer pada browser asli dan HP fisik. Rilis = merge PR (tidak butuh rilis API).
 5. Import Sheet tetap dipakai, formatnya belum sesuai data order sekarang → BACKLOG §7.
+6. PR #13 di-merge (`546bd36`) dan terdeploy (VPS + Vercel sukses; teks baru ada di JS live dashboard.haikuy.com). Rencana uji SIT/UAT: `docs/SIT-UAT.md` (75 kasus SIT, 10 skenario UAT).
+7. **Temuan keamanan (tinggi, belum diperbaiki):** PDF invoice dan kwitansi diunggah ke bucket `SUPABASE_STORAGE_BUCKET` dengan `getPublicUrl` (`storage.service.ts` `uploadInvoicePDF`) dan nama file = nomor invoice berurutan (`invoices/<invoice_number>.pdf`, `<invoice_number>-receipt.pdf`). Bila bucket publik (dashboard menampilkan PDF tanpa token, jadi kemungkinan besar ya), semua invoice bisa ditebak dan diunduh tanpa login (nama, HP, alamat pelanggan; UU PDP). Foto laporan driver (`driver-app.service.ts`, bucket trip, `public: true`) memakai nama acak, risikonya lebih kecil. Usulan: bucket privat + URL bertanda tangan dari API (seperti bukti bayar), dan link untuk pelanggan di pesan WhatsApp lewat token tak tertebak. Belum dicek langsung ke file produksi.
+8. Sedang dirancang: paket keuangan BACKLOG §6.1 (denda per hari, saldo lebih, uang diterima kurang/lebih, refund).
 
 ## 00. Sesi 3 Oktober: aturan lunas, kamera GPS, odometer, notifikasi, fee driver per hari
 
