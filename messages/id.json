@@ -1624,7 +1624,9 @@
     "colDocs": "Dokumen",
     "paidPrefix": "Dibayar",
     "docInvoice": "Invoice",
-    "openFullOrder": "Buka order lengkap"
+    "openFullOrder": "Buka order lengkap",
+    "received": "Diterima",
+    "credit": "Saldo lebih"
   },
   "scheduleLine": {
     "editDay": "Edit Hari",

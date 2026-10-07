@@ -93,6 +93,7 @@ import {
 } from "@/types";
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from "@/lib/statusStyles";
 import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
+import { useClientRef } from "@/hooks/useClientRef";
 
 const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
   CREATED: "statusCreated",
@@ -138,6 +139,8 @@ export default function OrderDetailPage({
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
+  // One client_ref per opening of "Tambah Biaya", reused on a retry.
+  const [adjClientRef, renewAdjClientRef] = useClientRef(additionalOpen);
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const reassignMutation = useReassignOrder();
@@ -278,7 +281,9 @@ export default function OrderDetailPage({
         amount: amt,
         quantity: 1,
         is_billable: true,
+        client_ref: adjClientRef,
       });
+      renewAdjClientRef();
       toast.success(t("okAdditionalAdded"));
       setAdditionalOpen(false);
       setAdjType("OVERTIME");

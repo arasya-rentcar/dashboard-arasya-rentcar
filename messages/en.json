@@ -1624,7 +1624,9 @@
     "colDocs": "Docs",
     "paidPrefix": "Paid",
     "docInvoice": "Invoice",
-    "openFullOrder": "Open full order"
+    "openFullOrder": "Open full order",
+    "received": "Received",
+    "credit": "Customer credit"
   },
   "scheduleLine": {
     "editDay": "Edit Day",

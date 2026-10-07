@@ -672,6 +672,12 @@ export interface OrderListItem {
   service_start_at?: string | null;
   service_end_at?: string | null;
   final_price: string;
+  // Money received, refunded and held as saldo lebih (Decimal strings). The
+  // list shows Diterima = paid_to_date − refunded_total from these, never
+  // from invoice amounts.
+  paid_to_date?: string | number | null;
+  refunded_total?: string | number | null;
+  credit_balance?: string | number | null;
   order_status: OrderStatus;
   payment_status: PaymentStatus;
   is_final?: boolean;

@@ -117,6 +117,8 @@ export function useAddAdjustment(id: string) {
       amount: number;
       quantity?: number;
       is_billable?: boolean;
+      // B8: a resend with the same client_ref returns the charge already made.
+      client_ref?: string;
     }) => {
       const res = await ordersApi.addAdjustment(id, data);
       return res.data.data;

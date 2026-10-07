@@ -162,6 +162,7 @@ export default function ReviseInvoiceForm({ invoice, money, onSubmit, isLoading 
         gross={gross}
         checked={applyCredit}
         onCheckedChange={setApplyCredit}
+        alwaysPreview
       />
 
       <div className="space-y-1.5">
