@@ -5,6 +5,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { leadsApi } from "@/lib/api";
+import { parseResponse } from "@/lib/safeParse";
+import { webLeadSchema, webLeadsResultSchema } from "@/lib/schemas";
 import type { WebLead, WebLeadsResult, WebLeadStatus } from "@/types";
 
 export interface LeadsParams {
@@ -19,7 +21,11 @@ export function useLeads(params: LeadsParams, options: { refetchInterval?: numbe
     queryKey: ["leads", params],
     queryFn: async () => {
       const res = await leadsApi.list(params as Record<string, string | number | undefined>);
-      return { data: res.data.data, meta: res.data.meta };
+      return parseResponse<WebLeadsResult>(
+        webLeadsResultSchema,
+        { data: res.data.data, meta: res.data.meta },
+        "useLeads",
+      );
     },
     placeholderData: keepPreviousData,
     refetchInterval: options.refetchInterval,
@@ -29,7 +35,8 @@ export function useLeads(params: LeadsParams, options: { refetchInterval?: numbe
 export function useLead(id: string | null) {
   return useQuery<WebLead>({
     queryKey: ["leads", "detail", id],
-    queryFn: async () => (await leadsApi.getById(id!)).data.data,
+    queryFn: async () =>
+      parseResponse<WebLead>(webLeadSchema, (await leadsApi.getById(id!)).data.data, "useLead"),
     enabled: !!id,
   });
 }

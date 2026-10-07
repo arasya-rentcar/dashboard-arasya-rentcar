@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, ExternalLink, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { mapsSearchUrl } from '@/lib/maps';
 import type { TripReportEntry } from '@/types';
 
 /**
@@ -32,7 +33,7 @@ export default function ReportLocation({ report }: { report: TripReportEntry }) 
             {report.location_accuracy_m != null && ` · ${t('accuracy', { m: report.location_accuracy_m })}`}
           </span>
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${point}`}
+            href={mapsSearchUrl({ lat: report.latitude!, lng: report.longitude! })}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-blue-600 hover:underline"

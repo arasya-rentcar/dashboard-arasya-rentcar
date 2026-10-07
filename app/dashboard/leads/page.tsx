@@ -31,7 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import MapPointLink from '@/components/dashboard/MapPointLink';
 import { ordersApi } from '@/lib/api';
+import { toGeoPoint, type GeoPoint } from '@/lib/maps';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import {
   useIgnoreLead,
@@ -266,6 +268,7 @@ function LeadCard({
                 )}
               </span>
             </Info>
+            <LeadPoints lead={lead} />
           </div>
           {(extras.length > 0 || lead.notes) && (
             <p className="text-sm text-gray-500 break-words">
@@ -327,6 +330,52 @@ function LeadCard({
         </div>
       </div>
     </article>
+  );
+}
+
+// Map points the customer picked on the website (none on older leads: then
+// nothing is shown and the card looks as before).
+function LeadPoints({ lead }: { lead: WebLead }) {
+  const t = useTranslations('maps');
+  const pickup = toGeoPoint(lead.pickup_lat, lead.pickup_lng, lead.pickup_place_id);
+  const destination = toGeoPoint(lead.destination_lat, lead.destination_lng, lead.destination_place_id);
+  if (!pickup && !destination) return null;
+  return (
+    <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1 pl-5.5 text-xs text-gray-600">
+      {pickup && (
+        <PointInfo
+          label={t('pickupPoint')}
+          name={usefulPlaceName(lead.pickup_place_name, lead.pickup_location)}
+          point={pickup}
+        />
+      )}
+      {destination && (
+        <PointInfo
+          label={t('destinationPoint')}
+          name={usefulPlaceName(lead.destination_place_name, lead.destination)}
+          point={destination}
+        />
+      )}
+    </div>
+  );
+}
+
+// The website fills the address field with "place name, address", so the
+// name is only worth repeating when the text does not already contain it.
+function usefulPlaceName(name?: string | null, text?: string | null) {
+  const n = name?.trim();
+  if (!n) return null;
+  return text?.toLowerCase().includes(n.toLowerCase()) ? null : n;
+}
+
+function PointInfo({ label, name, point }: { label: string; name: string | null; point: GeoPoint }) {
+  return (
+    <span className="inline-flex min-w-0 flex-wrap items-center gap-x-1.5">
+      <span className="font-medium text-gray-700">{label}</span>
+      {name && <span className="break-words">· {name}</span>}
+      <span aria-hidden="true">·</span>
+      <MapPointLink point={point} label={label} />
+    </span>
   );
 }
 

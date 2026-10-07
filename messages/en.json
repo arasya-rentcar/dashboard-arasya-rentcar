@@ -1980,7 +1980,15 @@
     "route": "Route to pickup address",
     "routeHint": "The map shows the distance from the driver's point to the pickup address",
     "openPhoto": "Open photo",
-    "photoAlt": "Arrival photo at pickup with time and GPS stamp"
+    "photoAlt": "Arrival photo at pickup with time and GPS stamp",
+    "distance": "Straight-line distance to the pickup point: {d}",
+    "distanceM": "{m} m",
+    "distanceKm": "{km} km",
+    "farFromPickup": "More than {m} m from the pickup point",
+    "farHint": "The driver's GPS point is more than {m} m from the pickup point the customer picked. Check with the driver.",
+    "lowAccuracy": "Low GPS accuracy, the distance may be off",
+    "routeToPoint": "Route to pickup point",
+    "routeToPointHint": "The map shows the route from the driver's point to the pickup point the customer picked"
   },
   "tripCosts": {
     "typeLabel": "Cost type",
@@ -2368,5 +2376,15 @@
     "next": "Next",
     "loadFailed": "This file cannot be shown here.",
     "pdfNotSupported": "This browser cannot show a PDF inside the page. Open it in a new tab to view it."
+  },
+  "maps": {
+    "openMap": "View on map",
+    "pickupPoint": "Pickup point",
+    "destinationPoint": "Destination point",
+    "openInMaps": "{label}: open in Google Maps (new tab)",
+    "pointFromWebsite": "Point from the website",
+    "pointHint": "Map point the customer picked on the website. Editing the address removes the point so the address and the point never disagree.",
+    "removePickupPoint": "Remove pickup point",
+    "removeDropoffPoint": "Remove destination point"
   }
 }

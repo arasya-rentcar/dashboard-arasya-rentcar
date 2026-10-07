@@ -44,6 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import ArrivalEvidence from "@/components/orders/ArrivalEvidence";
+import MapPointLink from "@/components/dashboard/MapPointLink";
 import TripCostsPanel from "@/components/orders/TripCostsPanel";
 import InvoiceSection from "@/components/orders/InvoiceSection";
 import AssignDriverForm from "@/components/forms/AssignDriverForm";
@@ -89,6 +90,7 @@ import {
 } from "@/types";
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from "@/lib/statusStyles";
 import { openWaWindow, extractWaUrl } from "@/lib/waWindow";
+import { itemDropoffPoint, itemPickupPoint } from "@/lib/maps";
 
 const ORDER_STATUS_KEYS: Record<OrderStatus, string> = {
   CREATED: "statusCreated",
@@ -1171,6 +1173,7 @@ export default function OrderDetailPage({
                                         {item.pickup_location} →{" "}
                                         {item.dropoff_location}
                                       </p>
+                                      <ItemPointLinks item={item} />
                                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-500">
                                         <span className="inline-flex items-center gap-1">
                                           <Clock className="h-3 w-3 text-gray-400" />
@@ -1294,6 +1297,7 @@ export default function OrderDetailPage({
                                     <ArrivalEvidence
                                       reports={item.reports}
                                       pickupLocation={item.pickup_location}
+                                      pickupPoint={itemPickupPoint(item)}
                                       arrivedAt={item.actual_pickup_at}
                                     />
                                   )}
@@ -1892,6 +1896,30 @@ function formatDuration(
   if (hours) parts.push(units.hours(hours));
   if (minutes || !parts.length) parts.push(units.minutes(minutes));
   return parts.join(" ");
+}
+
+// Map links for a day's pickup / dropoff points (website map picker). Renders
+// nothing for days without points.
+function ItemPointLinks({ item }: { item: OrderServiceItem }) {
+  const t = useTranslations("maps");
+  const pickup = itemPickupPoint(item);
+  const dropoff = itemDropoffPoint(item);
+  if (!pickup && !dropoff) return null;
+  return (
+    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
+      <MapPin className="h-3 w-3 text-gray-400" aria-hidden="true" />
+      {pickup && (
+        <MapPointLink point={pickup} label={t("pickupPoint")}>
+          {t("pickupPoint")}
+        </MapPointLink>
+      )}
+      {dropoff && (
+        <MapPointLink point={dropoff} label={t("destinationPoint")}>
+          {t("destinationPoint")}
+        </MapPointLink>
+      )}
+    </p>
+  );
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
