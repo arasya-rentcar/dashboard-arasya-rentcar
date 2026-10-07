@@ -81,3 +81,7 @@ Kolom lama `drivers.etoll_card` (teks bebas) tidak dipakai lagi; bisa dihapus se
 
 - Tombol "Preview Sheet" dan "Import Sheet" tetap dipakai (pemilik, 7 Okt), tetapi format sheet yang dibaca importer belum sesuai dengan data order yang sekarang (pelanggan/PIC, baris layanan per hari, unit, rekanan, invoice).
 - Perlu: contoh sheet yang dipakai tim (atau template baru yang disepakati), lalu sesuaikan pemetaan kolom di API (`/sheet-imports/preview`, `/sheet-imports/import`) dan tampilan pratinjau di dashboard.
+
+## 8. Website: alamat jemput & tujuan lewat peta
+
+- Saran tempat saat mengetik (seperti Google Maps), pilih titik di peta, "Pakai lokasi saya"; koordinat ikut ke lead, order, dan aplikasi driver. Rencana lengkap: `docs/PLAN-WEB-MAPS-PICKER.md` (menunggu keputusan penyedia & akun Google Cloud).
