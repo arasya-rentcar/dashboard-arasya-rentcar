@@ -706,11 +706,6 @@ export interface OrdersSearchParams {
   page_size?: number;
 }
 
-export interface FinalOrderListItem extends OrderListItem {
-  final_finance: OrderFinalFinance | null;
-  sheet_import_rows?: SheetImportRow[];
-}
-
 export interface SheetImportPreview {
   sheet_id: string;
   gid: string;

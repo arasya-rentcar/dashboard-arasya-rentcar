@@ -1,16 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { finalOrdersApi, sheetImportsApi } from "@/lib/api";
-import { FinalOrderListItem, SheetImportPreview, SheetImportResult } from "@/types";
-
-export function useFinalOrders() {
-  return useQuery<FinalOrderListItem[]>({
-    queryKey: ["final-orders"],
-    queryFn: async () => {
-      const res = await finalOrdersApi.list();
-      return res.data.data;
-    },
-  });
-}
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { sheetImportsApi } from "@/lib/api";
+import { SheetImportPreview, SheetImportResult } from "@/types";
 
 export function usePreviewSheetImport() {
   return useMutation<SheetImportPreview, Error, object | undefined>({
@@ -29,7 +19,9 @@ export function useRunSheetImport() {
       return res.data.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["final-orders"] });
+      // Imported rows land in the orders list.
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["orders-search"] });
     },
   });
 }

@@ -1,9 +1,9 @@
 // Central i18n configuration. Client-only locale (stored in localStorage),
-// no URL-based routing. Default language: English.
+// no URL-based routing. Default language: Indonesian (the admin team is Indonesian).
 export const LOCALES = ['en', 'id'] as const;
 export type Locale = (typeof LOCALES)[number];
 
-export const DEFAULT_LOCALE: Locale = 'en';
+export const DEFAULT_LOCALE: Locale = 'id';
 export const LOCALE_STORAGE_KEY = 'arasya.locale';
 
 export const LOCALE_LABELS: Record<Locale, string> = {
