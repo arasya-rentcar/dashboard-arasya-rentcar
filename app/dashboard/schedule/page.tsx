@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import TablePagination from '@/components/dashboard/TablePagination';
+import QueryError from '@/components/dashboard/QueryError';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { dayLockReason, formatCurrency, formatDate } from '@/lib/utils';
@@ -35,6 +36,14 @@ import HistoryTab from '@/components/schedule/HistoryTab';
 import ConfirmationCell from '@/components/schedule/ConfirmationCell';
 
 const PAGE_SIZE = 30;
+
+const STATUS_KEYS: Record<ScheduleStatus, string> = {
+  SCHEDULED: 'statusScheduled',
+  ASSIGNED: 'statusAssigned',
+  IN_PROGRESS: 'statusInProgress',
+  DONE: 'statusDone',
+  CANCELLED: 'statusCancelled',
+};
 
 const STATUS_STYLES: Record<ScheduleStatus, string> = {
   SCHEDULED: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -72,10 +81,13 @@ export default function SchedulePage() {
   return (
     <DashboardShell title={tx('title')}>
       <div className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label={tx('title')}>
           <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'schedule'}
             onClick={() => setTab('schedule')}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`flex min-h-9 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
               tab === 'schedule'
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -84,8 +96,11 @@ export default function SchedulePage() {
             <CalendarCheck className="h-4 w-4" /> {tx('tabSchedule')}
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'history'}
             onClick={() => setTab('history')}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`flex min-h-9 items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
               tab === 'history'
                 ? 'bg-gray-900 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -140,7 +155,7 @@ function AgendaTab() {
   };
 
   const debouncedSearch = useDebouncedValue(search.trim());
-  const { data, isLoading, isFetching } = useSchedule({
+  const { data, isLoading, isError, isFetching, refetch } = useSchedule({
     search: debouncedSearch || undefined,
     type: type === 'ALL' ? undefined : type,
     status: status === 'ALL' ? undefined : status,
@@ -168,18 +183,20 @@ function AgendaTab() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row gap-3 lg:items-end">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="flex flex-col gap-3">
+        <div className="relative w-full lg:max-w-xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
+            type="search"
             placeholder={tx('searchPlaceholder')}
+            aria-label={tx('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <div className="flex items-end gap-1.5">
+        <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap sm:gap-3">
+          <div className="col-span-2 flex flex-wrap items-end gap-1.5 sm:col-span-1" role="group" aria-label={tx('date')}>
             <DateChip
               label={tx('today')}
               active={!overdue && dateFrom === todayStr() && dateTo === todayStr()}
@@ -223,28 +240,30 @@ function AgendaTab() {
               }}
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">{tx('from')}</label>
+          <div className="min-w-0">
+            <label htmlFor="schedule-date-from" className="text-xs text-gray-400 block mb-1">{tx('from')}</label>
             <Input
+              id="schedule-date-from"
               type="date"
               value={dateFrom}
               onChange={(e) => setRange(e.target.value, dateTo)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">{tx('to')}</label>
+          <div className="min-w-0">
+            <label htmlFor="schedule-date-to" className="text-xs text-gray-400 block mb-1">{tx('to')}</label>
             <Input
+              id="schedule-date-to"
               type="date"
               value={dateTo}
               onChange={(e) => setRange(dateFrom, e.target.value)}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">{tx('type')}</label>
+          <div className="min-w-0">
+            <label htmlFor="schedule-type" className="text-xs text-gray-400 block mb-1">{tx('type')}</label>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger id="schedule-type" className="w-full sm:w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -254,10 +273,10 @@ function AgendaTab() {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">{tx('status')}</label>
+          <div className="min-w-0">
+            <label htmlFor="schedule-status" className="text-xs text-gray-400 block mb-1">{tx('status')}</label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger id="schedule-status" className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -295,10 +314,11 @@ function AgendaTab() {
 
       {/* Totals */}
       {totals && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <SummaryCard label={tt('revenue')} value={formatCurrency(totals.revenue)} />
           <SummaryCard label={tx('opsCost')} value={formatCurrency(totals.ops_cost)} />
           <SummaryCard
+            className="col-span-2 sm:col-span-1"
             label={tt('margin')}
             value={formatCurrency(totals.margin)}
             accent
@@ -328,9 +348,15 @@ function AgendaTab() {
                   {tx('loading')}
                 </TableCell>
               </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={9} className="p-4 whitespace-normal">
+                  <QueryError onRetry={() => refetch()} compact />
+                </TableCell>
+              </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-10 text-gray-400">
+                <TableCell colSpan={9} className="text-center py-10 text-gray-400 whitespace-normal">
                   {tx('noLines')}
                 </TableCell>
               </TableRow>
@@ -340,8 +366,8 @@ function AgendaTab() {
                   <TableCell className="whitespace-nowrap">
                     {line.service_date ? formatDate(line.service_date) : '—'}
                   </TableCell>
-                  <TableCell>
-                    <div className="font-medium text-gray-900">
+                  <TableCell className="min-w-40 whitespace-normal">
+                    <div className="font-medium text-gray-900 break-words">
                       {line.order?.customer_name || '—'}
                     </div>
                     {line.order?.order_code && (
@@ -354,14 +380,13 @@ function AgendaTab() {
                       </Link>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-gray-600">
-                    {line.pickup_location}
-                    {line.dropoff_location &&
-                    line.dropoff_location !== line.pickup_location
-                      ? ` → ${line.dropoff_location}`
-                      : ''}
+                  <TableCell
+                    className="max-w-[180px] truncate text-gray-600"
+                    title={routeLabel(line)}
+                  >
+                    {routeLabel(line)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="min-w-40 max-w-56 whitespace-normal break-words">
                     {line.is_external ? (
                       <div>
                         <Badge
@@ -430,7 +455,7 @@ function AgendaTab() {
                       variant="outline"
                       className={`text-[10px] ${STATUS_STYLES[line.line_status]}`}
                     >
-                      {line.line_status}
+                      {STATUS_KEYS[line.line_status] ? tx(STATUS_KEYS[line.line_status]) : line.line_status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -441,7 +466,7 @@ function AgendaTab() {
             )}
           </TableBody>
         </Table>
-        <div className="p-3">
+        <div className="border-t border-gray-100 p-3">
           {pagination && (
             <TablePagination
               page={pagination.page}
@@ -455,7 +480,7 @@ function AgendaTab() {
           )}
         </div>
         {isFetching && !isLoading && (
-          <p className="px-3 pb-2 text-xs text-gray-400">{tx('updating')}</p>
+          <p className="px-3 pb-2 text-xs text-gray-400" aria-live="polite">{tx('updating')}</p>
         )}
       </div>
 
@@ -491,6 +516,12 @@ function EditLineButton({ line, onEdit }: { line: ScheduleLine; onEdit: () => vo
   );
 }
 
+function routeLabel(line: ScheduleLine) {
+  return line.dropoff_location && line.dropoff_location !== line.pickup_location
+    ? `${line.pickup_location} → ${line.dropoff_location}`
+    : line.pickup_location;
+}
+
 function DateChip({
   label,
   active,
@@ -504,7 +535,8 @@ function DateChip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
+      aria-pressed={active}
+      className={`min-h-8 rounded-full px-3 py-1.5 text-xs font-medium border transition-colors ${
         active
           ? 'bg-gray-900 text-white border-gray-900'
           : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-100'
@@ -519,16 +551,18 @@ function SummaryCard({
   label,
   value,
   accent,
+  className = '',
 }: {
   label: string;
   value: string;
   accent?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className={`rounded-xl border border-gray-200 bg-white p-3 sm:p-4 ${className}`}>
       <p className="text-xs text-gray-400">{label}</p>
       <p
-        className={`text-lg font-semibold ${accent ? 'text-emerald-600' : 'text-gray-900'}`}
+        className={`text-base font-semibold tabular-nums break-words sm:text-lg ${accent ? 'text-emerald-600' : 'text-gray-900'}`}
       >
         {value}
       </p>

@@ -6,6 +6,7 @@ import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,36 +21,57 @@ import CustomerLookupHint from "./CustomerLookupHint";
 import VendorUnitPicker, { type VendorUnitValue } from "./VendorUnitPicker";
 import type { Customer, WebLeadDurationKey } from "@/types";
 
-const customerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().optional(),
-  is_primary: z.boolean().optional(),
-});
-const serviceItemSchema = z.object({
-  service_date: z.string().optional(),
-  start_at: z.string().optional(),
-  end_at: z.string().optional(),
-  description: z.string().optional(),
-  service_kind: z.string().optional(),
-  service_package: z.string().optional(),
-  pickup_location: z.string().min(1, "Pickup spot is required"),
-  dropoff_location: z.string().min(1, "Dropoff spot is required"),
-  quantity: z.string().min(1),
-  unit_price: z.string().min(1),
-  notes: z.string().optional(),
-});
-const additionalSchema = z.object({
-  type: z.string().min(1),
-  description: z.string().optional(),
-  amount: z.string().optional(),
-});
-const baseSchema = z.object({
-  customers: z.array(customerSchema).min(1),
-  service_items: z.array(serviceItemSchema).min(1),
-  additionals: z.array(additionalSchema).optional(),
-  notes: z.string().optional(),
-});
-type FormValues = z.infer<typeof baseSchema>;
+// Validation messages are passed in so they follow the dashboard language.
+function buildSchema(msg: {
+  name: string;
+  pickup: string;
+  dropoff: string;
+  price: string;
+}) {
+  const customerSchema = z.object({
+    name: z.string().min(1, msg.name),
+    phone: z.string().optional(),
+    is_primary: z.boolean().optional(),
+  });
+  const serviceItemSchema = z.object({
+    service_date: z.string().optional(),
+    start_at: z.string().optional(),
+    end_at: z.string().optional(),
+    description: z.string().optional(),
+    service_kind: z.string().optional(),
+    service_package: z.string().optional(),
+    pickup_location: z.string().min(1, msg.pickup),
+    dropoff_location: z.string().min(1, msg.dropoff),
+    quantity: z.string().min(1, msg.price),
+    unit_price: z.string().min(1, msg.price),
+    notes: z.string().optional(),
+  });
+  const additionalSchema = z.object({
+    type: z.string().min(1),
+    description: z.string().optional(),
+    amount: z.string().optional(),
+  });
+  return z.object({
+    customers: z.array(customerSchema).min(1),
+    service_items: z.array(serviceItemSchema).min(1),
+    additionals: z.array(additionalSchema).optional(),
+    notes: z.string().optional(),
+  });
+}
+type FormValues = z.infer<ReturnType<typeof buildSchema>>;
+
+/** First validation message in a react-hook-form error tree. */
+function firstErrorMessage(node: unknown): string | undefined {
+  if (!node || typeof node !== "object") return undefined;
+  const msg = (node as { message?: unknown }).message;
+  if (typeof msg === "string" && msg) return msg;
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "ref") continue;
+    const found = firstErrorMessage(value);
+    if (found) return found;
+  }
+  return undefined;
+}
 /** Prefill from a website lead (Lead Website → "Buat order"). */
 export interface CreateOrderPrefill {
   webLeadId: string;
@@ -117,9 +139,14 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
   // From a lead the customer only left a name: the WhatsApp number must be
   // typed in from the chat before the order can be saved.
   const needPhone = Boolean(prefill);
-  const schema = useMemo(
-    () =>
-      needPhone
+  const schema = useMemo(() => {
+    const baseSchema = buildSchema({
+      name: t("errNameRequired"),
+      pickup: t("errPickupRequired"),
+      dropoff: t("errDropoffRequired"),
+      price: t("errPriceRequired"),
+    });
+    return needPhone
         ? baseSchema.superRefine((values, ctx) => {
             const idx = Math.max(
               0,
@@ -132,9 +159,8 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                 message: t("phoneRequiredFromLead"),
               });
           })
-        : baseSchema,
-    [needPhone, t],
-  );
+        : baseSchema;
+  }, [needPhone, t]);
   const {
     register,
     handleSubmit,
@@ -279,10 +305,14 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
 
   return (
     <form
-      onSubmit={handleSubmit(handleFormSubmit)}
-      className="flex h-[calc(96vh-92px)] min-h-0 flex-col overflow-hidden"
+      // Service-line fields don't show inline errors, so a failed check is
+      // also announced as a toast instead of the button silently doing nothing.
+      onSubmit={handleSubmit(handleFormSubmit, (errs) =>
+        toast.error(firstErrorMessage(errs) ?? t("errCheckForm")),
+      )}
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 sm:pr-2">
         {prefill && (
           <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
             {t("fromLead", { code: prefill.leadCode })}
@@ -319,7 +349,7 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                     append({ name: "", phone: "", is_primary: false })
                   }
                 >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> {t("addPic")}
+                  <Plus className="h-3.5 w-3.5" /> {t("addPic")}
                 </Button>
               </div>
               <div className="mb-4">
@@ -366,8 +396,10 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon-sm"
                           onClick={() => remove(index)}
+                          aria-label={t("removePic")}
+                          title={t("removePic")}
                           className="text-red-500 hover:text-red-600"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -376,8 +408,9 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                     </div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                       <div className="space-y-1.5">
-                        <Label>{t("name")}</Label>
+                        <Label htmlFor={`customer-name-${index}`}>{t("name")}</Label>
                         <Input
+                          id={`customer-name-${index}`}
                           placeholder={t("namePlaceholder")}
                           {...register(`customers.${index}.name`)}
                         />
@@ -388,8 +421,12 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                         )}
                       </div>
                       <div className="space-y-1.5">
-                        <Label>{t("phone")}</Label>
+                        <Label htmlFor={`customer-phone-${index}`}>{t("phone")}</Label>
                         <Input
+                          id={`customer-phone-${index}`}
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="off"
                           placeholder={t("phonePlaceholder")}
                           {...register(`customers.${index}.phone`)}
                         />
@@ -424,7 +461,7 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
             />
 
             <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-950">
                     {t("additionalTitle")}
@@ -445,7 +482,7 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                     })
                   }
                 >
-                  <Plus className="mr-1 h-3.5 w-3.5" /> {t("addAdditional")}
+                  <Plus className="h-3.5 w-3.5" /> {t("addAdditional")}
                 </Button>
               </div>
               {additionalFields.length === 0 ? (
@@ -457,12 +494,13 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                   {additionalFields.map((field, index) => (
                     <div
                       key={field.id}
-                      className="grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 md:grid-cols-[160px_minmax(0,1fr)_160px_40px] md:items-end"
+                      className="relative grid grid-cols-1 gap-3 rounded-xl border border-gray-100 bg-gray-50/70 p-3 md:grid-cols-[160px_minmax(0,1fr)_160px_auto] md:items-end"
                     >
-                      <div className="space-y-1.5">
-                        <Label>{t("type")}</Label>
+                      <div className="space-y-1.5 pr-10 md:pr-0">
+                        <Label htmlFor={`additional-type-${index}`}>{t("type")}</Label>
                         <select
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          id={`additional-type-${index}`}
+                          className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
                           {...register(`additionals.${index}.type`)}
                         >
                           {ADDITIONAL_TYPE_KEYS.map((at) => (
@@ -473,16 +511,19 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <Label>{t("labelNote")}</Label>
+                        <Label htmlFor={`additional-desc-${index}`}>{t("labelNote")}</Label>
                         <Input
+                          id={`additional-desc-${index}`}
                           placeholder={t("labelNotePlaceholder")}
                           {...register(`additionals.${index}.description`)}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>{t("amountRp")}</Label>
+                        <Label htmlFor={`additional-amount-${index}`}>{t("amountRp")}</Label>
                         <Input
+                          id={`additional-amount-${index}`}
                           type="number"
+                          inputMode="numeric"
                           min="0"
                           placeholder="0"
                           {...register(`additionals.${index}.amount`)}
@@ -491,9 +532,11 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => removeAdditional(index)}
-                        className="text-red-500 hover:text-red-600"
+                        aria-label={t("removeAdditional")}
+                        title={t("removeAdditional")}
+                        className="absolute right-3 top-3 text-red-500 hover:text-red-600 md:static"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -505,8 +548,9 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
 
             <section className="rounded-2xl border border-gray-200 bg-white p-4 lg:p-5 shadow-sm">
               <div className="space-y-1.5">
-                <Label>{t("notesLabel")}</Label>
+                <Label htmlFor="order-notes">{t("notesLabel")}</Label>
                 <Textarea
+                  id="order-notes"
                   rows={2}
                   placeholder={t("notesPlaceholder")}
                   {...register("notes")}
@@ -565,15 +609,16 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <div>
+      <div className="mt-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm sm:mt-4 sm:px-4 sm:py-3">
+        <div className="min-w-0">
           <p className="text-xs text-gray-500">{t("calculatedFinal")}</p>
-          <p className="text-lg font-bold text-gray-950">
+          <p className="truncate text-base font-bold text-gray-950 tabular-nums sm:text-lg">
             {formatCurrency(total || 0)}
           </p>
         </div>
-        <Button type="submit" size="lg" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{t("createOrder")}
+        <Button type="submit" size="lg" disabled={isLoading} className="shrink-0 px-4 sm:px-6">
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {t("createOrder")}
         </Button>
       </div>
     </form>

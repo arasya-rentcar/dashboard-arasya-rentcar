@@ -67,7 +67,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
   return (
     <Card className="shadow-none border border-gray-200">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Wallet className="h-4 w-4 text-gray-400" /> {t('title')}
           </CardTitle>
@@ -82,7 +82,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             >
               {isExternal ? t('external') : t('internal')}
             </Badge>
-            <Button size="sm" variant="outline" onClick={openEditor}>
+            <Button type="button" size="sm" variant="outline" onClick={openEditor}>
               <PencilLine className="h-4 w-4 mr-1" /> {t('editDriverNote')}
             </Button>
           </div>
@@ -125,7 +125,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             </>
           )}
         </div>
-        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs text-gray-400">
               {t('margin')}
@@ -148,7 +148,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             </p>
           </div>
           {fin?.finance_note && (
-            <p className="text-xs text-gray-500 max-w-[50%] text-right">
+            <p className="text-xs text-gray-500 max-w-full break-words sm:max-w-[50%] sm:text-right">
               {fin.finance_note}
             </p>
           )}
@@ -158,7 +158,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="pr-6">
               {t('editDriverNote')} ({isExternal ? t('external') : t('internal')})
             </DialogTitle>
           </DialogHeader>
@@ -167,7 +167,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               {t('lineManaged')}
             </p>
             {/* Cost figures are read-only here (owned by Schedule lines). */}
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 gap-3 text-sm min-[400px]:grid-cols-2">
               <ReadOnlyStat label={t('totalUser')} value={fin?.total_user_amount} hint={t('costsReadOnlyHint')} />
               {isExternal ? (
                 <ReadOnlyStat label={t('rtr')} value={fin?.rtr_amount} hint={t('costsReadOnlyHint')} />
@@ -192,8 +192,9 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               <ReadOnlyStat label={t('driverFee')} value={fin?.total_driver_amount} hint={t('driverFeePerDayHint')} />
             )}
             <div className="space-y-1.5">
-              <Label>{t('noteOptional')}</Label>
+              <Label htmlFor="finance_note">{t('noteOptional')}</Label>
               <Textarea
+                id="finance_note"
                 rows={2}
                 value={form.finance_note}
                 onChange={(e) =>
@@ -202,7 +203,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
               />
             </div>
 
-            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex items-center justify-between">
+            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <span className="text-xs text-gray-500">
                 {t('marginPreview')}{' '}
                 <span className="normal-case">({t('marginReadOnlyHint')})</span>
@@ -223,6 +224,7 @@ export default function OrderFinanceCard({ order }: { order: Order }) {
             </div>
 
             <Button
+              type="button"
               className="w-full"
               onClick={save}
               disabled={mutation.isPending}

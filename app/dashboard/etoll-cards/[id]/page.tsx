@@ -84,21 +84,21 @@ export default function EtollCardDetailPage() {
           <ArrowLeft className="h-4 w-4" /> {t('back')}
         </Link>
 
-        <Card className="border border-gray-200 shadow-none">
-          <CardContent className="space-y-5 p-5">
+        <Card className="border border-gray-200 py-0 shadow-none">
+          <CardContent className="space-y-5 p-4 sm:p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 gap-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
                   <CreditCard className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 space-y-1">
-                  <p className="flex flex-wrap items-center gap-2 text-lg font-semibold text-gray-900">
+                  <p className="flex flex-wrap items-center gap-2 break-words text-lg font-semibold text-gray-900">
                     {card.name}
                     <Badge variant="outline" className={cn('text-[11px]', ISSUER_TINT[card.issuer])}>
                       {card.issuer_label || t('issuerOther')}
                     </Badge>
                     {!active && (
-                      <Badge variant="outline" className="border-gray-300 text-[11px] text-gray-500">
+                      <Badge variant="outline" className="max-w-full whitespace-normal border-gray-300 text-left text-[11px] text-gray-500">
                         {t('inactive')}
                         {card.inactive_reason ? ` · ${card.inactive_reason}` : ''}
                       </Badge>
@@ -106,8 +106,9 @@ export default function EtollCardDetailPage() {
                   </p>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-1.5 font-mono text-sm tabular-nums text-gray-600 hover:text-gray-900"
+                    className="-mx-1 inline-flex items-center gap-1.5 rounded px-1 py-0.5 font-mono text-sm tabular-nums text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     title={t('copy')}
+                    aria-label={`${t('copy')}: ${formatCardNumber(card.card_number)}`}
                     onClick={() => {
                       navigator.clipboard?.writeText(card.card_number).then(
                         () => toast.success(t('copied')),
@@ -115,9 +116,9 @@ export default function EtollCardDetailPage() {
                       );
                     }}
                   >
-                    {formatCardNumber(card.card_number)} <Copy className="h-3.5 w-3.5" />
+                    {formatCardNumber(card.card_number)} <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
-                  {card.note && <p className="text-xs italic text-gray-500">“{card.note}”</p>}
+                  {card.note && <p className="break-words text-xs italic text-gray-500">“{card.note}”</p>}
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -258,13 +259,13 @@ function HistoryCard({ data }: { data: EtollCardHistory }) {
     adminId ? t('byAdmin', { email: data.users[adminId] ?? t('admin') }) : driverName ? t('byDriverApp') : '';
 
   return (
-    <Card className="border border-gray-200 shadow-none">
-      <CardHeader className="pb-3">
+    <Card className="gap-3 overflow-hidden border border-gray-200 pt-4 pb-0 shadow-none sm:pt-6">
+      <CardHeader className="px-4 pb-0 sm:px-6">
         <CardTitle className="text-base">{t('history')}</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {rows.length === 0 ? (
-          <p className="px-6 pb-6 text-sm text-gray-400">{t('historyEmpty')}</p>
+          <p className="px-4 pb-6 text-sm text-gray-400 sm:px-6">{t('historyEmpty')}</p>
         ) : (
           <ul className="divide-y divide-gray-100 border-t border-gray-100">
             {rows.map((r) =>
@@ -316,7 +317,7 @@ function TxRow({ tx, who, onVoid }: { tx: EtollTransaction; who: string; onVoid:
             </Badge>
           )}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="break-words text-xs text-gray-500">
           {[tx.driver?.name, tx.note, who].filter(Boolean).join(' · ')}
         </p>
         {voided && (
@@ -328,7 +329,7 @@ function TxRow({ tx, who, onVoid }: { tx: EtollTransaction; who: string; onVoid:
         <p className="text-[11px] text-gray-400">{formatDateTime(tx.occurred_at)}</p>
       </div>
       {!voided && (
-        <Button size="sm" variant="ghost" className="h-7 shrink-0 text-xs text-gray-500" onClick={onVoid}>
+        <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 text-xs text-gray-500" onClick={onVoid}>
           <Ban className="h-3.5 w-3.5" /> {t('void')}
         </Button>
       )}
@@ -418,9 +419,9 @@ function GiveDialog({ card, onClose }: { card: EtollCard; onClose: () => void })
       <p className="text-sm text-gray-600">{card.label}</p>
       {card.holder && <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">{t('giveOtherHint', { name: card.holder.driver.name })}</p>}
       <div className="space-y-1.5">
-        <Label>{t('driver')}</Label>
+        <Label htmlFor="give_driver">{t('driver')}</Label>
         <Select value={driverId} onValueChange={setDriverId}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger id="give_driver" className="w-full">
             <SelectValue placeholder={t('selectDriver')} />
           </SelectTrigger>
           <SelectContent>

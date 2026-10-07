@@ -68,6 +68,7 @@ export default function AdditionalInvoiceForm({
   }
 
   async function handleSubmit() {
+    if (isLoading) return;
     const amt = Number(amount || 0);
     setError('');
     if (!amt || amt <= 0) {
@@ -90,15 +91,15 @@ export default function AdditionalInvoiceForm({
     <div className="space-y-4">
       {/* Summary */}
       <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('orderTotal')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('alreadyInvoiced')}</span>
           <span className="font-medium text-gray-700">{formatCurrency(alreadyPaid)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('availableToBill')}</span>
           <span className="font-semibold text-gray-900">{formatCurrency(remaining)}</span>
         </div>
@@ -112,9 +113,9 @@ export default function AdditionalInvoiceForm({
 
       {/* Pick a logged charge */}
       <div className="space-y-1.5">
-        <Label>{t('charge')}</Label>
+        <Label htmlFor="additional_charge">{t('charge')}</Label>
         <Select value={selectedId} onValueChange={handleSelectCharge}>
-          <SelectTrigger>
+          <SelectTrigger id="additional_charge" className="w-full min-w-0">
             <SelectValue placeholder={t('selectCharge')} />
           </SelectTrigger>
           <SelectContent>
@@ -135,9 +136,9 @@ export default function AdditionalInvoiceForm({
 
       {/* Payment method */}
       <div className="space-y-1.5">
-        <Label>{t('paymentMethod')}</Label>
+        <Label htmlFor="additional_method">{t('paymentMethod')}</Label>
         <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-          <SelectTrigger>
+          <SelectTrigger id="additional_method" className="w-full">
             <SelectValue placeholder={t('selectMethod')} />
           </SelectTrigger>
           <SelectContent>
@@ -156,6 +157,7 @@ export default function AdditionalInvoiceForm({
         <Input
           id="additional_amount"
           type="number"
+          inputMode="numeric"
           min="0"
           max={remaining}
           value={amount}

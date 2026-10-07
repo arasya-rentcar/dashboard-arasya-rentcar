@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { isAxiosError } from "axios";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Phone, Mail, MapPin, CreditCard } from "lucide-react";
 import DashboardShell from "@/components/layout/DashboardShell";
@@ -9,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PartnerDetailView from "@/components/partners/PartnerDetailView";
 import DriverAppAccessCard from "@/components/drivers/DriverAppAccessCard";
+import QueryError from "@/components/dashboard/QueryError";
 import { useDriverDetail } from "@/hooks/useDrivers";
 import { useEtollCards } from "@/hooks/useEtollCards";
 
@@ -17,14 +19,27 @@ export default function DriverDetailPage() {
   const id = params.id as string;
   const t = useTranslations("driverDetail");
   const tt = useTranslations("terms");
-  const { data, isLoading } = useDriverDetail(id);
+  const { data, isLoading, isError, error, refetch } = useDriverDetail(id);
+  // 404 = the driver really does not exist; anything else is a failed fetch.
+  const notFound = isAxiosError(error) && error.response?.status === 404;
   const { data: etollCards } = useEtollCards("ACTIVE");
   const held = (etollCards ?? []).filter((c) => c.holder?.driver.id === id);
 
   if (isLoading) {
     return (
       <DashboardShell title={t('title')}>
-        <p className="text-sm text-gray-400">{t('loading')}</p>
+        <div className="space-y-5" aria-busy="true" aria-label={t('loading')}>
+          <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+          <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
+          <div className="h-64 animate-pulse rounded-xl bg-gray-100" />
+        </div>
+      </DashboardShell>
+    );
+  }
+  if (isError && !data && !notFound) {
+    return (
+      <DashboardShell title={t('title')}>
+        <QueryError onRetry={() => refetch()} />
       </DashboardShell>
     );
   }
@@ -49,11 +64,11 @@ export default function DriverDetailPage() {
         </Link>
 
         {/* Header */}
-        <Card className="border border-gray-200 shadow-none">
+        <Card className="border border-gray-200 py-0 shadow-none">
           <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-2 p-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-lg font-semibold text-gray-900">{d.name}</p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="break-words text-lg font-semibold text-gray-900">{d.name}</p>
                 <Badge
                   variant="outline"
                   className={
@@ -72,8 +87,8 @@ export default function DriverDetailPage() {
                   </span>
                 )}
                 {d.user?.email && (
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5" /> {d.user.email}
+                  <span className="flex min-w-0 items-center gap-1.5 break-all">
+                    <Mail className="h-3.5 w-3.5 shrink-0" /> {d.user.email}
                   </span>
                 )}
                 {d.location && (

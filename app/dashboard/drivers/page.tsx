@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CreditCard, Edit, Plus, Search, Eye } from "lucide-react";
 import Link from "next/link";
@@ -43,6 +43,7 @@ import {
 import { useUsers } from "@/hooks/useUsers";
 import { useEtollCards } from "@/hooks/useEtollCards";
 import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
+import QueryError from "@/components/dashboard/QueryError";
 import { Driver, DriverStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -53,23 +54,28 @@ const DRIVER_STATUS_STYLES: Record<DriverStatus, string> = {
   OFF: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
-const createDriverSchema = z.object({
-  user_id: z.string().uuid("Select a user"),
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone is required"),
-  type: z.enum(["INTERNAL", "EXTERNAL"]),
-  location: z.string().optional(),
-});
-type CreateDriverForm = z.infer<typeof createDriverSchema>;
+type ErrKey = "errUser" | "errName" | "errPhone";
 
-const editDriverSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(1, "Phone is required"),
-  type: z.enum(["INTERNAL", "EXTERNAL"]),
-  location: z.string().optional(),
-  status: z.enum(["AVAILABLE", "ON_DUTY", "OFF"]),
-});
-type EditDriverForm = z.infer<typeof editDriverSchema>;
+// Validation messages come from next-intl, so the schemas are built per locale.
+function buildSchemas(t: (key: ErrKey) => string) {
+  const create = z.object({
+    user_id: z.string().uuid(t("errUser")),
+    name: z.string().min(1, t("errName")),
+    phone: z.string().min(1, t("errPhone")),
+    type: z.enum(["INTERNAL", "EXTERNAL"]),
+    location: z.string().optional(),
+  });
+  const edit = z.object({
+    name: z.string().min(1, t("errName")),
+    phone: z.string().min(1, t("errPhone")),
+    type: z.enum(["INTERNAL", "EXTERNAL"]),
+    location: z.string().optional(),
+    status: z.enum(["AVAILABLE", "ON_DUTY", "OFF"]),
+  });
+  return { create, edit };
+}
+type CreateDriverForm = z.infer<ReturnType<typeof buildSchemas>["create"]>;
+type EditDriverForm = z.infer<ReturnType<typeof buildSchemas>["edit"]>;
 
 export default function DriversPage() {
   const t = useTranslations("driversPage");
@@ -80,8 +86,9 @@ export default function DriversPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [createOpen, setCreateOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const schemas = useMemo(() => buildSchemas(t), [t]);
 
-  const { data: drivers, isLoading } = useDrivers();
+  const { data: drivers, isLoading, isError, refetch } = useDrivers();
   // Office e-toll cards a driver holds now ("Flazz 3, e-Money 1").
   const { data: etollCards } = useEtollCards("ACTIVE");
   const heldBy = new Map<string, string>();
@@ -124,7 +131,7 @@ export default function DriversPage() {
     reset,
     formState: { errors },
   } = useForm<CreateDriverForm>({
-    resolver: zodResolver(createDriverSchema),
+    resolver: zodResolver(schemas.create),
     defaultValues: { type: "INTERNAL" },
   });
 
@@ -134,7 +141,7 @@ export default function DriversPage() {
     control: editControl,
     reset: resetEdit,
     formState: { errors: editErrors },
-  } = useForm<EditDriverForm>({ resolver: zodResolver(editDriverSchema) });
+  } = useForm<EditDriverForm>({ resolver: zodResolver(schemas.edit) });
 
   async function onSubmit(data: CreateDriverForm) {
     try {
@@ -172,11 +179,13 @@ export default function DriversPage() {
   return (
     <DashboardShell title={t('title')}>
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
               <Input
+                type="search"
+                aria-label={t('searchPlaceholder')}
                 placeholder={t('searchPlaceholder')}
                 className="pl-9"
                 value={search}
@@ -184,7 +193,7 @@ export default function DriversPage() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-36 shrink-0" aria-label={t('colStatus')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -195,13 +204,99 @@ export default function DriversPage() {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => setCreateOpen(true)} className="w-full sm:ml-auto sm:w-auto">
+            <Plus className="h-4 w-4" />
             {t('addDriver')}
           </Button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-none overflow-hidden">
+        {isError ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : (
+        <>
+        {/* Phones and tablets: one card per driver, actions always in reach.
+            The full table starts at lg, where its columns fit beside the sidebar. */}
+        <div className="lg:hidden">
+          {isLoading ? (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 animate-pulse rounded-xl border border-gray-200 bg-gray-100" />
+              ))}
+            </div>
+          ) : filtered?.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white py-10 text-center text-sm text-gray-400">
+              {t('noDrivers')}
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+              {pageItems.map((driver) => (
+                <li key={driver.id} className="flex items-start gap-3 p-4">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <Link
+                      href={`/dashboard/drivers/${driver.id}`}
+                      className="block break-words text-sm font-semibold text-gray-900 hover:underline"
+                    >
+                      {driver.name}
+                    </Link>
+                    <p className="break-words text-sm text-gray-600 tabular-nums">
+                      {driver.phone}
+                      {driver.location && (
+                        <span className="text-gray-400"> · {driver.location}</span>
+                      )}
+                    </p>
+                    {heldBy.get(driver.id) && (
+                      <p className="flex items-center gap-1 text-xs text-violet-700" title={t('holdsEtoll')}>
+                        <CreditCard className="h-3 w-3 shrink-0" aria-hidden="true" />
+                        <span className="min-w-0 break-words">{heldBy.get(driver.id)}</span>
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <Badge
+                        variant="outline"
+                        className={
+                          driver.type === "INTERNAL"
+                            ? "text-xs bg-blue-50 text-blue-700 border-blue-200"
+                            : "text-xs bg-purple-50 text-purple-700 border-purple-200"
+                        }
+                      >
+                        {driver.type === "INTERNAL" ? tt('internal') : tt('external')}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${DRIVER_STATUS_STYLES[driver.status]}`}
+                      >
+                        {ts(driver.status)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    <Button variant="outline" size="icon-sm" asChild>
+                      <Link
+                        href={`/dashboard/drivers/${driver.id}`}
+                        aria-label={`${t('detail')}: ${driver.name}`}
+                        title={t('detail')}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon-sm"
+                      onClick={() => openEdit(driver)}
+                      aria-label={`${t('edit')}: ${driver.name}`}
+                      title={t('edit')}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="hidden bg-white rounded-xl border border-gray-200 shadow-none overflow-hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
@@ -214,13 +309,13 @@ export default function DriversPage() {
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {t('colPhone')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden xl:table-cell">
                   {t('colEmail')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {t('colType')}
                 </TableHead>
-                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden lg:table-cell">
+                <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide hidden xl:table-cell">
                   {t('colBase')}
                 </TableHead>
                 <TableHead className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -257,7 +352,7 @@ export default function DriversPage() {
                     <TableCell className="text-sm text-gray-400 tabular-nums">
                       {start + idx + 1}
                     </TableCell>
-                    <TableCell className="font-medium text-sm text-gray-900">
+                    <TableCell className="min-w-[12rem] whitespace-normal font-medium text-sm text-gray-900">
                       {driver.name}
                       {heldBy.get(driver.id) && (
                         <span
@@ -272,7 +367,7 @@ export default function DriversPage() {
                     <TableCell className="text-sm text-gray-600">
                       {driver.phone}
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 hidden md:table-cell">
+                    <TableCell className="text-sm text-gray-500 hidden xl:table-cell">
                       {driver.user?.email ?? "—"}
                     </TableCell>
                     <TableCell>
@@ -287,7 +382,7 @@ export default function DriversPage() {
                         {driver.type === "INTERNAL" ? tt('internal') : tt('external')}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-500 hidden lg:table-cell">
+                    <TableCell className="text-sm text-gray-500 hidden xl:table-cell">
                       {driver.location || "—"}
                     </TableCell>
                     <TableCell>
@@ -299,20 +394,23 @@ export default function DriversPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/drivers/${driver.id}`}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          {t('detail')}
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(driver)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        {t('edit')}
-                      </Button>
+                      <div className="inline-flex gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/dashboard/drivers/${driver.id}`}>
+                            <Eye className="h-4 w-4" />
+                            {t('detail')}
+                          </Link>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEdit(driver)}
+                        >
+                          <Edit className="h-4 w-4" />
+                          {t('edit')}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -320,6 +418,8 @@ export default function DriversPage() {
             </TableBody>
           </Table>
         </div>
+        </>
+        )}
 
         <TablePagination
           page={page}
@@ -334,19 +434,19 @@ export default function DriversPage() {
 
       {/* Create Driver Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('addNewDriver')}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>{t('userAccount')}</Label>
+              <Label htmlFor="d_user">{t('userAccount')}</Label>
               <Controller
                 control={control}
                 name="user_id"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger id="d_user" className="w-full">
                       <SelectValue placeholder={t('selectUser')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -386,13 +486,13 @@ export default function DriversPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{t('type')}</Label>
+                <Label htmlFor="d_type">{t('type')}</Label>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="d_type" className="w-full">
                         <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -436,7 +536,7 @@ export default function DriversPage() {
         open={!!editingDriver}
         onOpenChange={(open) => !open && setEditingDriver(null)}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('editDriver')}</DialogTitle>
           </DialogHeader>
@@ -462,13 +562,13 @@ export default function DriversPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{t('type')}</Label>
+                <Label htmlFor="edit_d_type">{t('type')}</Label>
                 <Controller
                   control={editControl}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="edit_d_type" className="w-full">
                         <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -487,13 +587,13 @@ export default function DriversPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>{t('status')}</Label>
+                <Label htmlFor="edit_d_status">{t('status')}</Label>
                 <Controller
                   control={editControl}
                   name="status"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="edit_d_status" className="w-full">
                         <SelectValue placeholder={t('status')} />
                       </SelectTrigger>
                       <SelectContent>

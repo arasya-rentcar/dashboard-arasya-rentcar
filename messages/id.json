@@ -97,6 +97,13 @@
     "MAINTENANCE": "Perawatan"
   },
   "nav": {
+    "groupOverview": "Ringkasan",
+    "groupSales": "Penjualan",
+    "groupOperations": "Operasional",
+    "groupFinance": "Keuangan",
+    "groupHelp": "Bantuan",
+    "menu": "Menu utama",
+    "openMenu": "Buka menu",
     "dashboard": "Dashboard",
     "orders": "Order",
     "schedule": "Trip",
@@ -107,7 +114,6 @@
     "drivers": "Driver",
     "customers": "Pelanggan",
     "external": "Eksternal / Vendor",
-    "agent": "Agen",
     "guide": "Panduan",
     "logout": "Keluar",
     "leads": "Lead Website",
@@ -152,6 +158,7 @@
     "okCreated": "Vendor dibuat"
   },
   "vendorDetail": {
+    "deleteCarConfirm": "Hapus {model} dari daftar unit vendor ini?",
     "platePlaceholder": "B 1234 XYZ",
     "title": "Vendor",
     "notFound": "Vendor tidak ditemukan.",
@@ -245,7 +252,9 @@
     "noOrders": "Tidak ada order.",
     "ext": "Ext",
     "open": "Buka",
-    "paginationLabel": "order"
+    "paginationLabel": "order",
+    "addTag": "Tambah tag",
+    "removeTag": "Hapus tag {tag}"
   },
   "driverStatus": {
     "AVAILABLE": "Tersedia",
@@ -253,6 +262,9 @@
     "OFF": "Libur"
   },
   "driversPage": {
+    "errUser": "Pilih akun pengguna",
+    "errName": "Nama wajib diisi",
+    "errPhone": "Nomor HP wajib diisi",
     "title": "Driver",
     "searchPlaceholder": "Cari driver…",
     "allStatus": "Semua Status",
@@ -311,6 +323,8 @@
     "etollHeld": "Pegang kartu e-toll"
   },
   "carsPage": {
+    "errPlate": "Nomor polisi wajib diisi",
+    "errModel": "Model wajib diisi",
     "title": "Mobil",
     "searchPlaceholder": "Cari mobil…",
     "allStatus": "Semua Status",
@@ -350,6 +364,8 @@
     "okUpdated": "Mobil berhasil diperbarui"
   },
   "login": {
+    "errEmail": "Format email tidak valid",
+    "errPassword": "Kata sandi wajib diisi",
     "brand": "Arasya RentCar",
     "signInTitle": "Masuk untuk melanjutkan",
     "signInDesc": "Masukkan kredensial admin Anda di bawah.",
@@ -358,9 +374,6 @@
     "password": "Kata Sandi",
     "signIn": "Masuk",
     "okLogin": "Berhasil masuk"
-  },
-  "finalOrders": {
-    "redirecting": "Final Orders dipindah ke Orders — mengalihkan…"
   },
   "ordersPage": {
     "title": "Order",
@@ -446,9 +459,17 @@
     "errNoMatchingExport": "Tidak ada order cocok untuk diekspor.",
     "okExportedAll": "Ekspor {count} baris (semua terfilter).",
     "errPresetName": "Masukkan nama preset.",
-    "okPresetSaved": "Preset \"{name}\" disimpan."
+    "okPresetSaved": "Preset \"{name}\" disimpan.",
+    "bucketsLabel": "Kelompok order",
+    "deletePreset": "Hapus preset \"{name}\"",
+    "expandRow": "Tampilkan riwayat invoice",
+    "collapseRow": "Sembunyikan riwayat invoice",
+    "hasSheetFinance": "Ada data keuangan dari sheet",
+    "createNewOrderDesc": "Isi data pelanggan, pelaksana, dan baris layanan, lalu simpan order."
   },
   "serviceItems": {
+    "removeRow": "Hapus baris {n}",
+    "fieldRequired": "Wajib diisi",
     "title": "Detail Layanan / Baris Invoice",
     "desc": "Gunakan satu baris per hari, rute, perhentian tambahan, overtime, atau layanan dengan harga terpisah.",
     "finalPrice": "Harga Final",
@@ -510,228 +531,278 @@
     "fromLead": "Dari lead website {code}. Data perjalanan sudah terisi; lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan.",
     "phoneRequiredFromLead": "Isi nomor WhatsApp pelanggan dari chat",
     "leadReturnHint": "Lead ini minta paket pulang-pergi / multi-hari. Layanan diisi 12 Jam; sesuaikan jumlah hari, durasi, dan harga.",
-    "leadNeedPartnerHint": "Unit ini tidak ada di armada Arasya — pilih Vendor/rekanan di bagian 'Pelaksana Order'."
+    "leadNeedPartnerHint": "Unit ini tidak ada di armada Arasya — pilih Vendor/rekanan di bagian 'Pelaksana Order'.",
+    "removePic": "Hapus PIC ini",
+    "removeAdditional": "Hapus biaya tambahan ini",
+    "errNameRequired": "Nama wajib diisi",
+    "errPickupRequired": "Lokasi jemput di baris layanan wajib diisi",
+    "errDropoffRequired": "Lokasi tujuan di baris layanan wajib diisi",
+    "errPriceRequired": "Harga di baris layanan wajib diisi",
+    "errCheckForm": "Ada data yang belum lengkap. Periksa lagi formnya."
   },
   "guide": {
     "title": "Panduan",
     "heroKicker": "Panduan singkat admin Arasya",
-    "heroTitle": "Cara pakai Website + WhatsApp Bot",
-    "heroSubtitle": "Panduan ini dibuat untuk admin operasional: ikuti alurnya, pakai contoh template, lalu cek hasilnya di dashboard.",
+    "heroTitle": "Cara kerja harian: website, dashboard, dan aplikasi driver",
+    "heroSubtitle": "Pesanan masuk dari form website atau dibuat admin, dijadwalkan per hari di dashboard, dijalankan driver lewat aplikasi, lalu ditagih dan ditutup di dashboard. WhatsApp tetap dipakai secara manual: dashboard membuka WhatsApp dengan pesan yang sudah terisi, Anda tinggal menekan kirim.",
+    "menuTitle": "Peta menu",
+    "menuGroups": [
+      {
+        "t": "{groupOverview}",
+        "d": "<b>{menuDashboard}</b>: ringkasan pendapatan, margin, kas, dan daftar <b>Perlu tindakan</b> (piutang dan utang yang lewat jatuh tempo). <b>{menuNotifications}</b>: kabar dari aplikasi driver dan permintaan top-up e-toll."
+      },
+      {
+        "t": "{groupSales}",
+        "d": "<b>{menuLeads}</b>, <b>{menuOrders}</b>, <b>{menuCustomers}</b>, dan <b>{menuPriceList}</b>: dari permintaan pelanggan sampai order jadi."
+      },
+      {
+        "t": "{groupOperations}",
+        "d": "<b>{menuTrip}</b> (jadwal per hari dan penugasan), <b>{menuDrivers}</b>, <b>{menuUnits}</b>, <b>{menuEtoll}</b>, dan <b>{menuVendors}</b>."
+      },
+      {
+        "t": "{groupFinance}",
+        "d": "<b>{menuInvoices}</b> (tagihan ke pelanggan), <b>{menuPayables}</b> (fee driver dan biaya vendor), dan <b>{menuRevenue}</b> (laporan per unit, vendor, dan driver)."
+      },
+      {
+        "t": "{groupHelp}",
+        "d": "<b>{menuGuide}</b>: halaman ini."
+      }
+    ],
     "dailyFlowTitle": "Alur kerja harian",
     "steps": [
-      "Terima order dari customer atau owner.",
-      "Input order lewat WhatsApp group Internal Arasya atau tombol Create Order di website.",
-      "Cek order di menu Orders: PIC, service detail, rute, mobil, driver, dan harga.",
-      "Assign driver/mobil per hari di menu Schedule. Order multi-hari bisa ganti driver tiap hari.",
-      "Cek ketersediaan driver (FREE/BUSY) di Schedule sebelum assign agar tidak bentrok.",
-      "Generate invoice dari Order Detail.",
-      "Kirim invoice PDF ke WhatsApp customer dari menu Invoices.",
-      "Driver kirim laporan/foto perjalanan ke bot.",
-      "Set status tiap hari di Schedule (SCHEDULED -> IN_PROGRESS -> DONE).",
-      "Order selesai setelah semua hari DONE dan data sudah lengkap."
+      "Cek <b>{menuLeads}</b> (tab <b>Baru</b>) dan <b>{menuNotifications}</b> beberapa kali sehari.",
+      "Lead yang jadi pesan: klik <b>Buat order</b>, lengkapi nomor HP, harga, dan unit, lalu simpan. Pesanan dari telepon atau chat dibuat lewat <b>{menuOrders}</b> → <b>Buat Order</b>.",
+      "Di halaman order, buat <b>Invoice Sewa</b> tipe <b>Uang Muka (DP)</b> minimal 20% dari sewa, lalu kirim ke pelanggan dengan tombol <b>Kirim</b>.",
+      "Setelah uang masuk ke rekening BCA kantor, klik <b>Tandai Terbayar</b> dan unggah bukti transfer.",
+      "Tugaskan driver dan mobil per hari: <b>Edit</b> pada barisnya di <b>{menuTrip}</b>, atau <b>Tugaskan</b> pada hari tersebut di halaman order. Cek dulu <b>Linimasa Ketersediaan</b> supaya tidak bentrok.",
+      "Kirim konfirmasi dari kolom <b>Konfirmasi</b> di <b>{menuTrip}</b> (<b>Kirim ke Customer</b>).",
+      "Tagih pelunasan dengan <b>Pelunasan (Sisa Tagihan)</b>; jatuh temponya hari pertama layanan. Perjalanan dengan pelanggan baru bisa dimulai setelah order lunas.",
+      "Selama trip berjalan, pantau progres driver dan bukti sampai lokasi di halaman order, lalu setujui atau tolak biaya perjalanan dari driver.",
+      "Setelah semua hari selesai, order masuk kelompok <b>Perlu Finalisasi</b>. Periksa fee driver dan biaya, lalu klik <b>Finalisasi Pesanan</b>.",
+      "Bayar fee driver dan biaya vendor di <b>{menuPayables}</b>."
     ],
-    "websiteMenuTitle": "Website: menu dan komponen",
-    "websiteMenuParas": [
-      "Orders adalah pusat operasional. Klik order untuk detail, edit order, dan generate invoice.",
-      "Schedule mengatur assign driver/mobil per hari dan cek ketersediaan driver. Customers menyimpan data customer otomatis, External menyimpan vendor/driver luar.",
-      "Form dipakai untuk input/edit data. Jika field wajib kosong, sistem menampilkan error.",
-      "Service Detail Rows adalah baris layanan/rute. Setiap baris menjadi line item invoice dan dihitung ke total.",
-      "Table adalah daftar data. Gunakan search, tombol action, atau klik row/chevron untuk membuka detail.",
-      "Badge warna menunjukkan status seperti AVAILABLE, ASSIGNED, ISSUED, PAID, SENT, atau FAILED."
-    ],
-    "websiteCasesTitle": "Contoh kasus website",
-    "websiteCases": [
+    "leadsTitle": "Lead Website & order",
+    "leadsItems": [
       {
-        "t": "Create Order",
-        "d": "Isi PIC, Booking, pickup/dropoff utama, lalu tambah Service Detail. Jika ada beberapa hari/rute, buat beberapa baris."
+        "t": "Lead masuk",
+        "d": "Form pemesanan di website membuat lead berkode ARS-XXXXX. Kode yang sama ikut di pesan WhatsApp pelanggan ke admin, jadi chat dan lead mudah dicocokkan."
       },
       {
-        "t": "Edit Order",
-        "d": "Gunakan saat ada perubahan harga/rute. Jika harga berubah dan invoice sudah ada, tulis alasan perubahan agar tercatat."
+        "t": "Buat order dari lead",
+        "d": "Klik <b>Buat order</b>: data perjalanan sudah terisi. Lengkapi nomor HP pelanggan, harga, dan unit, lalu simpan. Kode order sama dengan kode lead, sampai ke invoice."
       },
       {
-        "t": "Assign Driver/Car",
-        "d": "Pilih driver dan mobil dari daftar. Unit code seperti ARA/FCB/VLZ membantu mencari mobil cepat."
+        "t": "Order sudah dibuat dari chat",
+        "d": "Pakai <b>Hubungkan ke order</b> supaya tidak dobel. Lead iseng, dobel, atau hanya tanya harga: <b>Abaikan</b> dan pilih alasannya."
       },
       {
-        "t": "Generate Invoice",
-        "d": "Buat invoice setelah total order sudah benar. PDF otomatis dibuat dan bisa dipreview."
+        "t": "Ada di armada / Perlu rekanan",
+        "d": "<b>Perlu rekanan</b> hanya berarti unit yang diminta tidak ada di armada Arasya. Anda tetap boleh memakai unit dan driver sendiri, termasuk untuk luar kota."
       },
       {
-        "t": "Revise Invoice",
-        "d": "Jika order berubah setelah invoice dibuat, gunakan revisi/sync invoice. Invoice lama tetap menjadi history."
+        "t": "Buat Order manual",
+        "d": "<b>{menuOrders}</b> → <b>Buat Order</b>. Cari pelanggan lama lewat nama atau nomor HP (klik <b>Pakai data ini</b> bila dikenali), pilih <b>Pelaksana Order</b>, lalu isi satu baris layanan per hari: tanggal, jam, jemput, tujuan, dan harga."
       },
       {
-        "t": "Send Invoice WA",
-        "d": "Di menu Invoices, expand row, pilih penerima, lalu Send PDF via WhatsApp. History akan tersimpan."
-      },
-      {
-        "t": "Cars/Drivers",
-        "d": "Tambah/edit data master. Untuk internal, simpan phone asli agar tag WhatsApp bisa match ke database."
+        "t": "Mengubah order",
+        "d": "<b>Edit Order</b> untuk tanggal, jam, lokasi, harga, atau PIC. Bila harga berubah, alasannya wajib diisi. Invoice tidak ikut berubah otomatis, jadi revisi atau tambah invoice sesudahnya."
       }
     ],
-    "scheduleTitle": "Schedule: jadwal & ketersediaan driver",
-    "scheduleIntro": "Menu Schedule mengatur penugasan per hari, bukan per order. Inilah cara order yang berlangsung beberapa hari bisa memakai driver berbeda di tiap harinya.",
-    "scheduleCases": [
+    "tripsTitle": "Trip & penugasan per hari",
+    "tripsIntro": "Penugasan dilakukan per hari, bukan per order. Order beberapa hari boleh memakai driver atau mobil yang berbeda di tiap harinya.",
+    "tripsItems": [
       {
-        "t": "Agenda (daftar harian)",
-        "d": "Tab Agenda menampilkan satu baris per hari per order. Filter berdasarkan tanggal, driver, tipe (Internal/External), dan status."
+        "t": "Linimasa Ketersediaan",
+        "d": "Di <b>{menuTrip}</b> → tab <b>Jadwal</b>, linimasa mingguan menunjukkan siapa yang bebas dan siapa yang sudah punya trip (pilih <b>Driver</b> atau <b>Mobil</b>). Klik tanggalnya untuk melihat driver dan mobil yang bebas, lalu langsung menugaskan."
       },
       {
-        "t": "Assign / ganti per hari",
-        "d": "Klik Edit pada baris untuk pilih driver+mobil (internal) atau vendor+mobil (external) khusus hari itu. Order multi-hari boleh beda driver tiap hari."
+        "t": "Daftar harian dan Edit Hari",
+        "d": "Di bawah linimasa ada daftar satu baris per hari per order (<b>Hari ini</b>, <b>Besok</b>, <b>Minggu ini</b>, <b>Semua</b>). <b>Edit</b> membuka <b>Edit Hari</b>: driver dan mobil, status, fee driver, uang jalan, atau vendor untuk hari itu. Simpan dengan <b>Simpan & Hitung Ulang</b>."
       },
       {
-        "t": "Status per hari",
-        "d": "Setiap hari punya status sendiri: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Ubah saat perjalanan jalan."
+        "t": "Syarat DP",
+        "d": "Driver internal baru bisa dipilih setelah DP atau pelunasan tercatat (invoice ditandai terbayar). Sebelum itu harinya bertanda <b>Menunggu DP</b>. Mobil dan hari rekanan tetap bisa diatur."
       },
       {
-        "t": "Ketersediaan driver",
-        "d": "Tab Driver Availability menampilkan FREE/BUSY tiap driver untuk tanggal terpilih, dihitung dari jadwal (bukan status order). Pakai ini sebelum assign agar tidak bentrok."
+        "t": "Konfirmasi WhatsApp",
+        "d": "Kolom <b>Konfirmasi</b> → <b>Kirim ke Customer</b> membuka WhatsApp dengan pesan konfirmasi. Sesudahnya muncul tautan <b>Kirim juga ke driver (WhatsApp)</b> dan, bila driver diganti, <b>Beri tahu driver lama</b>. Driver internal juga menerima tugasnya di aplikasi."
+      },
+      {
+        "t": "Jadwal berubah",
+        "d": "Bila jam atau driver sebuah hari diubah, konfirmasinya menjadi <b>Berubah, perlu kirim ulang</b>. Klik <b>Kirim Perubahan</b> supaya pelanggan dan driver tahu."
+      },
+      {
+        "t": "Ganti driver untuk semua hari",
+        "d": "Di halaman order, <b>Ganti Semua</b> menimpa driver dan mobil pada setiap hari yang belum dimulai. Hari yang sedang berjalan, selesai, atau dibatalkan tidak diubah."
+      },
+      {
+        "t": "Trip lama belum ditutup",
+        "d": "Chip <b>Belum ditutup</b> menampilkan trip sebelum kemarin yang masih terbuka; trip ini sudah tidak muncul di aplikasi driver. Klik <b>Edit</b>, ubah status ke <b>Selesai</b> bila trip sudah jalan atau <b>Dibatalkan</b> bila tidak jadi, lalu simpan."
+      },
+      {
+        "t": "Riwayat",
+        "d": "Tab <b>Riwayat</b> berisi trip yang sudah selesai: linimasa perjalanan, laporan dan foto dari driver, bukti sampai lokasi, dan fee driver."
       }
     ],
-    "customersTitle": "Customers: data customer",
-    "customerCases": [
+    "invoiceTitle": "Invoice & pembayaran",
+    "invoiceItems": [
       {
-        "t": "Otomatis dari order",
-        "d": "Customer tersimpan otomatis saat order dibuat (dari WhatsApp atau website), dicocokkan berdasarkan nomor HP."
+        "t": "DP",
+        "d": "Di halaman order: <b>Invoice Sewa</b> → <b>Uang Muka (DP)</b>. Minimal 20% dari sewa; pelanggan boleh membayar lebih. Order menjadi <b>DP Terbayar</b> hanya bila uang yang benar-benar masuk minimal 20% dari sewa."
       },
       {
-        "t": "Riwayat order",
-        "d": "Buka detail customer untuk lihat total order dan daftar order sebelumnya. Berguna untuk customer langganan."
+        "t": "Pelunasan",
+        "d": "<b>Invoice Sewa</b> → <b>Pelunasan (Sisa Tagihan)</b>, jatuh tempo di hari pertama layanan. Bila pelanggan langsung membayar penuh, pilih <b>Pembayaran Penuh</b>."
       },
       {
-        "t": "Tags & catatan",
-        "d": "Tambahkan tag (mis. VIP, Corporate) dan catatan untuk info penting customer."
+        "t": "Biaya tambahan",
+        "d": "Overtime, parkir, tujuan tambahan, dan sejenisnya: klik <b>Tambah Biaya</b> di halaman order dulu (total order naik), lalu tagih dengan <b>Invoice Tambahan</b>. Bila belum ada invoice sama sekali, <b>Invoice Gabungan (Sewa + Tambahan)</b> menagih keduanya sekaligus."
+      },
+      {
+        "t": "Tandai Terbayar",
+        "d": "Setelah uang masuk, klik <b>Tandai Terbayar</b> dan unggah <b>Bukti Pembayaran</b> (wajib; untuk tunai, foto saat uang diterima). Kosongkan <b>Jumlah Diterima</b> bila sama dengan nilai invoice. Invoice yang sudah terbayar menjadi <b>Kwitansi</b>."
+      },
+      {
+        "t": "Kirim lewat WhatsApp",
+        "d": "<b>Kirim</b> dan <b>Kirim Kwitansi</b> di halaman order, atau <b>Kirim PDF via WhatsApp</b> dan <b>Kirim Kwitansi via WhatsApp</b> di menu <b>{menuInvoices}</b>, membuka WhatsApp dengan pesan yang sudah terisi; tekan kirim di WhatsApp. Invoice berstatus Draft, Direvisi, atau Dibatalkan tidak bisa dikirim."
+      },
+      {
+        "t": "Koreksi nominal",
+        "d": "Nominal salah atau harga order berubah: klik <b>Revisi</b> pada invoice aktif. Invoice lama tetap tersimpan sebagai riwayat."
+      },
+      {
+        "t": "Pembatalan dan refund",
+        "d": "<b>Batalkan Pesanan</b> menghitung biaya pembatalan sesuai kebijakan dan membuat invoice pembatalan hanya untuk sisa yang belum dibayar. Bila pelanggan sudah membayar lebih, kembalikan kelebihannya lalu catat dengan <b>Tandai Refund</b> beserta bukti transfer balik."
       }
     ],
-    "externalTitle": "External: vendor & driver luar",
-    "externalCases": [
+    "driverAppTitle": "Aplikasi driver & notifikasi",
+    "driverAppIntro": "Aplikasi driver hanya untuk driver internal Arasya. Driver rekanan tidak memakai aplikasi.",
+    "driverAppItems": [
       {
-        "t": "Vendor & mobil",
-        "d": "Menu External menyimpan vendor/driver luar beserta mobil-mobil mereka (satu vendor bisa punya banyak mobil)."
+        "t": "Akses driver",
+        "d": "Driver masuk ke aplikasi dengan nomor HP dan password yang diatur admin: <b>{menuDrivers}</b> → detail driver → <b>Atur password</b>. Nomor HP setiap driver harus berbeda."
       },
       {
-        "t": "Otomatis dari order",
-        "d": "Saat order external dibuat dari WhatsApp (driver pakai nama + HP + asal), vendor dan mobilnya dibuat otomatis lalu bisa dirapikan di menu ini."
+        "t": "Progres trip",
+        "d": "Halaman order menunjukkan langkah driver per hari: <b>Diterima driver</b>, <b>Berangkat</b>, <b>Tiba di penjemputan</b>, <b>Pelanggan naik</b>, dan <b>Selesai</b>. Selama driver belum menekan terima, tampil <b>Belum diterima driver</b>."
       },
       {
-        "t": "Pakai di Schedule",
-        "d": "Saat assign hari external di Schedule, pilih vendor dan mobilnya dari daftar yang sudah tersimpan di sini."
+        "t": "Mulai perjalanan setelah lunas",
+        "d": "Driver boleh berangkat dan menandai sampai di lokasi jemput walau order belum lunas, tetapi “Mulai perjalanan” (pelanggan naik) di aplikasi baru aktif setelah pelunasan tercatat. Hari seperti ini bertanda <b>Belum lunas</b>."
+      },
+      {
+        "t": "Bukti sampai lokasi jemput",
+        "d": "Driver memotret dengan kamera GPS saat tiba. Di halaman order dan tab <b>Riwayat</b> terlihat foto, koordinat, <b>Lihat di peta</b>, dan <b>Rute ke alamat jemput</b> untuk mengecek jarak driver ke alamat. Perhatikan tanda <b>Lokasi palsu terdeteksi</b> atau <b>Tanpa foto/GPS</b>."
+      },
+      {
+        "t": "Biaya perjalanan",
+        "d": "Struk bensin, tol, parkir, atau biaya lain dari driver masuk ke <b>Biaya perjalanan</b> pada hari itu dengan status <b>Menunggu dicek</b>. Klik <b>Setujui</b> atau <b>Tolak</b> (alasannya dikirim ke driver). Pilih <b>Dibayar kantor</b> bila dibayar dengan e-toll atau kartu kantor, dan centang <b>Ditagih ke pelanggan (Invoice Tambahan)</b> bila pelanggan yang menanggung. Order tidak bisa difinalisasi selama masih ada biaya yang menunggu dicek."
+      },
+      {
+        "t": "Notifikasi",
+        "d": "Lonceng di bagian atas dan menu <b>{menuNotifications}</b> menampilkan kabar dari aplikasi: tugas diterima, berangkat, tiba, pelanggan naik, selesai, laporan, dan biaya baru (<b>Perlu ditinjau</b>). Klik untuk membuka halaman terkait."
+      },
+      {
+        "t": "Permintaan top-up e-toll",
+        "d": "Permintaan top-up dari driver muncul di <b>{menuNotifications}</b> → <b>Permintaan driver</b>. Isi saldo kartunya lewat m-banking, lalu klik <b>Tandai sudah top-up</b>, pilih <b>Kartu yang diisi</b>, dan isi <b>Nominal top-up</b>. Driver mendapat pemberitahuan dan perlu menempelkan kartu untuk memperbarui saldo sebelum masuk tol."
+      },
+      {
+        "t": "Kartu e-toll kantor",
+        "d": "Daftarkan semua kartu di <b>{menuEtoll}</b> lewat <b>Tambah kartu</b>, dengan nomor lengkap untuk top-up. Driver mencatat ambil dan kembalikan kartu di aplikasi; admin juga bisa memakai <b>Serahkan ke driver</b>, <b>Tandai sudah kembali</b>, <b>Catat top-up</b>, <b>Catat saldo</b>, dan <b>Catat tol</b>. Saldo di dashboard hanya perkiraan; saldo asli tersimpan di chip kartu."
       }
     ],
-    "invoiceTitle": "Invoice dan kirim WhatsApp",
-    "invoiceGenerate": "Generate",
-    "invoiceGenerateDesc": "Buat invoice setelah total order benar. PDF akan tersedia untuk preview dan kirim.",
-    "invoiceSendPdf": "Send PDF",
-    "invoiceSendPdfDesc": "Di menu Invoices, expand row, pilih customer/PIC, isi catatan opsional, lalu kirim PDF via WhatsApp.",
-    "invoiceHistory": "History",
-    "invoiceHistoryDesc": "Setiap pengiriman tersimpan: penerima, nomor, status SENT/FAILED, error, dan View PDF.",
-    "serviceTypesTitle": "Harga resmi Arasya",
-    "serviceTypesIntro": "Daftar harga resmi ada di halaman Daftar Harga. Harga di sana yang tampil di website setelah diterbitkan.",
-    "priceListLink": "Buka Daftar Harga",
-    "botTriggerTitle": "WhatsApp Bot: aturan trigger",
-    "botTriggerWarnTitle": "Wajib pakai keyword di awal pesan.",
-    "botTriggerWarnBody": "Bot akan mengabaikan semua chat biasa. Untuk text, foto, PDF, dan dokumen, caption/pesan harus diawali keyword. Huruf besar kecil bebas: #START, #Start, dan #start dianggap sama.",
-    "botWakeKeywords": [
+    "customersTitle": "Pelanggan",
+    "customersItems": [
       {
-        "k": "#order",
-        "d": "Admin membuat order baru dari grup Internal Arasya."
+        "t": "Tercatat otomatis",
+        "d": "Pelanggan tercatat otomatis saat order dibuat. Pelanggan lama dikenali dari nomor HP di form order."
       },
       {
-        "k": "#start",
-        "d": "Driver mulai jalan / sampai pickup / mulai pekerjaan. Bisa teks, foto, atau dokumen dengan caption."
+        "t": "Identitas & dokumen",
+        "d": "NIK, alamat, perusahaan, dan dokumen KTP/SIM/NPWP disimpan di detail pelanggan (<b>Identitas & dokumen</b>). Daftar pelanggan hanya menampilkan NIK yang disamarkan; NIK lengkap hanya ada di halaman detail. Setelah identitas dicek, klik <b>Tandai terverifikasi</b>."
       },
       {
-        "k": "#drop",
-        "d": "Driver laporan drop-off/customer turun. Tidak menutup order. Untuk multi-drop/multi-day, tetap pakai #drop lalu tulis nomor drop di isi pesan: #drop 1, #drop 2, dst."
-      },
-      {
-        "k": "#finish",
-        "d": "Driver menyelesaikan pekerjaan dan menutup order/trip."
+        "t": "Riwayat dan catatan",
+        "d": "Detail pelanggan menampilkan riwayat order, tag (mis. VIP, Corporate), dan catatan loyalitas."
       }
     ],
-    "multiDropNote": "Multi-drop / multi-day: jangan buat keyword baru seperti #drop1 atau #drop2. Tetap pakai #drop, lalu tulis nomor drop setelah keyword atau di isi pesan. Contoh: #drop 1, #drop 2, #drop ke-3. Semua drop hanya menyimpan laporan; order baru ditutup dengan #finish.",
-    "captionNote": "Foto/dokumen tanpa caption keyword tidak diproses. Contoh benar: kirim foto dengan caption #start, #drop, #drop 1, atau #finish.",
-    "botOrderRulesTitle": "WhatsApp Bot: aturan order",
-    "internalDriverTitle": "Driver internal",
-    "internalDriverDesc": "Pakai nama pendek atau tag. Bot match ke database untuk mengambil nama lengkap, phone, type, dan base.",
-    "externalDriverTitle": "Driver external",
-    "externalDriverDesc": "Wajib tulis nama, nomor WA, dan asal/base. Jangan pakai tag untuk external.",
-    "tbaTitle": "TBA/TBC",
-    "tbaDesc": "Boleh untuk lokasi/jam yang belum pasti. Hari pertama sebaiknya lengkap.",
-    "botChatExamplesTitle": "Contoh chat order WhatsApp untuk berbagai kasus",
-    "driverReportTitle": "Contoh laporan driver ke bot",
-    "keywordsTitle": "Keyword yang dipahami bot",
-    "colKeyword": "Keyword",
-    "colMeaning": "Artinya",
-    "keywords": [
+    "partnersTitle": "Rekanan & vendor",
+    "partnersItems": [
       {
-        "k": "PIC / Nama / HP",
-        "d": "Data customer atau penanggung jawab yang bisa dihubungi."
+        "t": "Data rekanan",
+        "d": "<b>{menuVendors}</b> menyimpan vendor beserta mobilnya, PIC, area layanan, dan rekening pembayaran. Vendor dan mobil baru juga bisa dibuat langsung dari <b>Edit Hari</b>."
       },
       {
-        "k": "Booking",
-        "d": "Waktu order dibuat. Di website otomatis memakai waktu order dibuat; di WhatsApp boleh ditulis jika order lama/perlu tanggal khusus."
+        "t": "Hari rekanan",
+        "d": "Di <b>Edit Hari</b> pilih <b>Eksternal</b>, lalu vendor, mobil vendor, dan <b>RTR (biaya vendor, hari ini)</b>. Isi <b>Driver & unit rekanan</b> (nama, nomor HP, plat) supaya konfirmasi WhatsApp lengkap; sampai itu kolom Konfirmasi menampilkan <b>Lengkapi driver & plat rekanan</b>."
       },
       {
-        "k": "DETAIL / Rincian / Itinerary",
-        "d": "Awal daftar layanan/rute. Setiap nomor jadi satu baris invoice sekaligus satu hari di Schedule. Driver bisa diisi berbeda di tiap nomor."
-      },
-      {
-        "k": "Pickup / Jemput",
-        "d": "Lokasi penjemputan."
-      },
-      {
-        "k": "Dropoff / Tujuan / Antar",
-        "d": "Lokasi tujuan/dropoff."
-      },
-      {
-        "k": "Mobil / Unit",
-        "d": "Kode unit atau tipe mobil, contoh ARA, FCB, VLZ1, Innova."
-      },
-      {
-        "k": "Driver",
-        "d": "Internal cukup nama pendek/tag. External wajib nama + HP + asal."
-      },
-      {
-        "k": "HP Driver / WA Driver",
-        "d": "Nomor WhatsApp driver external."
-      },
-      {
-        "k": "Asal Driver",
-        "d": "Base driver external, contoh Bandung, Bogor, Jakarta."
-      },
-      {
-        "k": "Harga",
-        "d": "Harga per baris layanan. Total order dihitung dari semua baris."
-      },
-      {
-        "k": "Catatan",
-        "d": "Info tambahan untuk admin/driver."
-      },
-      {
-        "k": "TBA / TBC / TBD / menyusul",
-        "d": "Boleh untuk lokasi/jam yang belum pasti, terutama hari berikutnya."
+        "t": "Tanpa aplikasi",
+        "d": "Hari rekanan dijalankan dari dashboard dan ditutup lewat <b>Edit</b> → status <b>Selesai</b>. Hari rekanan tidak terkena syarat DP."
       }
     ],
-    "componentExampleTitle": "Contoh tampilan komponen",
-    "exampleInvoiceTable": "Contoh table invoice",
-    "exampleServiceRow": "Contoh service row",
-    "colInvoice": "Invoice",
-    "colCustomer": "Customer",
-    "colStatus": "Status",
-    "colAction": "Action",
+    "financeTitle": "Keuangan & Daftar Harga",
+    "financeItems": [
+      {
+        "t": "{menuInvoices}",
+        "d": "Semua invoice dan kwitansi dari semua order: cari, lihat PDF, dan kirim lewat WhatsApp."
+      },
+      {
+        "t": "{menuPayables}",
+        "d": "<b>Tagihan Driver</b> (fee + ganti biaya yang disetujui − uang jalan) dan <b>Tagihan Vendor</b>. Klik <b>Bayar</b>, atau pilih beberapa lalu <b>Bayar Terpilih</b>; driver mendapat pemberitahuan fee sudah dibayar. Fee dan uang jalan diubah di <b>Edit Hari</b>; bila sudah terbayar, klik <b>Tandai belum terbayar</b> dulu."
+      },
+      {
+        "t": "{menuRevenue}",
+        "d": "Pendapatan = harga hari + biaya tambahan (dihitung pada tanggal dicatat) + biaya pembatalan (pada tanggal pembatalan). Biaya perjalanan yang ditagihkan ulang ke pelanggan bukan pendapatan. Hari rekanan dihitung dengan harga ke pelanggan; RTR menjadi biaya."
+      },
+      {
+        "t": "{menuPriceList}",
+        "d": "Harga resmi per kota. Perubahan baru tampil di website setelah <b>Terbitkan ke website</b>; sebelum itu website memakai harga lama. Harga bertanda usulan perlu dikonfirmasi pemilik sebelum diterbitkan."
+      }
+    ],
+    "priceListLink": "Buka {menuPriceList}",
+    "rulesTitle": "Aturan penting",
+    "rules": [
+      {
+        "t": "Rekening resmi",
+        "d": "Pembayaran hanya ke BCA 0954840782 a.n. PT Ayomi Raya Karsa. Jangan pernah memberikan rekening pribadi kepada pelanggan."
+      },
+      {
+        "t": "Biaya pembatalan",
+        "d": "Sebelum hari perjalanan: 20% dari total order. Hari H sampai pukul 10.00 WIB dan perjalanan belum dimulai: 50%. Setelah itu: 100%. Batalkan order dengan <b>Batalkan Pesanan</b>; order yang semua harinya sudah selesai ditutup dengan <b>Finalisasi Pesanan</b>, bukan dibatalkan."
+      },
+      {
+        "t": "Driver setelah DP",
+        "d": "Driver internal hanya bisa ditugaskan setelah DP atau pelunasan ditandai terbayar. Perjalanan dengan pelanggan baru bisa dimulai setelah order lunas."
+      },
+      {
+        "t": "Data pribadi",
+        "d": "NIK dan dokumen KTP bersifat rahasia (UU PDP) dan hanya untuk verifikasi pemesanan. Dokumen dibuka lewat <b>Lihat</b> dengan tautan sementara; hapus bila pelanggan meminta."
+      },
+      {
+        "t": "Mengubah atau membatalkan hari",
+        "d": "Hari yang sudah punya driver tidak bisa dihapus lewat <b>Edit Order</b>; batalkan lewat <b>Edit Hari</b>. Hari terakhir yang masih aktif tidak bisa dibatalkan lewat <b>Edit Hari</b>; pakai <b>Batalkan Pesanan</b>. <b>Edit Hari</b> juga menolak perubahan yang membuat total order di bawah invoice yang sudah terbit; revisi invoicenya dulu."
+      },
+      {
+        "t": "Order selesai atau dibatalkan",
+        "d": "Hari pada order Selesai atau Dibatalkan terkunci. Penagihan (invoice, pembayaran, kwitansi, refund) tetap bisa dilakukan."
+      }
+    ],
     "mistakesTitle": "Kesalahan yang sering terjadi",
     "mistakes": [
-      "External driver tidak boleh hanya tag. Tulis nama + nomor WA + asal/base.",
-      "Jangan lupa Harga di setiap baris detail, karena invoice dihitung dari baris layanan.",
-      "Invoice REVISED, CANCELLED, atau DRAFT tidak bisa dikirim ke WhatsApp customer.",
-      "Jika invoice belum punya PDF, generate/sync invoice dulu sebelum kirim.",
-      "Jika tag driver internal gagal match, pastikan nomor WhatsApp driver di database benar."
+      "Menandai invoice terbayar sebelum uang benar-benar masuk ke rekening BCA kantor.",
+      "Mencoba memilih driver sebelum DP tercatat. Buat invoice DP, tunggu transfer, lalu <b>Tandai Terbayar</b> dengan bukti.",
+      "Lupa menekan kirim di WhatsApp. Tombol di dashboard hanya membuka WhatsApp dengan pesan yang sudah terisi.",
+      "Lupa mengirim ulang konfirmasi setelah jam atau driver diubah (status <b>Berubah, perlu kirim ulang</b>).",
+      "Mencatat overtime atau parkir tanpa <b>Tambah Biaya</b>, sehingga <b>Invoice Tambahan</b> tidak punya sisa untuk ditagih.",
+      "Membiarkan biaya perjalanan berstatus <b>Menunggu dicek</b>, sehingga order tidak bisa difinalisasi.",
+      "Membiarkan trip lama terbuka. Cek chip <b>Belum ditutup</b> di <b>{menuTrip}</b> secara berkala."
     ]
   },
   "orderDetail": {
+    "durDays": "{n} hr",
+    "durHours": "{n} jam",
+    "durMinutes": "{n} mnt",
     "title": "Detail Order",
     "notFound": "Order tidak ditemukan.",
     "refundDue": "Perlu refund",
@@ -827,6 +898,9 @@
     "typeParking": "Parkir",
     "typeToll": "Tol",
     "typeAdditional": "Tambahan",
+    "typeExtraDestination": "Tujuan tambahan",
+    "typeFuel": "BBM",
+    "typeDiscount": "Diskon",
     "okNoPhone": "Tidak ada nomor telepon pelanggan pada order ini",
     "okInvoiceSent": "Invoice {number} dikirim via WhatsApp",
     "okReceiptSent": "Kwitansi {number} dikirim via WhatsApp",
@@ -887,6 +961,16 @@
     "notPaidForTrip": "Order belum lunas (sisa sewa {left}). Driver tetap bisa berangkat dan menandai sampai di lokasi jemput, tetapi \"Mulai perjalanan\" di aplikasi baru aktif setelah pelunasan tercatat (invoice ditandai terbayar)."
   },
   "invoicesPage": {
+    "expandRow": "Buka detail invoice",
+    "collapseRow": "Tutup detail invoice",
+    "viewInvoicePdfAria": "Lihat PDF invoice {number}",
+    "openOrderAria": "Buka order invoice {number}",
+    "manualNamePlaceholder": "mis. Finance / PIC",
+    "deliveryStatus": {
+      "PENDING": "Menunggu",
+      "SENT": "Terkirim",
+      "FAILED": "Gagal"
+    },
     "title": "Invoice",
     "payUnpaid": "Belum Bayar",
     "payDp": "DP",
@@ -991,7 +1075,13 @@
     "loading": "Memuat…",
     "noResources": "Tidak ada sumber daya untuk ditampilkan.",
     "unassigned": "Belum ditugaskan",
-    "today": "Hari ini"
+    "today": "Hari ini",
+    "prevWeek": "Minggu sebelumnya",
+    "nextWeek": "Minggu berikutnya",
+    "openDay": "Lihat & tugaskan hari ini",
+    "capacityTitle": "{free} bebas · {trips} trip",
+    "freeShort": "{n} bebas",
+    "tripsShort": "{n} trip"
   },
   "dayDrawer": {
     "title": "Hari",
@@ -1012,7 +1102,8 @@
     "cancel": "Batal",
     "save": "Simpan",
     "awaitingDp": "Menunggu DP",
-    "notPaid": "Belum lunas"
+    "notPaid": "Belum lunas",
+    "description": "Driver dan mobil yang bebas serta trip pada tanggal ini."
   },
   "history": {
     "title": "Riwayat Perjalanan",
@@ -1080,32 +1171,9 @@
       "ONBOARD": "Pelanggan naik"
     },
     "reimbursed": "Ganti biaya",
-    "travelAdvance": "Uang jalan"
-  },
-  "agentPage": {
-    "title": "Bot Agent",
-    "subtitle": "Arasya WhatsApp Bot",
-    "heading": "Memori, Skill & Keputusan Agent",
-    "intro": "Pantau hasil routing #order/#start/#drop/#finish, decision log, alias yang dipelajari, dan parser lessons. Bot tetap keyword-gated dan action harus tool-backed.",
-    "decisions": "Keputusan",
-    "lessons": "Pelajaran",
-    "aliases": "Alias",
-    "wakeKeywords": "Kata Kunci Pemicu",
-    "recentDecisionLog": "Log keputusan terbaru",
-    "colTime": "Waktu",
-    "colSkill": "Skill",
-    "colAction": "Aksi",
-    "colStatus": "Status",
-    "colSummary": "Ringkasan",
-    "orderLabel": "Order: {code}",
-    "driverAliases": "Alias driver",
-    "areaAliases": "Alias area",
-    "carAliases": "Alias mobil",
-    "agentLessons": "Pelajaran agent",
-    "parserFailures": "Kegagalan / pelajaran parser",
-    "orderParser": "Parser order",
-    "reportParser": "Parser laporan",
-    "noData": "Belum ada data."
+    "travelAdvance": "Uang jalan",
+    "feePaid": "Sudah dibayar",
+    "feeUnpaid": "Belum dibayar"
   },
   "partnerDetail": {
     "totalTrip": "Total Trip",
@@ -1239,7 +1307,10 @@
     "advanceLabel": "Uang jalan (dipotong)",
     "baseFromDayHint": "Fee/harga dan uang jalan diubah di Edit Hari (Jadwal); ganti biaya dari biaya perjalanan yang disetujui di halaman order.",
     "reimburseShort": "ganti biaya",
-    "advanceShort": "uang jalan"
+    "advanceShort": "uang jalan",
+    "selectAll": "Pilih semua tagihan yang belum terbayar",
+    "selectRow": "Pilih tagihan {name}",
+    "extraAmount": "Jumlah"
   },
   "invoiceSection": {
     "typeDP": "DP",
@@ -1259,7 +1330,26 @@
     "invoiceAdditional": "Invoice Tambahan",
     "invoiceCombined": "Invoice Gabungan (Sewa + Tambahan)",
     "statementCombinedPick": "Statement Gabungan (Pilih Invoice)",
-    "syncHint": "Total order lebih tinggi dari invoice. Klik <b>Sinkronkan Invoice Saat Ini</b> untuk membuat invoice penuh yang direvisi.",
+    "syncHint": "Total order lebih tinggi dari total invoice. Tagih sisanya lewat Invoice Sewa (Pelunasan) atau Invoice Tambahan, atau klik <b>Revisi</b> pada invoice aktif untuk menyesuaikan jumlahnya.",
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Diterbitkan",
+      "REVISED": "Direvisi",
+      "PAID": "Terbayar",
+      "CANCELLED": "Dibatalkan"
+    },
+    "method": {
+      "CASH": "Tunai",
+      "BANK_TRANSFER": "Transfer Bank",
+      "QRIS": "QRIS",
+      "OTHER": "Lainnya"
+    },
+    "viewInvoice": "Lihat Invoice",
+    "viewInvoiceAria": "Lihat invoice {number}",
+    "viewReceiptAria": "Lihat kwitansi {number}",
+    "invoiceTitle": "Invoice {number}",
+    "receiptTitle": "Kwitansi {number}",
+    "proofTitle": "Bukti bayar {number}",
     "fullyInvoicedHint": "Sudah ter-invoice penuh. Tambahkan biaya dengan mengubah harga final, lalu sinkronkan invoice.",
     "invoicesLabel": "Invoice",
     "totalCount": "{count} total",
@@ -1295,6 +1385,12 @@
     "openDownload": "Buka / Unduh"
   },
   "generateInvoice": {
+    "errAmountRequired": "Jumlah wajib diisi",
+    "errAmountPositive": "Jumlah harus lebih dari 0",
+    "methodCash": "Tunai",
+    "methodBankTransfer": "Transfer Bank",
+    "methodQris": "QRIS",
+    "methodOther": "Lainnya",
     "typeDP": "Uang Muka (DP)",
     "typeSettlement": "Pelunasan (Sisa Tagihan)",
     "typeFull": "Pembayaran Penuh",
@@ -1374,6 +1470,10 @@
     "onTrip": "Sedang jalan"
   },
   "reviseInvoice": {
+    "errAmountRequired": "Jumlah wajib diisi",
+    "errAmountPositive": "Jumlah harus lebih dari 0",
+    "defaultNote": "Revisi dari {number}",
+    "defaultNoteWith": "Revisi dari {number}: {note}",
     "currentInvoice": "Invoice saat ini",
     "currentAmount": "Jumlah saat ini",
     "reviseHint": "Ini akan menandai invoice saat ini sebagai REVISI dan membuat invoice baru. Gunakan jumlah order terbaru secara penuh saat menyesuaikan perubahan harga.",
@@ -1428,6 +1528,14 @@
     "methodOther": "Lainnya"
   },
   "editOrderForm": {
+    "customerTitle": "Pelanggan / PIC",
+    "customerHint": "PIC utama dipakai sebagai kontak utama pelanggan.",
+    "addPic": "Tambah PIC",
+    "primaryPic": "PIC utama",
+    "setPrimary": "Jadikan utama",
+    "removePic": "Hapus PIC",
+    "nameRequired": "Nama wajib diisi",
+    "reasonRequired": "Alasan wajib diisi karena harga berubah.",
     "name": "Nama",
     "phone": "Telepon",
     "orderDateNote": "Tanggal Order / Waktu Booking dipertahankan dari pembuatan order asli. Hari 1 adalah baris Detail Layanan pertama di bawah. Untuk sewa 1 hari, perbarui baris pertama saja.",
@@ -1442,6 +1550,22 @@
     "assignedDaysNote": "Hari yang sudah punya driver, mobil, atau perjalanan tetap tersimpan bersama datanya; ubah tanggal, jam, lokasi, atau harganya di sini. Untuk membatalkan satu hari, pakai Edit Hari di menu Trip."
   },
   "invoiceHistoryTable": {
+    "docReceipt": "Kwitansi",
+    "type": {
+      "DP": "DP",
+      "SETTLEMENT": "Pelunasan",
+      "FULL": "Penuh",
+      "ADDITIONAL": "Tambahan",
+      "COMBINED": "Gabungan",
+      "CANCELLATION_FEE": "Biaya Pembatalan"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Diterbitkan",
+      "REVISED": "Direvisi",
+      "PAID": "Terbayar",
+      "CANCELLED": "Dibatalkan"
+    },
     "orderTotal": "Total Order",
     "invoiced": "Ditagih",
     "paid": "Dibayar",
@@ -1482,7 +1606,7 @@
     "status": "Status",
     "statusScheduled": "Terjadwal",
     "statusAssigned": "Ditugaskan",
-    "statusInProgress": "Berlangsung",
+    "statusInProgress": "Berjalan",
     "statusDone": "Selesai",
     "statusCancelled": "Dibatalkan",
     "marginPreview": "Pratinjau margin",
@@ -1556,6 +1680,12 @@
     "driverFeePerDayHint": "Jumlah fee semua hari · diatur per hari di Edit Hari"
   },
   "markPaid": {
+    "methods": {
+      "CASH": "Tunai",
+      "BANK_TRANSFER": "Transfer Bank",
+      "QRIS": "QRIS",
+      "OTHER": "Lainnya"
+    },
     "title": "Tandai Terbayar — {invoice}",
     "intro": "Bukti pembayaran wajib diupload. Untuk pembayaran tunai, upload foto saat uang diterima.",
     "proofLabel": "Bukti Pembayaran",
@@ -1571,6 +1701,7 @@
     "markPaidBtn": "Tandai Terbayar"
   },
   "cars": {
+    "viewPhoto": "Lihat foto",
     "baseNotSet": "Base belum diisi",
     "revenueOfUnit": "Pendapatan unit ini",
     "changePhoto": "Ganti foto",
@@ -1756,7 +1887,8 @@
     "inFleet": "Ada di armada",
     "needPartner": "Perlu rekanan",
     "inFleetTitle": "Unit di armada: {cars}",
-    "needPartnerTitle": "Unit ini tidak ada di armada Arasya. Cari rekanan/vendor."
+    "needPartnerTitle": "Unit ini tidak ada di armada Arasya. Cari rekanan/vendor.",
+    "linkSearch": "Cari order"
   },
   "customerIdentity": {
     "title": "Identitas & dokumen",
@@ -1804,7 +1936,8 @@
     "okDeleted": "Dokumen dihapus",
     "deleteTitle": "Hapus dokumen?",
     "deleteConfirm": "Dokumen {kind} akan dihapus permanen dan tidak bisa dikembalikan.",
-    "privacyNote": "Dokumen bersifat rahasia; hanya untuk verifikasi pemesanan. Hapus bila pelanggan meminta."
+    "privacyNote": "Dokumen bersifat rahasia; hanya untuk verifikasi pemesanan. Hapus bila pelanggan meminta.",
+    "docFile": "File dokumen"
   },
   "customerLookup": {
     "returning": "Pelanggan lama: {name}",
@@ -1817,6 +1950,7 @@
     "use": "Pakai data ini"
   },
   "vendorFields": {
+    "holderLine": "a.n. {name}",
     "pic": "PIC / kontak",
     "picPlaceholder": "Nama penanggung jawab",
     "area": "Area layanan",
@@ -1849,6 +1983,8 @@
     "photoAlt": "Foto sampai lokasi jemput dengan cap waktu dan GPS"
   },
   "tripCosts": {
+    "typeLabel": "Jenis biaya",
+    "paidByLabel": "Dibayar oleh",
     "title": "Biaya perjalanan",
     "pendingCount": "{n} menunggu dicek",
     "add": "Tambah biaya",
@@ -2217,5 +2353,20 @@
     "amountEmptyHint": "Kosongkan kalau biayanya tidak tetap; website akan menampilkan \"Tanya admin\".",
     "slugPlaceholder": "toyota-avanza",
     "priceClassPlaceholder": "Avanza sekelas"
+  },
+  "filePreview": {
+    "document": "Dokumen",
+    "photo": "Foto",
+    "counter": "{current} dari {total}",
+    "pdfHint": "Pratinjau dokumen",
+    "imageHint": "Ketuk atau klik gambar untuk memperbesar",
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "rotate": "Putar",
+    "openNewTab": "Buka di tab baru",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "loadFailed": "File tidak bisa ditampilkan di sini.",
+    "pdfNotSupported": "Browser ini tidak bisa menampilkan PDF di dalam halaman. Buka di tab baru untuk melihatnya."
   }
 }

@@ -105,7 +105,7 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
         <Button
           size="sm"
           variant={state === 'CHANGED' ? 'default' : 'outline'}
-          className="h-7 text-[11px] px-2"
+          className="h-8 gap-1 px-2 text-[11px] sm:h-7"
           disabled={isBusy}
           onClick={handle}
         >
@@ -114,7 +114,7 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
           ) : (
             <Send className="h-3 w-3" />
           )}
-          <span className="ml-1">{btnLabel}</span>
+          {btnLabel}
         </Button>
       </div>
       {extra.driver && (
@@ -137,7 +137,11 @@ export default function ConfirmationCell({ line }: { line: ScheduleLine }) {
           {t('notifyOldDriver')}
         </a>
       )}
-      {error && <div className="text-[10px] text-red-600 max-w-[160px]">{error}</div>}
+      {error && (
+        <div role="alert" className="max-w-[180px] whitespace-normal break-words text-[10px] text-red-600">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Search, Users, Handshake, CheckCheck } from "lucide-react";
+import { toast } from "sonner";
 import DashboardShell from "@/components/layout/DashboardShell";
 import QueryError from "@/components/dashboard/QueryError";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ import TablePagination from "@/components/dashboard/TablePagination";
 import PayablesTable from "@/components/payables/PayablesTable";
 import { usePayables, useBulkMarkPaid } from "@/hooks/usePayables";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getErrorMessage } from "@/lib/utils";
 import { PayableKind } from "@/types";
 
 const PAGE_SIZE = 30;
@@ -81,53 +82,62 @@ export default function PayablesPage() {
     .reduce((sum, p) => sum + Number(p.total_amount), 0);
 
   async function paySelected() {
-    if (selected.size === 0) return;
-    await bulk.mutateAsync({ ids: Array.from(selected) });
-    setSelected(new Set());
+    if (selected.size === 0 || bulk.isPending) return;
+    try {
+      await bulk.mutateAsync({ ids: Array.from(selected) });
+      setSelected(new Set());
+    } catch (err) {
+      // Was an unhandled rejection: the admin saw nothing when it failed.
+      toast.error(getErrorMessage(err));
+    }
   }
 
   return (
     <DashboardShell title={t('pageTitle')}>
       <div className="space-y-4">
         {/* Tabs */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2" role="group">
           <button
+            type="button"
+            aria-pressed={tab === "DRIVER"}
             onClick={() => switchTab("DRIVER")}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-medium ${
               tab === "DRIVER"
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            <Users className="h-4 w-4" /> {t('driverPayables')}
+            <Users className="h-4 w-4" aria-hidden="true" /> {t('driverPayables')}
           </button>
           <button
+            type="button"
+            aria-pressed={tab === "VENDOR"}
             onClick={() => switchTab("VENDOR")}
-            className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`flex h-9 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-medium ${
               tab === "VENDOR"
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            <Handshake className="h-4 w-4" /> {t('vendorPayables')}
+            <Handshake className="h-4 w-4" aria-hidden="true" /> {t('vendorPayables')}
           </button>
         </div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-          <div className="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+          <div className="min-w-0 rounded-xl border border-amber-100 bg-amber-50 px-3 py-3 sm:px-4">
             <p className="text-xs font-medium text-amber-700">
               {t('outstandingLabel')}
             </p>
-            <p className="mt-1 text-xl font-bold text-amber-900">
+            <p className="mt-1 break-words text-base font-bold tabular-nums text-amber-900 sm:text-xl">
               {formatCurrency(totals.outstanding)}
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+          <div className="min-w-0 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-3 sm:px-4">
             <p className="text-xs font-medium text-emerald-700">
               {t('paidFiltered')}
             </p>
-            <p className="mt-1 text-xl font-bold text-emerald-900">
+            <p className="mt-1 break-words text-base font-bold tabular-nums text-emerald-900 sm:text-xl">
               {formatCurrency(totals.paid)}
             </p>
           </div>
@@ -136,8 +146,9 @@ export default function PayablesPage() {
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
             <Input
+              aria-label={t('searchPlaceholder')}
               placeholder={t('searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -151,7 +162,7 @@ export default function PayablesPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-44" aria-label={t('colStatus')}>
               <SelectValue placeholder={t('colStatus')} />
             </SelectTrigger>
             <SelectContent>
@@ -164,7 +175,7 @@ export default function PayablesPage() {
 
         {/* Batch action bar */}
         {selected.size > 0 && (
-          <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5">
             <span className="text-sm font-medium text-emerald-800">
               {t('selectedSummary', { count: selected.size, amount: formatCurrency(selectedTotal) })}
             </span>
@@ -174,7 +185,7 @@ export default function PayablesPage() {
               disabled={bulk.isPending}
               onClick={paySelected}
             >
-              <CheckCheck className="h-4 w-4" />
+              <CheckCheck className="h-4 w-4" aria-hidden="true" />
               {bulk.isPending ? t('processing') : t('paySelected')}
             </Button>
           </div>

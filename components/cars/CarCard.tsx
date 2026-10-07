@@ -60,7 +60,7 @@ export default function CarCard({
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-gray-900">
+            <p className="truncate text-sm font-semibold text-gray-900" title={car.model}>
               {car.model}
             </p>
             <p className="mt-0.5 font-mono text-xs text-gray-500">
@@ -77,7 +77,9 @@ export default function CarCard({
 
         <div className="flex items-center gap-1.5 text-xs text-gray-500">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{car.origin_location || t("baseNotSet")}</span>
+          <span className="truncate" title={car.origin_location || undefined}>
+            {car.origin_location || t("baseNotSet")}
+          </span>
         </div>
 
         {showRevenue && (
@@ -88,19 +90,23 @@ export default function CarCard({
 
         <div className="mt-auto flex gap-2 pt-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             className="flex-1"
             onClick={() => onEdit(car)}
           >
-            <Edit className="mr-1.5 h-3.5 w-3.5" />
+            <Edit className="h-3.5 w-3.5" />
             {tc("edit")}
           </Button>
           <Button
             variant="outline"
             size="sm"
+            type="button"
             className={showRevenue ? "px-2 bg-gray-50" : "px-2"}
             title={t("revenueOfUnit")}
+            aria-label={t("revenueOfUnit")}
+            aria-expanded={showRevenue}
             onClick={() => setShowRevenue((v) => !v)}
           >
             <TrendingUp className="h-3.5 w-3.5" />

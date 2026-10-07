@@ -55,8 +55,8 @@ export default function TablePagination({
   const resolvedLabel = label ?? tc('items');
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 pt-1">
-      <p className="text-xs text-gray-400">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 px-1 pt-1">
+      <p className="text-center text-xs text-gray-400 sm:text-left">
         {t('showing', { from, to, total, label: resolvedLabel })}
       </p>
       {pageCount > 1 && (
@@ -65,18 +65,18 @@ export default function TablePagination({
             type="button"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50"
+            className="flex h-9 items-center gap-1 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50 sm:h-8 sm:px-2.5"
           >
             <ChevronLeft className="h-3.5 w-3.5" /> {t('prev')}
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="whitespace-nowrap text-xs text-gray-500" aria-live="polite">
             {t('pageOf', { page, pageCount })}
           </span>
           <button
             type="button"
             onClick={() => onPageChange(Math.min(pageCount, page + 1))}
             disabled={page >= pageCount}
-            className="flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50"
+            className="flex h-9 items-center gap-1 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 text-xs text-gray-600 disabled:opacity-40 hover:bg-gray-50 sm:h-8 sm:px-2.5"
           >
             {t('next')} <ChevronRight className="h-3.5 w-3.5" />
           </button>

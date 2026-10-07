@@ -117,11 +117,6 @@ export const ordersApi = {
     api.post(`/orders/${id}/adjustments`, data),
 };
 
-export const finalOrdersApi = {
-  list: () => api.get("/final-orders"),
-  getById: (id: string) => api.get(`/final-orders/${id}`),
-};
-
 export const invoicesApi = {
   search: (params: Record<string, string | number | undefined> = {}) =>
     api.get("/invoices", { params }),

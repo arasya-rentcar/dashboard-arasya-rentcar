@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Check, ExternalLink, Plus, Receipt, Trash2, X } from 'lucide-react';
+import { Check, Eye, Loader2, Plus, Receipt, Trash2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ export default function TripCostsPanel({
   readOnly?: boolean;
 }) {
   const t = useTranslations('tripCosts');
+  const { openPreview } = useFilePreview();
   const update = useUpdateTripCost();
   const create = useCreateTripCost();
   const remove = useDeleteTripCost();
@@ -58,6 +60,8 @@ export default function TripCostsPanel({
   // Idempotency key for the add form: a resend after a lost answer is a no-op.
   const [newRef, setNewRef] = useState(() => crypto.randomUUID());
   const busy = update.isPending;
+  // Compact controls on desktop, finger-sized (32px) on phones.
+  const btn = 'h-8 gap-1 px-2 text-[11px] sm:h-6';
 
   const list = costs ?? [];
   const pending = list.filter((c) => c.status === 'PENDING').length;
@@ -87,7 +91,19 @@ export default function TripCostsPanel({
     }
   }
 
-  async function addCost() {
+  // Every receipt photo of this day in one gallery, starting at the clicked one.
+  function showReceipt(costId: string) {
+    const withPhoto = list.filter((c) => c.trip_report?.file_url);
+    const items = withPhoto.map((c) => ({
+      url: c.trip_report!.file_url!,
+      title: `${t('receipt')} · ${t(`type.${c.type}`)} · ${formatCurrency(c.amount)}`,
+    }));
+    openPreview(items, Math.max(0, withPhoto.findIndex((c) => c.id === costId)));
+  }
+
+  async function addCost(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (create.isPending) return;
     const amount = Number(newAmount.replace(/[^\d]/g, ''));
     if (!amount) return toast.error(t('amountRequired'));
     try {
@@ -124,40 +140,43 @@ export default function TripCostsPanel({
           )}
         </span>
         {!readOnly && !adding && (
-          <Button size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px]" onClick={() => setAdding(true)}>
+          <Button type="button" size="sm" variant="outline" className={btn} onClick={() => setAdding(true)}>
             <Plus className="h-3 w-3" /> {t('add')}
           </Button>
         )}
       </div>
 
       {adding && (
-        <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-md bg-gray-50 p-2 sm:grid-cols-4">
+        <form onSubmit={addCost} className="mt-2 grid grid-cols-1 gap-1.5 rounded-md bg-gray-50 p-2 min-[400px]:grid-cols-2 lg:grid-cols-4">
           <Select value={newType} onValueChange={(v) => setNewType(v as TripCost['type'])}>
-            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-full text-xs sm:h-7" aria-label={t('typeLabel')}><SelectValue /></SelectTrigger>
             <SelectContent>
               {(['FUEL', 'TOLL', 'PARKING', 'OTHER'] as const).map((k) => (
                 <SelectItem key={k} value={k}>{t(`type.${k}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Input className="h-7 text-xs" inputMode="numeric" placeholder={t('amount')} value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
+          <Input className="h-8 text-xs sm:h-7" inputMode="numeric" placeholder={t('amount')} aria-label={t('amount')} value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
           {isExternal ? (
-            <span className="flex h-7 items-center text-xs text-gray-500">{t('paidBy.COMPANY')}</span>
+            <span className="flex min-h-7 items-center text-xs text-gray-500">{t('paidBy.COMPANY')}</span>
           ) : (
             <Select value={newPaidBy} onValueChange={(v) => setNewPaidBy(v as TripCost['paid_by'])}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-full text-xs sm:h-7" aria-label={t('paidByLabel')}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
                 <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
               </SelectContent>
             </Select>
           )}
-          <Input className="h-7 text-xs" placeholder={t('note')} value={newNote} onChange={(e) => setNewNote(e.target.value)} />
-          <div className="col-span-2 flex gap-1.5 sm:col-span-4">
-            <Button size="sm" className="h-7 text-xs" onClick={addCost} disabled={create.isPending}>{t('save')}</Button>
-            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAdding(false)}>{t('cancel')}</Button>
+          <Input className="h-8 text-xs sm:h-7" placeholder={t('note')} aria-label={t('note')} value={newNote} onChange={(e) => setNewNote(e.target.value)} />
+          <div className="flex gap-1.5 min-[400px]:col-span-2 lg:col-span-4">
+            <Button type="submit" size="sm" className="h-8 text-xs sm:h-7" disabled={create.isPending}>
+              {create.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+              {t('save')}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" className="h-8 text-xs sm:h-7" disabled={create.isPending} onClick={() => setAdding(false)}>{t('cancel')}</Button>
           </div>
-        </div>
+        </form>
       )}
 
       {list.length === 0 ? (
@@ -174,12 +193,16 @@ export default function TripCostsPanel({
                 </Badge>
                 <span className="text-gray-400">{c.created_by ? t('fromAdmin') : t('fromApp')}</span>
                 {c.trip_report?.file_url && (
-                  <a href={c.trip_report.file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-blue-600 hover:underline">
-                    {t('receipt')} <ExternalLink className="h-3 w-3" />
-                  </a>
+                  <button
+                    type="button"
+                    onClick={() => showReceipt(c.id)}
+                    className="inline-flex min-h-6 items-center gap-0.5 text-blue-600 hover:underline"
+                  >
+                    <Eye className="h-3 w-3" /> {t('receipt')}
+                  </button>
                 )}
               </div>
-              {c.note && <p className="text-gray-600">{c.note}</p>}
+              {c.note && <p className="break-words text-gray-600">{c.note}</p>}
               {c.status === 'APPROVED' && c.bill_to_customer && c.paid_by === 'DRIVER' && !isExternal && (
                 <p className="mt-0.5 rounded bg-blue-50 px-1.5 py-1 text-blue-800">
                   {t('billedDriverHint', { amount: formatCurrency(c.amount) })}
@@ -191,43 +214,44 @@ export default function TripCostsPanel({
               {!readOnly && (
                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   {c.status !== 'APPROVED' && (
-                    <Button size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px] text-emerald-700" disabled={update.isPending}
+                    <Button type="button" size="sm" variant="outline" className={`${btn} text-emerald-700`} disabled={busy}
                       onClick={() => patch(c, { status: 'APPROVED' }, t('approved'))}>
                       <Check className="h-3 w-3" /> {t('approve')}
                     </Button>
                   )}
                   {c.status !== 'REJECTED' && rejecting !== c.id && (
-                    <Button size="sm" variant="outline" className="h-6 gap-1 px-2 text-[11px] text-red-700" disabled={update.isPending}
+                    <Button type="button" size="sm" variant="outline" className={`${btn} text-red-700`} disabled={busy}
                       onClick={() => { setRejecting(c.id); setReason(''); }}>
                       <X className="h-3 w-3" /> {t('reject')}
                     </Button>
                   )}
                   {rejecting === c.id && (
-                    <span className="flex items-center gap-1">
-                      <Input className="h-6 w-48 text-[11px]" placeholder={t('rejectPlaceholder')} value={reason} onChange={(e) => setReason(e.target.value)} />
-                      <Button size="sm" className="h-6 px-2 text-[11px]" variant="destructive"
+                    <span className="flex w-full flex-wrap items-center gap-1 sm:w-auto">
+                      <Input className="h-8 min-w-0 flex-1 text-[11px] sm:h-6 sm:w-48 sm:flex-none" placeholder={t('rejectPlaceholder')} aria-label={t('rejectPlaceholder')} value={reason} onChange={(e) => setReason(e.target.value)} />
+                      <Button type="button" size="sm" className={btn} variant="destructive"
                         disabled={busy}
                         onClick={async () => { if (await patch(c, { status: 'REJECTED', review_note: reason.trim() || null }, t('rejected'))) setRejecting(null); }}>
                         {t('reject')}
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-6 px-2 text-[11px]" onClick={() => setRejecting(null)}>{t('cancel')}</Button>
+                      <Button type="button" size="sm" variant="ghost" className={btn} onClick={() => setRejecting(null)}>{t('cancel')}</Button>
                     </span>
                   )}
                   {!isExternal && (
                     <Select value={c.paid_by} disabled={busy} onValueChange={(v) => patch(c, { paid_by: v })}>
-                      <SelectTrigger className="h-6 w-auto gap-1 px-2 text-[11px]"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 w-auto max-w-full gap-1 px-2 text-[11px] sm:h-6" aria-label={t('paidByLabel')}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="DRIVER">{t('paidBy.DRIVER')}</SelectItem>
                         <SelectItem value="COMPANY">{t('paidBy.COMPANY')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
-                  <label className="inline-flex items-center gap-1 text-gray-600">
-                    <input type="checkbox" disabled={busy} checked={c.bill_to_customer} onChange={(e) => patch(c, { bill_to_customer: e.target.checked })} />
+                  <label className="inline-flex min-h-8 items-center gap-1 text-gray-600 sm:min-h-6">
+                    <input className="h-3.5 w-3.5" type="checkbox" disabled={busy} checked={c.bill_to_customer} onChange={(e) => patch(c, { bill_to_customer: e.target.checked })} />
                     {t('billCustomer')}
                   </label>
                   {c.created_by && (
-                    <Button size="sm" variant="ghost" className="h-6 px-1.5 text-gray-400 hover:text-red-600" title={t('delete')}
+                    <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 sm:h-6 sm:w-6" title={t('delete')} aria-label={t('delete')}
+                      disabled={remove.isPending && remove.variables === c.id}
                       onClick={async () => { try { await remove.mutateAsync(c.id); } catch (err) { toast.error(getErrorMessage(err)); } }}>
                       <Trash2 className="h-3 w-3" />
                     </Button>

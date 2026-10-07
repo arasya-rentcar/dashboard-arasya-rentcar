@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, ExternalLink, CalendarCheck, Wallet } from "lucide-react";
+import { Check, ExternalLink, CalendarCheck, Loader2, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMarkPayablePaid } from "@/hooks/usePayables";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, getErrorMessage } from "@/lib/utils";
 import {
   PartnerDetailSummary,
   PartnerTripRow,
@@ -28,6 +29,15 @@ interface Props {
   trips: PartnerTripRow[];
   payments: Payable[];
 }
+
+// Line status -> key in the "scheduleLine" namespace (same labels as Schedule).
+const LINE_STATUS_KEYS: Record<string, string> = {
+  SCHEDULED: "statusScheduled",
+  ASSIGNED: "statusAssigned",
+  IN_PROGRESS: "statusInProgress",
+  DONE: "statusDone",
+  CANCELLED: "statusCancelled",
+};
 
 const LINE_STATUS_STYLES: Record<string, string> = {
   SCHEDULED: "bg-blue-50 text-blue-700 border-blue-200",
@@ -53,9 +63,9 @@ function StatCard({
     gray: "border-gray-100 bg-gray-50 text-gray-900",
   }[accent ?? "gray"];
   return (
-    <div className={`rounded-xl border px-4 py-3 ${styles}`}>
+    <div className={`min-w-0 rounded-xl border px-3 py-3 sm:px-4 ${styles}`}>
       <p className="text-xs font-medium opacity-70">{label}</p>
-      <p className="mt-1 text-lg font-bold">{value}</p>
+      <p className="mt-1 break-words text-base font-bold tabular-nums sm:text-lg">{value}</p>
     </div>
   );
 }
@@ -67,6 +77,7 @@ export default function PartnerDetailView({
   payments,
 }: Props) {
   const tx = useTranslations("partnerDetail");
+  const tl = useTranslations("scheduleLine");
   const [tab, setTab] = useState<"trips" | "payments">("trips");
   const markPaid = useMarkPayablePaid();
   const earned =
@@ -113,8 +124,10 @@ export default function PartnerDetailView({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
+          type="button"
+          aria-pressed={tab === "trips"}
           onClick={() => setTab("trips")}
           className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
             tab === "trips"
@@ -125,6 +138,8 @@ export default function PartnerDetailView({
           <CalendarCheck className="h-4 w-4" /> {tx('tripHistory', { count: trips.length })}
         </button>
         <button
+          type="button"
+          aria-pressed={tab === "payments"}
           onClick={() => setTab("payments")}
           className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium ${
             tab === "payments"
@@ -193,13 +208,13 @@ export default function PartnerDetailView({
                           "-"
                         )}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
+                      <TableCell className="min-w-[10rem] max-w-[16rem] whitespace-normal text-sm text-gray-600">
                         {t.order?.customer_name || "-"}
                       </TableCell>
-                      <TableCell className="max-w-[180px] truncate text-sm text-gray-600">
+                      <TableCell className="max-w-[180px] truncate text-sm text-gray-600" title={route || undefined}>
                         {route || "-"}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-500">
+                      <TableCell className="min-w-[9rem] whitespace-normal text-sm text-gray-500">
                         {unit || "-"}
                         {partnerDriver && (
                           <p className="text-[11px] text-purple-700">
@@ -215,7 +230,7 @@ export default function PartnerDetailView({
                           variant="outline"
                           className={`text-xs ${LINE_STATUS_STYLES[t.line_status] ?? ""}`}
                         >
-                          {t.line_status}
+                          {LINE_STATUS_KEYS[t.line_status] ? tl(LINE_STATUS_KEYS[t.line_status]) : t.line_status}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -296,12 +311,23 @@ export default function PartnerDetailView({
                       <TableCell className="text-right">
                         {!isPaid && (
                           <Button
+                            type="button"
                             size="sm"
                             className="h-8 gap-1 bg-emerald-600 text-xs hover:bg-emerald-700"
                             disabled={markPaid.isPending}
-                            onClick={() => markPaid.mutate({ id: p.id, data: {} })}
+                            onClick={() =>
+                              markPaid.mutate(
+                                { id: p.id, data: {} },
+                                { onError: (err) => toast.error(getErrorMessage(err)) },
+                              )
+                            }
                           >
-                            <Check className="h-3 w-3" /> {tx('pay')}
+                            {markPaid.isPending && markPaid.variables?.id === p.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}{" "}
+                            {tx('pay')}
                           </Button>
                         )}
                       </TableCell>

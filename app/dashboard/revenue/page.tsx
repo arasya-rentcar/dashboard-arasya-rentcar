@@ -9,8 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useTranslations } from "next-intl";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isoToWibDate } from "@/lib/utils";
 import { useRevenueReport } from "@/hooks/useAnalytics";
+
+// Wide report tables scroll sideways on phones/tablets: keep the first column
+// (unit / vendor / driver) pinned so a row's figures stay identifiable. Rows
+// carry an opaque background that the pinned cell inherits. The scroller
+// (CardContent px-0) has no padding, because a pinned cell sticks to the
+// padding edge and scrolled figures showed through the gap; the outer
+// columns carry the card inset instead.
+const STICKY_FIRST_COL =
+  "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-[1] [&_tr>*:first-child]:bg-inherit [&_tr>*:first-child]:shadow-[1px_0_0_0_rgb(243,244,246)] [&_tr>*:first-child]:pl-6 [&_tr>*:last-child]:pr-6";
 
 function moneyOrDash(v: number | null) {
   return v == null ? "—" : formatCurrency(v);
@@ -26,9 +35,10 @@ function monthBounds(month: string) {
   return { from, to };
 }
 
+// The month in WIB, not in the browser timezone (an admin abroad, or a
+// laptop on UTC, would otherwise open the wrong month around midnight).
 function currentMonth() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  return isoToWibDate(new Date().toISOString()).slice(0, 7);
 }
 
 export default function RevenuePage() {
@@ -50,20 +60,21 @@ export default function RevenuePage() {
     <DashboardShell title={t("title")}>
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="flex items-center gap-2 text-sm text-gray-500">
-              <TrendingUp className="h-4 w-4" />
+          <div className="min-w-0">
+            <p className="text-sm text-gray-500">
+              <TrendingUp className="mr-2 inline h-4 w-4 align-[-2px]" aria-hidden="true" />
               {t("intro")} <b>{t("introFinal")}</b> = {t("introFinalDesc")},{" "}
               <b>{t("introEstimated")}</b> = {t("introEstimatedDesc")}.
             </p>
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-gray-500">{t("month")}</Label>
+          <div className="shrink-0 space-y-1.5">
+            <Label htmlFor="revenue-month" className="text-xs text-gray-500">{t("month")}</Label>
             <Input
+              id="revenue-month"
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value || currentMonth())}
-              className="w-44"
+              className="w-full sm:w-44"
             />
           </div>
         </div>
@@ -89,7 +100,7 @@ export default function RevenuePage() {
                         {data.order_counts.total}
                       </p>
                     </div>
-                    <div className="h-10 w-px bg-gray-200" />
+                    <div className="hidden h-10 w-px bg-gray-200 sm:block" aria-hidden="true" />
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-blue-600">{tt("internal")}</p>
                       <p className="text-xl font-semibold tabular-nums text-blue-700">
@@ -108,7 +119,7 @@ export default function RevenuePage() {
                         {data.order_counts.freelance}
                       </p>
                     </div>
-                    <div className="h-10 w-px bg-gray-200" />
+                    <div className="hidden h-10 w-px bg-gray-200 sm:block" aria-hidden="true" />
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-gray-500">{t("kpiExternalTotal")}</p>
                       <p className="text-xl font-semibold tabular-nums text-gray-700">
@@ -125,7 +136,7 @@ export default function RevenuePage() {
 
             {/* ── Section A — Internal cars ────────────────────────────── */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between gap-2">
                 <CardTitle className="text-base">
                   {t("sectionInternalTitle")}
                 </CardTitle>
@@ -133,10 +144,10 @@ export default function RevenuePage() {
                   <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
                 )}
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[960px] text-sm">
+              <CardContent className="overflow-x-auto px-0">
+                <table className={`w-full min-w-[960px] text-sm ${STICKY_FIRST_COL}`}>
                   <thead>
-                    <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr className="border-b bg-white text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="py-2 pr-3">{t("colUnit")}</th>
                       <th className="py-2 px-3 text-right">{t("colGrossFinal")}</th>
                       <th className="py-2 px-3 text-right">{tt("opsCost")}</th>
@@ -157,9 +168,9 @@ export default function RevenuePage() {
                       A.rows.map((r) => (
                         <tr
                           key={r.car_id ?? "unassigned"}
-                          className="border-b last:border-0"
+                          className="border-b bg-white last:border-0"
                         >
-                          <td className="py-2.5 pr-3">
+                          <td className="min-w-[9rem] max-w-[11rem] py-2.5 pr-3 sm:max-w-none">
                             <div className="font-medium text-gray-900">
                               {r.car_label}
                             </div>
@@ -204,7 +215,7 @@ export default function RevenuePage() {
                   </tbody>
                   {A?.rows.length ? (
                     <tfoot>
-                      <tr className="border-t-2 font-semibold">
+                      <tr className="border-t-2 bg-white font-semibold">
                         <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums">
                           {formatCurrency(A.totals.final.gross)}
@@ -247,10 +258,10 @@ export default function RevenuePage() {
                   {t("sectionVendorNote")}
                 </p>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[920px] text-sm">
+              <CardContent className="overflow-x-auto px-0">
+                <table className={`w-full min-w-[920px] text-sm ${STICKY_FIRST_COL}`}>
                   <thead>
-                    <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr className="border-b bg-white text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="py-2 pr-3">{t("colVendor")}</th>
                       <th className="py-2 px-3 text-right">{t("colBilledFinal")}</th>
                       <th className="py-2 px-3 text-right">{t("colVendorCost")}</th>
@@ -270,17 +281,22 @@ export default function RevenuePage() {
                         return (
                           <Fragment key={key}>
                             <tr
-                              className="cursor-pointer border-b last:border-0 hover:bg-gray-50"
+                              className="cursor-pointer border-b bg-white last:border-0 hover:bg-gray-50"
                               onClick={() =>
                                 setOpenVendor(open ? null : key)
                               }
                             >
                               <td className="py-2.5 pr-3">
-                                <div className="flex items-center gap-1.5 font-medium text-gray-900">
+                                {/* The click bubbles to the row, which toggles it. */}
+                                <button
+                                  type="button"
+                                  aria-expanded={open}
+                                  className="flex items-center gap-1.5 rounded text-left font-medium text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+                                >
                                   {open ? (
-                                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                                    <ChevronDown className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
                                   ) : (
-                                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" aria-hidden="true" />
                                   )}
                                   {v.vendor_name}
                                   {v.vendor_id == null && (
@@ -288,10 +304,10 @@ export default function RevenuePage() {
                                       variant="outline"
                                       className="ml-1 text-[10px] text-amber-700 border-amber-200 bg-amber-50"
                                     >
-                                      freelance
+                                      {t("badgeFreelance")}
                                     </Badge>
                                   )}
-                                </div>
+                                </button>
                               </td>
                               <td className="px-3 text-right tabular-nums">
                                 {formatCurrency(v.final.customer_billed)}
@@ -316,7 +332,7 @@ export default function RevenuePage() {
                               v.units.map((u) => (
                                 <tr
                                   key={key + (u.external_car_id ?? "nounit")}
-                                  className="border-b bg-gray-50/50 text-xs last:border-0"
+                                  className="border-b bg-gray-50 text-xs last:border-0"
                                 >
                                   <td className="py-2 pr-3 pl-9 text-gray-600">
                                     {u.car_label}
@@ -355,7 +371,7 @@ export default function RevenuePage() {
                   </tbody>
                   {B?.rows.length ? (
                     <tfoot>
-                      <tr className="border-t-2 font-semibold">
+                      <tr className="border-t-2 bg-white font-semibold">
                         <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums">
                           {formatCurrency(B.totals.final.customer_billed)}
@@ -424,10 +440,10 @@ export default function RevenuePage() {
                   {t("driverNoteOutstanding")}.
                 </p>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
+              <CardContent className="overflow-x-auto px-0">
+                <table className={`w-full min-w-[760px] text-sm ${STICKY_FIRST_COL}`}>
                   <thead>
-                    <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr className="border-b bg-white text-left text-xs uppercase tracking-wide text-gray-500">
                       <th className="py-2 pr-3">{t("colDriver")}</th>
                       <th className="py-2 px-3 text-right">{t("colTotalFee")}</th>
                       <th className="py-2 px-3 text-right text-emerald-700">{tt("paid")}</th>
@@ -441,7 +457,7 @@ export default function RevenuePage() {
                       data.driver_fees.rows.map((d) => (
                         <tr
                           key={d.driver_id ?? d.driver_name}
-                          className="border-b last:border-0"
+                          className="border-b bg-white last:border-0"
                         >
                           <td className="py-2.5 pr-3">
                             <div className="font-medium text-gray-900">
@@ -480,7 +496,7 @@ export default function RevenuePage() {
                   </tbody>
                   {data?.driver_fees.rows.length ? (
                     <tfoot>
-                      <tr className="border-t-2 font-semibold">
+                      <tr className="border-t-2 bg-white font-semibold">
                         <td className="py-2.5 pr-3">{tc("total")}</td>
                         <td className="px-3 text-right tabular-nums text-gray-900">
                           {formatCurrency(data.driver_fees.totals.fee_total)}

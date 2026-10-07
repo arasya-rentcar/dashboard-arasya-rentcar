@@ -54,6 +54,7 @@ export default function CombinedInvoiceForm({
   const [note, setNote] = useState<string>('');
 
   async function handleSubmit() {
+    if (isLoading) return;
     await onSubmit({
       invoice_type: 'COMBINED',
       payment_method: method,
@@ -70,7 +71,7 @@ export default function CombinedInvoiceForm({
 
       {/* Breakdown */}
       <div className="rounded-lg border border-gray-100 bg-gray-50/70 p-3 space-y-1.5 text-sm">
-        <div className="flex justify-between">
+        <div className="flex flex-wrap justify-between gap-x-3">
           <span className="text-gray-500">{t('rental')}</span>
           <span className="font-medium text-gray-800">{formatCurrency(rentalBase)}</span>
         </div>
@@ -78,12 +79,12 @@ export default function CombinedInvoiceForm({
         {billable.length > 0 ? (
           <div className="space-y-1 border-t border-gray-200 pt-1.5">
             {billable.map((a) => (
-              <div key={a.id} className="flex justify-between text-xs">
-                <span className="text-gray-500 truncate pr-2">
+              <div key={a.id} className="flex justify-between gap-2 text-xs">
+                <span className="min-w-0 truncate text-gray-500" title={a.description || a.type}>
                   + {a.description || a.type}
                   {(a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''}
                 </span>
-                <span className="text-gray-600">
+                <span className="shrink-0 text-gray-600 tabular-nums">
                   {formatCurrency(Number(a.amount) * (a.quantity || 1))}
                 </span>
               </div>
@@ -95,11 +96,11 @@ export default function CombinedInvoiceForm({
           </p>
         )}
 
-        <div className="flex justify-between border-t border-gray-200 pt-1.5">
+        <div className="flex flex-wrap justify-between gap-x-3 border-t border-gray-200 pt-1.5">
           <span className="font-medium text-gray-600">{t('additionalCharges')}</span>
           <span className="font-medium text-gray-800">{formatCurrency(additionalsTotal)}</span>
         </div>
-        <div className="flex justify-between border-t border-gray-300 pt-1.5">
+        <div className="flex flex-wrap justify-between gap-x-3 border-t border-gray-300 pt-1.5">
           <span className="font-semibold text-gray-900">{t('grandTotal')}</span>
           <span className="text-base font-bold text-indigo-700">{formatCurrency(grandTotal)}</span>
         </div>
@@ -107,9 +108,9 @@ export default function CombinedInvoiceForm({
 
       {/* Payment method */}
       <div className="space-y-1.5">
-        <Label>{t('paymentMethod')}</Label>
+        <Label htmlFor="combined_method">{t('paymentMethod')}</Label>
         <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-          <SelectTrigger>
+          <SelectTrigger id="combined_method" className="w-full">
             <SelectValue placeholder={t('selectMethod')} />
           </SelectTrigger>
           <SelectContent>
@@ -138,7 +139,7 @@ export default function CombinedInvoiceForm({
           type="button"
           onClick={handleSubmit}
           disabled={isLoading || grandTotal <= 0}
-          className="bg-indigo-600 hover:bg-indigo-700"
+          className="h-auto min-h-9 w-full whitespace-normal bg-indigo-600 py-2 text-center leading-tight hover:bg-indigo-700 sm:w-auto"
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {t('generateBtn')} — {formatCurrency(grandTotal)}

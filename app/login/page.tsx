@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
@@ -16,17 +16,20 @@ import { authApi } from '@/lib/api';
 import { saveAuth, isAuthenticated } from '@/lib/auth';
 import { getErrorMessage } from '@/lib/utils';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(1, 'Password is required'),
-});
+function buildLoginSchema(t: (key: 'errEmail' | 'errPassword') => string) {
+  return z.object({
+    email: z.string().email(t('errEmail')),
+    password: z.string().min(1, t('errPassword')),
+  });
+}
 
-type LoginForm = z.infer<typeof loginSchema>;
+type LoginForm = z.infer<ReturnType<typeof buildLoginSchema>>;
 
 export default function LoginPage() {
   const router = useRouter();
   const t = useTranslations('login');
   const [ready, setReady] = useState(false);
+  const loginSchema = useMemo(() => buildLoginSchema(t), [t]);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -58,14 +61,14 @@ export default function LoginPage() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50">
         <div className="h-6 w-6 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50 px-4 py-8">
       <Card className="w-full max-w-sm shadow-sm">
         <CardHeader className="space-y-1 pb-4">
           <div className="mb-2">
@@ -81,6 +84,9 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
+                autoComplete="username"
+                inputMode="email"
+                aria-invalid={!!errors.email}
                 placeholder={t('emailPlaceholder')}
                 {...register('email')}
               />
@@ -94,6 +100,8 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
+                autoComplete="current-password"
+                aria-invalid={!!errors.password}
                 placeholder="••••••••"
                 {...register('password')}
               />

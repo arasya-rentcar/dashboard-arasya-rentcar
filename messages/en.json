@@ -97,6 +97,13 @@
     "MAINTENANCE": "Maintenance"
   },
   "nav": {
+    "groupOverview": "Overview",
+    "groupSales": "Sales",
+    "groupOperations": "Operations",
+    "groupFinance": "Finance",
+    "groupHelp": "Help",
+    "menu": "Main menu",
+    "openMenu": "Open menu",
     "dashboard": "Dashboard",
     "orders": "Orders",
     "schedule": "Trip",
@@ -107,7 +114,6 @@
     "drivers": "Drivers",
     "customers": "Customers",
     "external": "External / Vendors",
-    "agent": "Agent",
     "guide": "Guide",
     "logout": "Log out",
     "leads": "Website leads",
@@ -152,6 +158,7 @@
     "okCreated": "Vendor created"
   },
   "vendorDetail": {
+    "deleteCarConfirm": "Remove {model} from this vendor's cars?",
     "platePlaceholder": "B 1234 XYZ",
     "title": "Vendor",
     "notFound": "Vendor not found.",
@@ -245,7 +252,9 @@
     "noOrders": "No orders.",
     "ext": "Ext",
     "open": "Open",
-    "paginationLabel": "orders"
+    "paginationLabel": "orders",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag {tag}"
   },
   "driverStatus": {
     "AVAILABLE": "Available",
@@ -253,6 +262,9 @@
     "OFF": "Off"
   },
   "driversPage": {
+    "errUser": "Select a user account",
+    "errName": "Name is required",
+    "errPhone": "Phone is required",
     "title": "Drivers",
     "searchPlaceholder": "Search drivers…",
     "allStatus": "All Status",
@@ -311,6 +323,8 @@
     "etollHeld": "Holds e-toll card"
   },
   "carsPage": {
+    "errPlate": "Plate number is required",
+    "errModel": "Model is required",
     "title": "Cars",
     "searchPlaceholder": "Search cars…",
     "allStatus": "All Status",
@@ -350,6 +364,8 @@
     "okUpdated": "Car updated successfully"
   },
   "login": {
+    "errEmail": "Enter a valid email address",
+    "errPassword": "Password is required",
     "brand": "Arasya RentCar",
     "signInTitle": "Sign in to continue",
     "signInDesc": "Enter your admin credentials below.",
@@ -358,9 +374,6 @@
     "password": "Password",
     "signIn": "Sign In",
     "okLogin": "Login successful"
-  },
-  "finalOrders": {
-    "redirecting": "Final Orders moved into Orders — redirecting…"
   },
   "ordersPage": {
     "title": "Orders",
@@ -446,9 +459,17 @@
     "errNoMatchingExport": "No matching orders to export.",
     "okExportedAll": "Exported {count} rows (all filtered).",
     "errPresetName": "Enter a preset name.",
-    "okPresetSaved": "Preset \"{name}\" saved."
+    "okPresetSaved": "Preset \"{name}\" saved.",
+    "bucketsLabel": "Order groups",
+    "deletePreset": "Delete preset \"{name}\"",
+    "expandRow": "Show invoice history",
+    "collapseRow": "Hide invoice history",
+    "hasSheetFinance": "Has finance data imported from the sheet",
+    "createNewOrderDesc": "Fill in the customer, fulfilment and service lines, then save the order."
   },
   "serviceItems": {
+    "removeRow": "Remove row {n}",
+    "fieldRequired": "Required",
     "title": "Service Detail / Invoice Lines",
     "desc": "Use one row per day, route, extra stop, overtime, or separate priced service.",
     "finalPrice": "Final Price",
@@ -510,228 +531,278 @@
     "fromLead": "From website lead {code}. Trip details are filled in; add the customer phone, price and unit, then save.",
     "phoneRequiredFromLead": "Enter the customer's WhatsApp number from the chat",
     "leadReturnHint": "This lead asks for a return / multi-day trip. The service is set to 12 Hours; adjust the number of days, duration and price.",
-    "leadNeedPartnerHint": "This unit is not in Arasya's fleet — choose Vendor/partner under 'Order Fulfilled By'."
+    "leadNeedPartnerHint": "This unit is not in Arasya's fleet — choose Vendor/partner under 'Order Fulfilled By'.",
+    "removePic": "Remove this PIC",
+    "removeAdditional": "Remove this additional charge",
+    "errNameRequired": "Name is required",
+    "errPickupRequired": "Pickup location on the service line is required",
+    "errDropoffRequired": "Drop-off location on the service line is required",
+    "errPriceRequired": "Price on the service line is required",
+    "errCheckForm": "Some details are missing. Please check the form."
   },
   "guide": {
     "title": "Guide",
-    "heroKicker": "Quick guide for Arasya admins",
-    "heroTitle": "How to use Website + WhatsApp Bot",
-    "heroSubtitle": "This guide is for operations admins: follow the flow, use the example templates, then check the results on the dashboard.",
+    "heroKicker": "A short guide for Arasya admins",
+    "heroTitle": "How the day works: website, dashboard and driver app",
+    "heroSubtitle": "Bookings come in from the website form or are created by an admin, are scheduled per day in the dashboard, are carried out by drivers in the app, and are billed and closed in the dashboard. WhatsApp is still used, by hand: the dashboard opens WhatsApp with the message already filled in, and you press send.",
+    "menuTitle": "Menu map",
+    "menuGroups": [
+      {
+        "t": "{groupOverview}",
+        "d": "<b>{menuDashboard}</b>: revenue, margin, cash and the <b>Needs attention</b> list (overdue receivables and payables). <b>{menuNotifications}</b>: updates from the driver app and e-toll top-up requests."
+      },
+      {
+        "t": "{groupSales}",
+        "d": "<b>{menuLeads}</b>, <b>{menuOrders}</b>, <b>{menuCustomers}</b> and <b>{menuPriceList}</b>: from the customer request to a confirmed order."
+      },
+      {
+        "t": "{groupOperations}",
+        "d": "<b>{menuTrip}</b> (daily schedule and assignments), <b>{menuDrivers}</b>, <b>{menuUnits}</b>, <b>{menuEtoll}</b> and <b>{menuVendors}</b>."
+      },
+      {
+        "t": "{groupFinance}",
+        "d": "<b>{menuInvoices}</b> (billing customers), <b>{menuPayables}</b> (driver fees and vendor costs) and <b>{menuRevenue}</b> (reports per unit, vendor and driver)."
+      },
+      {
+        "t": "{groupHelp}",
+        "d": "<b>{menuGuide}</b>: this page."
+      }
+    ],
     "dailyFlowTitle": "Daily workflow",
     "steps": [
-      "Receive an order from the customer or owner.",
-      "Input the order via the Internal Arasya WhatsApp group or the Create Order button on the website.",
-      "Check the order in the Orders menu: PIC, service detail, route, car, driver, and price.",
-      "Assign driver/car per day in the Schedule menu. Multi-day orders can change the driver each day.",
-      "Check driver availability (FREE/BUSY) in Schedule before assigning to avoid clashes.",
-      "Generate the invoice from Order Detail.",
-      "Send the invoice PDF to the customer's WhatsApp from the Invoices menu.",
-      "The driver sends trip reports/photos to the bot.",
-      "Set the status each day in Schedule (SCHEDULED -> IN_PROGRESS -> DONE).",
-      "The order is complete once all days are DONE and the data is final."
+      "Check <b>{menuLeads}</b> (the <b>New</b> tab) and <b>{menuNotifications}</b> several times a day.",
+      "When a lead books: click <b>Create order</b>, fill in the phone number, price and unit, then save. Bookings by phone or chat are created in <b>{menuOrders}</b> → <b>Create Order</b>.",
+      "On the order page, create a <b>Rental Invoice</b> of type <b>Down Payment (DP)</b> of at least 20% of the rental and send it to the customer with <b>Send</b>.",
+      "Once the money reaches the office BCA account, click <b>Mark Paid</b> and upload the transfer proof.",
+      "Assign a driver and car per day: <b>Edit</b> on the row in <b>{menuTrip}</b>, or <b>Assign</b> on that day on the order page. Check the <b>Availability Timeline</b> first to avoid clashes.",
+      "Send the confirmation from the <b>Confirmation</b> column in <b>{menuTrip}</b> (<b>Send to Customer</b>).",
+      "Bill the rest with <b>Settlement (Remaining Balance)</b>; it is due on the first service day. The trip with the customer can only start once the order is paid in full.",
+      "While the trip runs, follow the driver progress and the proof of arrival on the order page, and approve or reject the trip costs sent by the driver.",
+      "When every day is done, the order moves to <b>Needs Finalization</b>. Check the driver fees and costs, then click <b>Finalize Order</b>.",
+      "Pay driver fees and vendor costs in <b>{menuPayables}</b>."
     ],
-    "websiteMenuTitle": "Website: menus and components",
-    "websiteMenuParas": [
-      "Orders is the operational hub. Click an order for detail, edit the order, and generate the invoice.",
-      "Schedule manages driver/car assignment per day and checks driver availability. Customers stores customer data automatically, External stores outside vendors/drivers.",
-      "Forms are used to input/edit data. If a required field is empty, the system shows an error.",
-      "Service Detail Rows are the service/route lines. Each row becomes an invoice line item and counts toward the total.",
-      "Tables are data lists. Use search, action buttons, or click the row/chevron to open detail.",
-      "Colored badges show status such as AVAILABLE, ASSIGNED, ISSUED, PAID, SENT, or FAILED."
-    ],
-    "websiteCasesTitle": "Website case examples",
-    "websiteCases": [
+    "leadsTitle": "Website leads & orders",
+    "leadsItems": [
       {
-        "t": "Create Order",
-        "d": "Fill in PIC, Booking, main pickup/dropoff, then add Service Detail. If there are several days/routes, create several rows."
+        "t": "Incoming leads",
+        "d": "The booking form on the website creates a lead with an ARS-XXXXX code. The same code is in the WhatsApp message the customer sends to the admin, so chat and lead are easy to match."
       },
       {
-        "t": "Edit Order",
-        "d": "Use when there is a price/route change. If the price changes and an invoice already exists, write the reason so it is recorded."
+        "t": "Order from a lead",
+        "d": "Click <b>Create order</b>: the trip details are already filled in. Add the customer phone number, price and unit, then save. The order code is the lead code, all the way to the invoice."
       },
       {
-        "t": "Assign Driver/Car",
-        "d": "Pick a driver and car from the list. Unit codes like ARA/FCB/VLZ help find a car quickly."
+        "t": "Order already made from the chat",
+        "d": "Use <b>Link to order</b> to avoid a duplicate. Spam, duplicates or price questions only: <b>Ignore</b> and pick the reason."
       },
       {
-        "t": "Generate Invoice",
-        "d": "Create the invoice once the order total is correct. The PDF is generated automatically and can be previewed."
+        "t": "In fleet / Partner needed",
+        "d": "<b>Partner needed</b> only means the requested unit is not in the Arasya fleet. You may still use your own unit and driver, including for trips out of town."
       },
       {
-        "t": "Revise Invoice",
-        "d": "If the order changes after the invoice is made, use revise/sync invoice. The old invoice stays as history."
+        "t": "Creating an order by hand",
+        "d": "<b>{menuOrders}</b> → <b>Create Order</b>. Look up a returning customer by name or phone number (click <b>Use this data</b> when recognised), choose <b>Order Fulfilled By</b>, then add one service row per day: date, time, pickup, destination and price."
       },
       {
-        "t": "Send Invoice WA",
-        "d": "In the Invoices menu, expand the row, choose the recipient, then Send PDF via WhatsApp. The history is saved."
-      },
-      {
-        "t": "Cars/Drivers",
-        "d": "Add/edit master data. For internal drivers, store the real phone so the WhatsApp tag can match the database."
+        "t": "Changing an order",
+        "d": "<b>Edit Order</b> changes dates, times, places, prices or contacts. When the price changes a reason is required. Invoices do not change automatically, so revise or add an invoice afterwards."
       }
     ],
-    "scheduleTitle": "Schedule: schedule & driver availability",
-    "scheduleIntro": "The Schedule menu manages assignment per day, not per order. This is how an order that runs several days can use a different driver each day.",
-    "scheduleCases": [
+    "tripsTitle": "Trips & daily assignments",
+    "tripsIntro": "Assignments are made per day, not per order. A multi-day order may use a different driver or car on each day.",
+    "tripsItems": [
       {
-        "t": "Agenda (daily list)",
-        "d": "The Agenda tab shows one row per day per order. Filter by date, driver, type (Internal/External), and status."
+        "t": "Availability Timeline",
+        "d": "In <b>{menuTrip}</b> → the <b>Schedule</b> tab, the weekly timeline shows who is free and who already has a trip (switch between <b>Drivers</b> and <b>Cars</b>). Click a date to see the free drivers and cars and assign straight away."
       },
       {
-        "t": "Assign / change per day",
-        "d": "Click Edit on a row to pick driver+car (internal) or vendor+car (external) for that day only. Multi-day orders may use a different driver each day."
+        "t": "Daily list and Edit Day",
+        "d": "Below the timeline is a list with one row per day per order (<b>Today</b>, <b>Tomorrow</b>, <b>This week</b>, <b>All</b>). <b>Edit</b> opens <b>Edit Day</b>: driver and car, status, driver fee, travel advance, or the vendor for that day. Save with <b>Save & Recompute</b>."
       },
       {
-        "t": "Status per day",
-        "d": "Each day has its own status: SCHEDULED, IN_PROGRESS, DONE, CANCELLED. Change it as the trip progresses."
+        "t": "DP requirement",
+        "d": "An internal driver can only be chosen once the DP or the settlement is recorded (invoice marked paid). Until then the day shows <b>Awaiting DP</b>. Cars and partner days can still be set."
       },
       {
-        "t": "Driver availability",
-        "d": "The Driver Availability tab shows FREE/BUSY per driver for the selected date, computed from the schedule (not order status). Use this before assigning to avoid clashes."
+        "t": "WhatsApp confirmation",
+        "d": "<b>Confirmation</b> column → <b>Send to Customer</b> opens WhatsApp with the confirmation message. Afterwards the links <b>Also send to driver (WhatsApp)</b> and, when the driver changed, <b>Notify previous driver</b> appear. Internal drivers also get the job in the app."
+      },
+      {
+        "t": "Schedule changes",
+        "d": "When the time or driver of a day changes, its confirmation becomes <b>Changed, needs resend</b>. Click <b>Send Changes</b> so the customer and driver know."
+      },
+      {
+        "t": "Change the driver for all days",
+        "d": "On the order page, <b>Reassign All</b> overwrites the driver and car on every day that has not started. Days in progress, done or cancelled are left alone."
+      },
+      {
+        "t": "Old trips not closed",
+        "d": "The <b>Not closed</b> chip lists trips from before yesterday that are still open; they no longer appear in the driver app. Click <b>Edit</b>, set the status to <b>Done</b> if the trip took place or <b>Cancelled</b> if it did not, then save."
+      },
+      {
+        "t": "History",
+        "d": "The <b>History</b> tab holds finished trips: the trip timeline, driver reports and photos, the proof of arrival and the driver fee."
       }
     ],
-    "customersTitle": "Customers: customer data",
-    "customerCases": [
+    "invoiceTitle": "Invoices & payments",
+    "invoiceItems": [
       {
-        "t": "Automatic from order",
-        "d": "The customer is saved automatically when an order is created (from WhatsApp or website), matched by phone number."
+        "t": "DP",
+        "d": "On the order page: <b>Rental Invoice</b> → <b>Down Payment (DP)</b>. At least 20% of the rental; the customer may pay more. The order becomes <b>DP Paid</b> only when the money actually received is at least 20% of the rental."
       },
       {
-        "t": "Order history",
-        "d": "Open the customer detail to see total orders and the list of previous orders. Useful for repeat customers."
+        "t": "Settlement",
+        "d": "<b>Rental Invoice</b> → <b>Settlement (Remaining Balance)</b>, due on the first service day. If the customer pays everything at once, choose <b>Full Payment</b>."
       },
       {
-        "t": "Tags & notes",
-        "d": "Add tags (e.g. VIP, Corporate) and notes for important customer info."
+        "t": "Additional charges",
+        "d": "Overtime, parking, extra stops and the like: click <b>Add Additional</b> on the order page first (the order total goes up), then bill it with an <b>Additional Invoice</b>. If there is no invoice yet, a <b>Combined Invoice (Rental + Additional)</b> bills both at once."
+      },
+      {
+        "t": "Mark Paid",
+        "d": "Once the money is in, click <b>Mark Paid</b> and upload the <b>Payment Proof</b> (required; for cash, a photo taken when the money is received). Leave <b>Amount Received</b> empty when it equals the invoice amount. A paid invoice becomes a <b>Receipt</b> (kwitansi)."
+      },
+      {
+        "t": "Sending by WhatsApp",
+        "d": "<b>Send</b> and <b>Send Kwitansi</b> on the order page, or <b>Send PDF via WhatsApp</b> and <b>Send Kwitansi via WhatsApp</b> in <b>{menuInvoices}</b>, open WhatsApp with the message filled in; press send in WhatsApp. Invoices in Draft, Revised or Cancelled status cannot be sent."
+      },
+      {
+        "t": "Correcting an amount",
+        "d": "Wrong amount, or the order price changed: click <b>Revise</b> on the active invoice. The old invoice stays as history."
+      },
+      {
+        "t": "Cancellation and refunds",
+        "d": "<b>Cancel Order</b> calculates the cancellation fee according to the policy and issues a cancellation invoice only for the part not yet paid. If the customer paid more, return the difference and record it with <b>Mark Refund</b> and the transfer proof."
       }
     ],
-    "externalTitle": "External: outside vendors & drivers",
-    "externalCases": [
+    "driverAppTitle": "Driver app & notifications",
+    "driverAppIntro": "The driver app is for internal Arasya drivers only. Partner drivers do not use the app.",
+    "driverAppItems": [
       {
-        "t": "Vendor & car",
-        "d": "The External menu stores outside vendors/drivers and their cars (one vendor can have many cars)."
+        "t": "Driver access",
+        "d": "Drivers log in to the app with their phone number and a password set by the admin: <b>{menuDrivers}</b> → driver detail → <b>Set password</b>. Every driver needs a different phone number."
       },
       {
-        "t": "Automatic from order",
-        "d": "When an external order is created from WhatsApp (driver as name + phone + origin), the vendor and car are created automatically, then can be tidied up here."
+        "t": "Trip progress",
+        "d": "The order page shows the driver steps per day: <b>Accepted by driver</b>, <b>Departed</b>, <b>Arrived at pickup</b>, <b>Customer on board</b> and <b>Finished</b>. Until the driver accepts, it shows <b>Not yet accepted by driver</b>."
       },
       {
-        "t": "Use in Schedule",
-        "d": "When assigning an external day in Schedule, pick the vendor and car from the list already saved here."
+        "t": "Start trip only when paid in full",
+        "d": "The driver may depart and mark the arrival at pickup before the order is paid in full, but “Start trip” (customer on board) in the app unlocks only once the settlement is recorded. Such days are marked <b>Not paid in full</b>."
+      },
+      {
+        "t": "Proof of arrival at pickup",
+        "d": "The driver takes a photo with the GPS camera on arrival. The order page and the <b>History</b> tab show the photo, coordinates, <b>View on map</b> and <b>Route to pickup address</b> to check the distance between driver and address. Watch for <b>Fake location detected</b> or <b>No photo/GPS</b>."
+      },
+      {
+        "t": "Trip costs",
+        "d": "Fuel, toll, parking and other receipts from the driver appear under <b>Trip costs</b> for that day with the status <b>Waiting for review</b>. Click <b>Approve</b> or <b>Reject</b> (the reason is sent to the driver). Choose <b>Paid by the office</b> when it was paid with an office e-toll or card, and tick <b>Bill to customer (Additional Invoice)</b> when the customer bears it. An order cannot be finalized while costs are still waiting for review."
+      },
+      {
+        "t": "Notifications",
+        "d": "The bell at the top and the <b>{menuNotifications}</b> menu show updates from the app: job accepted, departed, arrived, customer on board, finished, reports and new costs (<b>Needs review</b>). Click one to open the related page."
+      },
+      {
+        "t": "E-toll top-up requests",
+        "d": "Top-up requests from drivers appear in <b>{menuNotifications}</b> → <b>Driver requests</b>. Top up the card through m-banking, then click <b>Mark as topped up</b>, choose the <b>Card topped up</b> and enter the <b>Top-up amount</b>. The driver is notified and needs to tap the card to update the balance before entering the toll road."
+      },
+      {
+        "t": "Office e-toll cards",
+        "d": "Register every card in <b>{menuEtoll}</b> with <b>Add card</b>, including the full number for top-ups. Drivers record taking and returning a card in the app; admins can also use <b>Hand to a driver</b>, <b>Mark as returned</b>, <b>Record top-up</b>, <b>Record balance</b> and <b>Record toll</b>. The balance in the dashboard is an estimate; the real balance is on the card chip."
       }
     ],
-    "invoiceTitle": "Invoice and WhatsApp sending",
-    "invoiceGenerate": "Generate",
-    "invoiceGenerateDesc": "Create the invoice once the order total is correct. The PDF will be available for preview and sending.",
-    "invoiceSendPdf": "Send PDF",
-    "invoiceSendPdfDesc": "In the Invoices menu, expand the row, choose the customer/PIC, add an optional note, then send the PDF via WhatsApp.",
-    "invoiceHistory": "History",
-    "invoiceHistoryDesc": "Each send is saved: recipient, number, SENT/FAILED status, error, and View PDF.",
-    "serviceTypesTitle": "Official Arasya prices",
-    "serviceTypesIntro": "The official price list is on the Price List page. The prices there are the ones shown on the website once published.",
-    "priceListLink": "Open Price List",
-    "botTriggerTitle": "WhatsApp Bot: trigger rules",
-    "botTriggerWarnTitle": "You must use a keyword at the start of the message.",
-    "botTriggerWarnBody": "The bot ignores all normal chat. For text, photos, PDFs, and documents, the caption/message must start with a keyword. Case does not matter: #START, #Start, and #start are treated the same.",
-    "botWakeKeywords": [
+    "customersTitle": "Customers",
+    "customersItems": [
       {
-        "k": "#order",
-        "d": "Admin creates a new order from the Internal Arasya group."
+        "t": "Recorded automatically",
+        "d": "Customers are recorded automatically when an order is created. Returning customers are recognised by their phone number in the order form."
       },
       {
-        "k": "#start",
-        "d": "Driver starts moving / arrives at pickup / starts work. Can be text, photo, or document with a caption."
+        "t": "Identity & documents",
+        "d": "NIK, address, company and KTP/SIM/NPWP documents are kept on the customer detail page (<b>Identity & documents</b>). The customer list only shows a masked NIK; the full NIK is only on the detail page. After checking the identity, click <b>Mark as verified</b>."
       },
       {
-        "k": "#drop",
-        "d": "Driver reports drop-off/customer alighting. Does not close the order. For multi-drop/multi-day, still use #drop then write the drop number in the message: #drop 1, #drop 2, etc."
-      },
-      {
-        "k": "#finish",
-        "d": "Driver finishes the work and closes the order/trip."
+        "t": "History and notes",
+        "d": "The customer detail page shows the order history, tags (e.g. VIP, Corporate) and loyalty notes."
       }
     ],
-    "multiDropNote": "Multi-drop / multi-day: do not create new keywords like #drop1 or #drop2. Keep using #drop, then write the drop number after the keyword or in the message. Example: #drop 1, #drop 2, #drop 3. All drops only save reports; the order is closed only with #finish.",
-    "captionNote": "Photos/documents without a keyword caption are not processed. Correct example: send a photo with caption #start, #drop, #drop 1, or #finish.",
-    "botOrderRulesTitle": "WhatsApp Bot: order rules",
-    "internalDriverTitle": "Internal driver",
-    "internalDriverDesc": "Use a short name or tag. The bot matches the database to get the full name, phone, type, and base.",
-    "externalDriverTitle": "External driver",
-    "externalDriverDesc": "Must write the name, WhatsApp number, and origin/base. Do not use a tag for external.",
-    "tbaTitle": "TBA/TBC",
-    "tbaDesc": "Allowed for locations/times not yet confirmed. The first day should be complete.",
-    "botChatExamplesTitle": "WhatsApp order chat examples for various cases",
-    "driverReportTitle": "Driver report examples to the bot",
-    "keywordsTitle": "Keywords the bot understands",
-    "colKeyword": "Keyword",
-    "colMeaning": "Meaning",
-    "keywords": [
+    "partnersTitle": "Partners & vendors",
+    "partnersItems": [
       {
-        "k": "PIC / Name / Phone",
-        "d": "Customer or person-in-charge data that can be contacted."
+        "t": "Partner data",
+        "d": "<b>{menuVendors}</b> keeps vendors with their cars, contact person, service area and bank account. New vendors and cars can also be created straight from <b>Edit Day</b>."
       },
       {
-        "k": "Booking",
-        "d": "When the order was made. On the website it automatically uses the order creation time; on WhatsApp it can be written if the order is old/needs a specific date."
+        "t": "Partner days",
+        "d": "In <b>Edit Day</b> choose <b>External</b>, then the vendor, vendor car and <b>RTR (vendor cost, this day)</b>. Fill in <b>Partner driver & unit</b> (name, phone number, plate) so the WhatsApp confirmation is complete; until then the Confirmation column shows <b>Complete the partner driver & plate</b>."
       },
       {
-        "k": "DETAIL / Itinerary",
-        "d": "Start of the service/route list. Each number becomes one invoice line and one day in Schedule. Drivers can differ per number."
-      },
-      {
-        "k": "Pickup",
-        "d": "Pickup location."
-      },
-      {
-        "k": "Dropoff",
-        "d": "Destination/dropoff location."
-      },
-      {
-        "k": "Car / Unit",
-        "d": "Unit code or car type, e.g. ARA, FCB, VLZ1, Innova."
-      },
-      {
-        "k": "Driver",
-        "d": "Internal: short name/tag is enough. External: must have name + phone + origin."
-      },
-      {
-        "k": "Driver Phone / WA",
-        "d": "External driver's WhatsApp number."
-      },
-      {
-        "k": "Driver Origin",
-        "d": "External driver's base, e.g. Bandung, Bogor, Jakarta."
-      },
-      {
-        "k": "Price",
-        "d": "Price per service line. The order total is computed from all lines."
-      },
-      {
-        "k": "Notes",
-        "d": "Extra info for admin/driver."
-      },
-      {
-        "k": "TBA / TBC / TBD",
-        "d": "Allowed for locations/times not yet confirmed, especially the next day."
+        "t": "No app",
+        "d": "Partner days are run from the dashboard and closed with <b>Edit</b> → status <b>Done</b>. Partner days are not subject to the DP requirement."
       }
     ],
-    "componentExampleTitle": "Component display examples",
-    "exampleInvoiceTable": "Example invoice table",
-    "exampleServiceRow": "Example service row",
-    "colInvoice": "Invoice",
-    "colCustomer": "Customer",
-    "colStatus": "Status",
-    "colAction": "Action",
+    "financeTitle": "Finance & Price List",
+    "financeItems": [
+      {
+        "t": "{menuInvoices}",
+        "d": "Every invoice and receipt across all orders: search, view the PDF and send it by WhatsApp."
+      },
+      {
+        "t": "{menuPayables}",
+        "d": "<b>Driver Payables</b> (fee + approved reimbursements − travel advance) and <b>Vendor Payables</b>. Click <b>Pay</b>, or select several and click <b>Pay Selected</b>; the driver is notified that the fee has been paid. Fees and travel advances are changed in <b>Edit Day</b>; once paid, click <b>Mark unpaid</b> first."
+      },
+      {
+        "t": "{menuRevenue}",
+        "d": "Revenue = day prices + additional charges (counted on the date recorded) + cancellation fees (on the cancellation date). Trip costs re-billed to the customer are not revenue. Partner days count at the price charged to the customer; the RTR is a cost."
+      },
+      {
+        "t": "{menuPriceList}",
+        "d": "Official prices per city. Changes appear on the website only after <b>Publish to website</b>; until then the website uses the old prices. Prices marked as proposed need the owner to confirm them before publishing."
+      }
+    ],
+    "priceListLink": "Open {menuPriceList}",
+    "rulesTitle": "Key rules",
+    "rules": [
+      {
+        "t": "Official bank account",
+        "d": "Payments go only to BCA 0954840782 in the name of PT Ayomi Raya Karsa. Never give a personal account to a customer."
+      },
+      {
+        "t": "Cancellation fee",
+        "d": "Before the travel day: 20% of the order total. On the travel day until 10:00 WIB and the trip has not started: 50%. After that: 100%. Cancel an order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
+      },
+      {
+        "t": "Driver after the DP",
+        "d": "An internal driver can only be assigned after the DP or the settlement is marked paid. The trip with the customer can only start once the order is paid in full."
+      },
+      {
+        "t": "Personal data",
+        "d": "NIK and KTP documents are confidential (UU PDP) and only used to verify bookings. Documents open through <b>View</b> with a temporary link; delete them if the customer asks."
+      },
+      {
+        "t": "Changing or cancelling a day",
+        "d": "A day that already has a driver cannot be removed in <b>Edit Order</b>; cancel it in <b>Edit Day</b>. The last active day cannot be cancelled in <b>Edit Day</b>; use <b>Cancel Order</b>. <b>Edit Day</b> also refuses a change that would bring the order total below the invoices already issued; revise the invoice first."
+      },
+      {
+        "t": "Done or cancelled orders",
+        "d": "Days on a Done or Cancelled order are locked. Billing (invoices, payments, receipts, refunds) is still possible."
+      }
+    ],
     "mistakesTitle": "Common mistakes",
     "mistakes": [
-      "External drivers cannot be just a tag. Write name + WhatsApp number + origin/base.",
-      "Do not forget the Price on each detail line, because the invoice is computed from the service lines.",
-      "REVISED, CANCELLED, or DRAFT invoices cannot be sent to the customer's WhatsApp.",
-      "If the invoice has no PDF yet, generate/sync the invoice first before sending.",
-      "If an internal driver tag fails to match, make sure the driver's WhatsApp number in the database is correct."
+      "Marking an invoice paid before the money has actually reached the office BCA account.",
+      "Trying to choose a driver before the DP is recorded. Create the DP invoice, wait for the transfer, then <b>Mark Paid</b> with the proof.",
+      "Forgetting to press send in WhatsApp. The dashboard buttons only open WhatsApp with the message filled in.",
+      "Not resending the confirmation after the time or driver changed (status <b>Changed, needs resend</b>).",
+      "Logging overtime or parking without <b>Add Additional</b>, so the <b>Additional Invoice</b> has nothing left to bill.",
+      "Leaving trip costs in <b>Waiting for review</b>, so the order cannot be finalized.",
+      "Leaving old trips open. Check the <b>Not closed</b> chip in <b>{menuTrip}</b> regularly."
     ]
   },
   "orderDetail": {
+    "durDays": "{n}d",
+    "durHours": "{n}h",
+    "durMinutes": "{n}m",
     "title": "Order Detail",
     "notFound": "Order not found.",
     "refundDue": "Refund due",
@@ -827,6 +898,9 @@
     "typeParking": "Parking",
     "typeToll": "Toll",
     "typeAdditional": "Additional",
+    "typeExtraDestination": "Extra destination",
+    "typeFuel": "Fuel",
+    "typeDiscount": "Discount",
     "okNoPhone": "No customer phone number on this order",
     "okInvoiceSent": "Invoice {number} sent via WhatsApp",
     "okReceiptSent": "Kwitansi for {number} sent via WhatsApp",
@@ -887,6 +961,16 @@
     "notPaidForTrip": "Order not paid in full ({left} of the rental left). The driver can still depart and mark the arrival at pickup, but \"Start trip\" in the app unlocks only once the settlement is recorded (invoice marked paid)."
   },
   "invoicesPage": {
+    "expandRow": "Show invoice details",
+    "collapseRow": "Hide invoice details",
+    "viewInvoicePdfAria": "View PDF of invoice {number}",
+    "openOrderAria": "Open the order of invoice {number}",
+    "manualNamePlaceholder": "e.g. Finance / PIC",
+    "deliveryStatus": {
+      "PENDING": "Pending",
+      "SENT": "Sent",
+      "FAILED": "Failed"
+    },
     "title": "Invoices",
     "payUnpaid": "Unpaid",
     "payDp": "DP",
@@ -991,7 +1075,13 @@
     "loading": "Loading…",
     "noResources": "No resources to show.",
     "unassigned": "Unassigned",
-    "today": "Today"
+    "today": "Today",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "openDay": "View & assign this day",
+    "capacityTitle": "{free} free · {trips} trips",
+    "freeShort": "{n} free",
+    "tripsShort": "{n} trips"
   },
   "dayDrawer": {
     "title": "Day",
@@ -1012,7 +1102,8 @@
     "cancel": "Cancel",
     "save": "Save",
     "awaitingDp": "Awaiting DP",
-    "notPaid": "Not paid in full"
+    "notPaid": "Not paid in full",
+    "description": "Free drivers and cars and the trips on this date."
   },
   "history": {
     "title": "Trip History",
@@ -1080,32 +1171,9 @@
       "ONBOARD": "Customer on board"
     },
     "reimbursed": "Reimbursed costs",
-    "travelAdvance": "Travel advance"
-  },
-  "agentPage": {
-    "title": "Bot Agent",
-    "subtitle": "Arasya WhatsApp Bot",
-    "heading": "Agent Memory, Skills & Decisions",
-    "intro": "Monitor #order/#start/#drop/#finish routing results, decision log, learned aliases, and parser lessons. The bot stays keyword-gated and actions must be tool-backed.",
-    "decisions": "Decisions",
-    "lessons": "Lessons",
-    "aliases": "Aliases",
-    "wakeKeywords": "Wake Keywords",
-    "recentDecisionLog": "Recent decision log",
-    "colTime": "Time",
-    "colSkill": "Skill",
-    "colAction": "Action",
-    "colStatus": "Status",
-    "colSummary": "Summary",
-    "orderLabel": "Order: {code}",
-    "driverAliases": "Driver aliases",
-    "areaAliases": "Area aliases",
-    "carAliases": "Car aliases",
-    "agentLessons": "Agent lessons",
-    "parserFailures": "Parser failures / lessons",
-    "orderParser": "Order parser",
-    "reportParser": "Report parser",
-    "noData": "No data yet."
+    "travelAdvance": "Travel advance",
+    "feePaid": "Paid",
+    "feeUnpaid": "Unpaid"
   },
   "partnerDetail": {
     "totalTrip": "Total Trips",
@@ -1239,7 +1307,10 @@
     "advanceLabel": "Travel advance (deducted)",
     "baseFromDayHint": "Fee/price and travel advance are changed in Edit Day (Schedule); reimbursements come from trip costs approved on the order page.",
     "reimburseShort": "reimbursed",
-    "advanceShort": "advance"
+    "advanceShort": "advance",
+    "selectAll": "Select all unpaid payables",
+    "selectRow": "Select payable for {name}",
+    "extraAmount": "Amount"
   },
   "invoiceSection": {
     "typeDP": "DP",
@@ -1259,7 +1330,26 @@
     "invoiceAdditional": "Additional Invoice",
     "invoiceCombined": "Combined Invoice (Rental + Additional)",
     "statementCombinedPick": "Combined Statement (Select Invoices)",
-    "syncHint": "Order total is higher than invoice. Click <b>Sync Current Invoice</b> to create a revised full invoice.",
+    "syncHint": "Order total is higher than the invoice total. Bill the rest with a Rental Invoice (Settlement) or an Additional Invoice, or click <b>Revise</b> on the current invoice to adjust its amount.",
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Issued",
+      "REVISED": "Revised",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
+    "method": {
+      "CASH": "Cash",
+      "BANK_TRANSFER": "Bank Transfer",
+      "QRIS": "QRIS",
+      "OTHER": "Other"
+    },
+    "viewInvoice": "View Invoice",
+    "viewInvoiceAria": "View invoice {number}",
+    "viewReceiptAria": "View receipt {number}",
+    "invoiceTitle": "Invoice {number}",
+    "receiptTitle": "Receipt {number}",
+    "proofTitle": "Payment proof {number}",
     "fullyInvoicedHint": "Fully invoiced. Add charges by editing final price, then sync the invoice.",
     "invoicesLabel": "Invoices",
     "totalCount": "{count} total",
@@ -1295,6 +1385,12 @@
     "openDownload": "Open / Download"
   },
   "generateInvoice": {
+    "errAmountRequired": "Amount is required",
+    "errAmountPositive": "Amount must be more than 0",
+    "methodCash": "Cash",
+    "methodBankTransfer": "Bank Transfer",
+    "methodQris": "QRIS",
+    "methodOther": "Other",
     "typeDP": "Down Payment (DP)",
     "typeSettlement": "Settlement (Remaining Balance)",
     "typeFull": "Full Payment",
@@ -1374,6 +1470,10 @@
     "onTrip": "On trip"
   },
   "reviseInvoice": {
+    "errAmountRequired": "Amount is required",
+    "errAmountPositive": "Amount must be more than 0",
+    "defaultNote": "Revision of {number}",
+    "defaultNoteWith": "Revision of {number}: {note}",
     "currentInvoice": "Current invoice",
     "currentAmount": "Current amount",
     "reviseHint": "This will mark the current invoice as REVISED and create a new current invoice. Use the full latest order amount when syncing a price change.",
@@ -1428,6 +1528,14 @@
     "methodOther": "Other"
   },
   "editOrderForm": {
+    "customerTitle": "Customer / PIC",
+    "customerHint": "The primary PIC is used as the main customer contact.",
+    "addPic": "Add PIC",
+    "primaryPic": "Primary PIC",
+    "setPrimary": "Set as primary",
+    "removePic": "Remove PIC",
+    "nameRequired": "Name is required",
+    "reasonRequired": "A reason is required because the price changed.",
     "name": "Name",
     "phone": "Phone",
     "orderDateNote": "Order Date / Booking Time is kept from the original order creation. Day 1 is the first Service Detail row below. For a 1-day rental, update the first row only.",
@@ -1442,6 +1550,22 @@
     "assignedDaysNote": "Days that already have a driver, car or trip keep them; change their date, time, place or price here. To cancel one day, use Edit Hari in the Trip menu."
   },
   "invoiceHistoryTable": {
+    "docReceipt": "Receipt",
+    "type": {
+      "DP": "DP",
+      "SETTLEMENT": "Settlement",
+      "FULL": "Full",
+      "ADDITIONAL": "Additional",
+      "COMBINED": "Combined",
+      "CANCELLATION_FEE": "Cancellation Fee"
+    },
+    "status": {
+      "DRAFT": "Draft",
+      "ISSUED": "Issued",
+      "REVISED": "Revised",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
     "orderTotal": "Order Total",
     "invoiced": "Invoiced",
     "paid": "Paid",
@@ -1556,6 +1680,12 @@
     "driverFeePerDayHint": "Sum of every day's fee · set per day in Edit Day"
   },
   "markPaid": {
+    "methods": {
+      "CASH": "Cash",
+      "BANK_TRANSFER": "Bank Transfer",
+      "QRIS": "QRIS",
+      "OTHER": "Other"
+    },
     "title": "Mark Paid — {invoice}",
     "intro": "Payment proof is required. For cash payments, upload a photo taken when the money is received.",
     "proofLabel": "Payment Proof",
@@ -1571,6 +1701,7 @@
     "markPaidBtn": "Mark Paid"
   },
   "cars": {
+    "viewPhoto": "View photo",
     "baseNotSet": "Base not set",
     "revenueOfUnit": "Revenue for this unit",
     "changePhoto": "Change photo",
@@ -1756,7 +1887,8 @@
     "inFleet": "In fleet",
     "needPartner": "Partner needed",
     "inFleetTitle": "Fleet units: {cars}",
-    "needPartnerTitle": "This unit is not in Arasya's fleet. Find a partner/vendor."
+    "needPartnerTitle": "This unit is not in Arasya's fleet. Find a partner/vendor.",
+    "linkSearch": "Search orders"
   },
   "customerIdentity": {
     "title": "Identity & documents",
@@ -1804,7 +1936,8 @@
     "okDeleted": "Document deleted",
     "deleteTitle": "Delete document?",
     "deleteConfirm": "The {kind} document will be permanently deleted and cannot be restored.",
-    "privacyNote": "Documents are confidential and only used to verify bookings. Delete them if the customer asks."
+    "privacyNote": "Documents are confidential and only used to verify bookings. Delete them if the customer asks.",
+    "docFile": "Document file"
   },
   "customerLookup": {
     "returning": "Returning customer: {name}",
@@ -1817,6 +1950,7 @@
     "use": "Use this data"
   },
   "vendorFields": {
+    "holderLine": "Account holder: {name}",
     "pic": "PIC / contact",
     "picPlaceholder": "Person in charge",
     "area": "Service area",
@@ -1849,6 +1983,8 @@
     "photoAlt": "Arrival photo at pickup with time and GPS stamp"
   },
   "tripCosts": {
+    "typeLabel": "Cost type",
+    "paidByLabel": "Paid by",
     "title": "Trip costs",
     "pendingCount": "{n} waiting for review",
     "add": "Add cost",
@@ -2217,5 +2353,20 @@
     "amountEmptyHint": "Leave empty when there is no fixed cost; it then shows as \"Ask admin\" (\"Tanya admin\" on the website).",
     "slugPlaceholder": "toyota-avanza",
     "priceClassPlaceholder": "e.g. Avanza sekelas"
+  },
+  "filePreview": {
+    "document": "Document",
+    "photo": "Photo",
+    "counter": "{current} of {total}",
+    "pdfHint": "Document preview",
+    "imageHint": "Tap or click the image to zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "rotate": "Rotate",
+    "openNewTab": "Open in new tab",
+    "previous": "Previous",
+    "next": "Next",
+    "loadFailed": "This file cannot be shown here.",
+    "pdfNotSupported": "This browser cannot show a PDF inside the page. Open it in a new tab to view it."
   }
 }

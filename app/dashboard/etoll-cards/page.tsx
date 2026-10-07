@@ -41,26 +41,34 @@ export default function EtollCardsPage() {
     <DashboardShell title={t('title')}>
       <div className="space-y-4">
         <p className="max-w-3xl text-sm text-gray-500">{t('desc')}</p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
               <Input
+                type="search"
+                aria-label={t('searchPlaceholder')}
                 className="pl-9"
                 placeholder={t('searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex w-fit gap-0.5 rounded-lg bg-gray-100 p-0.5">
+            <div className="flex w-fit gap-0.5 rounded-lg bg-gray-100 p-0.5" role="group">
               {(['ACTIVE', 'INACTIVE', 'ALL'] as Filter[]).map((f) => (
-                <button key={f} type="button" className={segmentClass(filter === f)} onClick={() => setFilter(f)}>
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={filter === f}
+                  className={segmentClass(filter === f, 'whitespace-nowrap')}
+                  onClick={() => setFilter(f)}
+                >
                   {t(`filter${f}`)} ({count(f)})
                 </button>
               ))}
             </div>
           </div>
-          <Button onClick={() => setAdding(true)}>
+          <Button onClick={() => setAdding(true)} className="w-full sm:ml-auto sm:w-auto">
             <Plus className="h-4 w-4" /> {t('add')}
           </Button>
         </div>
@@ -115,13 +123,13 @@ function CardRow({ c }: { c: EtollCard }) {
           <CreditCard className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900">
+          <p className="flex flex-wrap items-center gap-2 break-words text-sm font-semibold text-gray-900">
             {c.name}
             <Badge variant="outline" className={cn('text-[11px] font-medium', ISSUER_TINT[c.issuer])}>
               {c.issuer_label || t('issuerOther')}
             </Badge>
             {c.status === 'INACTIVE' && (
-              <Badge variant="outline" className="border-gray-300 text-[11px] text-gray-500">
+              <Badge variant="outline" className="max-w-full whitespace-normal border-gray-300 text-left text-[11px] text-gray-500">
                 {t('inactive')}
                 {c.inactive_reason ? ` · ${c.inactive_reason}` : ''}
               </Badge>

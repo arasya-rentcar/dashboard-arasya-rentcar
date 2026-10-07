@@ -2,15 +2,14 @@
 
 import {
   FileText,
-  Download,
   Plus,
   PencilLine,
   Eye,
-  RefreshCw,
   Send,
   CheckCircle2,
   ReceiptText,
   FileSpreadsheet,
+  Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
@@ -18,15 +17,17 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import { ordersApi } from '@/lib/api';
-import { getErrorMessage } from '@/lib/utils';
+import { cn, getErrorMessage } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Invoice, InvoiceType, PaymentMethod } from '@/types';
+import { Invoice, InvoiceType, PaymentMethod, InvoiceStatus } from '@/types';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 const TYPE_KEYS: Record<InvoiceType, 'typeDP' | 'typeSettlement' | 'typeFull' | 'typeAdditional' | 'typeCombined' | 'typeCancellationFee'> = {
@@ -55,12 +56,13 @@ const STATUS_STYLES: Record<string, string> = {
   CANCELLED: 'border-red-200 text-red-700 bg-red-50',
 };
 
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  CASH: 'Cash',
-  BANK_TRANSFER: 'Bank Transfer',
-  QRIS: 'QRIS',
-  OTHER: 'Other',
-};
+const KNOWN_STATUSES: InvoiceStatus[] = ['DRAFT', 'ISSUED', 'REVISED', 'PAID', 'CANCELLED'];
+const KNOWN_METHODS: PaymentMethod[] = ['CASH', 'BANK_TRANSFER', 'QRIS', 'OTHER'];
+
+// Buttons in this column may be narrower than their label (the invoice column
+// is ~300px on desktop): let the label wrap inside the button instead of
+// spilling out of it.
+const WRAP_BTN = 'h-auto min-h-9 whitespace-normal py-1.5 text-center leading-tight';
 
 interface Props {
   invoices: Invoice[];
@@ -109,17 +111,50 @@ export default function InvoiceSection({
 }: Props) {
   const t = useTranslations('invoiceSection');
   const tc = useTranslations('common');
-  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const { openPreview } = useFilePreview();
   const [proofLoadingId, setProofLoadingId] = useState<string | null>(null);
   const [statementLoading, setStatementLoading] = useState(false);
+  const [statementOpen, setStatementOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Sprint 3: fetch a short-lived signed URL for the payment proof and open it.
+  const statusLabel = (status: string) =>
+    KNOWN_STATUSES.includes(status as InvoiceStatus) ? t(`status.${status as InvoiceStatus}`) : status;
+  const methodLabel = (method: PaymentMethod) =>
+    KNOWN_METHODS.includes(method) ? t(`method.${method}`) : method;
+
+  function previewInvoice(inv: Invoice) {
+    if (!inv.file_url) return;
+    openPreview({ url: inv.file_url, title: t('invoiceTitle', { number: inv.invoice_number }), kind: 'pdf' });
+  }
+
+  // Every kwitansi of the invoice in one gallery, starting at the clicked one.
+  function previewReceipts(inv: Invoice, startIndex = 0) {
+    const items = (inv.receipts ?? [])
+      .map((r) => ({
+        url: r.file_url || inv.receipt_url || '',
+        title: t('receiptTitle', { number: r.receipt_number }),
+        kind: 'pdf' as const,
+      }))
+      .filter((i) => i.url);
+    if (items.length) {
+      openPreview(items, startIndex);
+    } else if (inv.receipt_url) {
+      openPreview({
+        url: inv.receipt_url,
+        title: t('receiptTitle', { number: inv.invoice_number }),
+        kind: 'pdf',
+      });
+    }
+  }
+
+  // Fetch a short-lived signed URL for the payment proof, then show it in the
+  // in-page viewer (no new tab, so no popup blocker after the await).
   async function handleViewProof(inv: Invoice) {
     setProofLoadingId(inv.id);
     try {
       const res = await ordersApi.getPaymentProof(orderId, inv.id);
       const url = res.data?.data?.url as string | undefined;
-      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      if (url) openPreview({ url, title: t('proofTitle', { number: inv.invoice_number }) });
       else toast.error(t('proofNotFound'));
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -127,8 +162,6 @@ export default function InvoiceSection({
       setProofLoadingId(null);
     }
   }
-  const [statementOpen, setStatementOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // Open the picker with every invoice pre-selected (most common case = all).
   function openStatementPicker() {
@@ -155,8 +188,8 @@ export default function InvoiceSection({
       const res = await ordersApi.getStatement(orderId, idsArg);
       const url = res.data?.data?.statement_url;
       if (url) {
-        window.open(url, '_blank', 'noopener,noreferrer');
         setStatementOpen(false);
+        openPreview({ url, title: t('statementCombined'), kind: 'pdf' });
       } else {
         toast.error(t('statementUrlMissing'));
       }
@@ -166,6 +199,7 @@ export default function InvoiceSection({
       setStatementLoading(false);
     }
   }
+
   const activeInvoices = invoices.filter(isActiveInvoice);
   const currentInvoice = latestActiveInvoice(invoices);
   const totalPaid = activeInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
@@ -175,21 +209,21 @@ export default function InvoiceSection({
   const hasInvoice = invoices.length > 0;
 
   return (
-    <div className="space-y-4">
+    <div className="@container space-y-4">
       {/* Payment summary */}
       <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-3 space-y-2">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
           <span className="text-gray-500">{t('orderTotal')}</span>
-          <span className="font-semibold text-gray-900">{formatCurrency(finalPrice)}</span>
+          <span className="font-semibold text-gray-900 tabular-nums">{formatCurrency(finalPrice)}</span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
           <span className="text-gray-500">{t('activeInvoice')}</span>
-          <span className="font-medium text-gray-700">{formatCurrency(totalPaid)}</span>
+          <span className="font-medium text-gray-700 tabular-nums">{formatCurrency(totalPaid)}</span>
         </div>
         <Separator />
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 text-sm">
           <span className="text-gray-500">{t('remaining')}</span>
-          <span className={`font-semibold ${isOverInvoiced ? 'text-red-600' : isFullyPaid ? 'text-emerald-600' : 'text-gray-900'}`}>
+          <span className={`font-semibold tabular-nums ${isOverInvoiced ? 'text-red-600' : isFullyPaid ? 'text-emerald-600' : 'text-gray-900'}`}>
             {formatCurrency(remaining)}
           </span>
         </div>
@@ -201,16 +235,17 @@ export default function InvoiceSection({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <Button variant="outline" size="sm" className="w-full gap-2" onClick={onOpenGenerate}>
+      <div className="grid grid-cols-1 gap-2 @xs:grid-cols-2">
+        <Button type="button" variant="outline" size="sm" className={cn('w-full', WRAP_BTN)} onClick={onOpenGenerate}>
           <Plus className="h-4 w-4" />
           {t('invoiceRental')}
         </Button>
         {onOpenAdditional && (
           <Button
+            type="button"
             variant="outline"
             size="sm"
-            className="w-full gap-2 text-purple-700 border-purple-200 hover:bg-purple-50"
+            className={cn('w-full text-purple-700 border-purple-200 hover:bg-purple-50', WRAP_BTN)}
             onClick={onOpenAdditional}
           >
             <Plus className="h-4 w-4" />
@@ -221,9 +256,10 @@ export default function InvoiceSection({
 
       {onOpenCombined && !hasInvoice && (
         <Button
+          type="button"
           variant="outline"
           size="sm"
-          className="w-full gap-2 text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+          className={cn('w-full text-indigo-700 border-indigo-200 hover:bg-indigo-50', WRAP_BTN)}
           onClick={onOpenCombined}
         >
           <Plus className="h-4 w-4" />
@@ -233,9 +269,10 @@ export default function InvoiceSection({
 
       {hasInvoice && (
         <Button
+          type="button"
           variant="outline"
           size="sm"
-          className="w-full gap-2 text-slate-700 border-slate-300 hover:bg-slate-50"
+          className={cn('w-full text-slate-700 border-slate-300 hover:bg-slate-50', WRAP_BTN)}
           onClick={openStatementPicker}
         >
           <FileSpreadsheet className="h-4 w-4" />
@@ -258,7 +295,7 @@ export default function InvoiceSection({
       {/* Invoice list */}
       {invoices.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{t('invoicesLabel')}</p>
             <span className="text-xs text-gray-400">{t('totalCount', { count: invoices.length })}</span>
           </div>
@@ -266,30 +303,30 @@ export default function InvoiceSection({
           {invoices.map((inv) => {
             const active = isActiveInvoice(inv);
             const current = currentInvoice?.id === inv.id;
+            const receiptUrl = inv.receipts?.[0]?.file_url || inv.receipt_url;
 
             // Only the current/latest invoice shows as a full card. Every other
             // invoice (already paid, revised, historical) collapses into a
-            // compact list row — number/type/status/amount + quick view links.
+            // compact list row — number/type/status/amount + quick view buttons.
             if (!current) {
-              const receiptUrl = inv.receipts?.[0]?.file_url || inv.receipt_url;
               return (
                 <div
                   key={inv.id}
-                  className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2"
+                  className="flex items-start gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2"
                 >
-                  <div className="h-7 w-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center shrink-0">
+                  <div className="mt-0.5 h-7 w-7 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center shrink-0">
                     <FileText className="h-3.5 w-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="truncate font-mono text-xs font-medium text-gray-700" title={inv.invoice_number}>
-                        {shortInvoiceNumber(inv.invoice_number)}
-                      </span>
+                    <p className="truncate font-mono text-xs font-medium text-gray-700" title={inv.invoice_number}>
+                      {inv.invoice_number}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
                         {t(TYPE_KEYS[inv.invoice_type])}
                       </Badge>
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
-                        {inv.status}
+                        {statusLabel(inv.status)}
                       </Badge>
                       {(inv.revision ?? 0) > 0 && (
                         <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">
@@ -297,60 +334,75 @@ export default function InvoiceSection({
                         </Badge>
                       )}
                     </div>
-                    <p className="text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
+                    <p className="mt-0.5 text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-gray-900">
-                    {formatCurrency(inv.amount)}
-                  </span>
-                  <div className="flex shrink-0 items-center gap-1">
-                    {inv.file_url && (
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title={t('invoice')} onClick={() => setPreviewInvoice(inv)}>
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {receiptUrl && (
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-700" title={t('receipt')} asChild>
-                        <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
-                          <ReceiptText className="h-3.5 w-3.5" />
-                        </a>
-                      </Button>
-                    )}
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className="text-sm font-semibold text-gray-900 tabular-nums">
+                      {formatCurrency(inv.amount)}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {inv.file_url && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title={t('viewInvoice')}
+                          aria-label={t('viewInvoiceAria', { number: inv.invoice_number })}
+                          onClick={() => previewInvoice(inv)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {receiptUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-emerald-700"
+                          title={t('receipt')}
+                          aria-label={t('viewReceiptAria', { number: inv.invoice_number })}
+                          onClick={() => previewReceipts(inv)}
+                        >
+                          <ReceiptText className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             }
 
+            const proofLoading = proofLoadingId === inv.id;
+            const sending = sendingInvoiceId === inv.id;
+            const paying = payingInvoiceId === inv.id;
+
             return (
               <div
                 key={inv.id}
-                className={`rounded-xl border p-3 space-y-3 ${
-                  current ? 'border-emerald-200 bg-emerald-50/40' : 'border-gray-100 bg-white'
-                }`}
+                className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 space-y-3"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`mt-1 h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${current ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <div className="mt-1 h-9 w-9 rounded-full flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700">
                     <FileText className="h-4 w-4" />
                   </div>
 
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 font-mono truncate" title={inv.invoice_number}>
-                        {shortInvoiceNumber(inv.invoice_number)}
+                        {inv.invoice_number}
                       </p>
                       <p className="text-xs text-gray-400">{formatDate(inv.issue_date)}</p>
                     </div>
 
                     <div className="flex flex-wrap gap-1.5">
-                      {current && (
-                        <Badge variant="outline" className="text-[10px] border-emerald-200 bg-emerald-50 text-emerald-700">
-                          {t('current')}
-                        </Badge>
-                      )}
+                      <Badge variant="outline" className="text-[10px] border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {t('current')}
+                      </Badge>
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
                         {t(TYPE_KEYS[inv.invoice_type])}
                       </Badge>
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
-                        {inv.status}
+                        {statusLabel(inv.status)}
                       </Badge>
                       {inv.status === 'PAID' && (
                         <Badge variant="outline" className="text-[10px] border-emerald-300 bg-emerald-100 text-emerald-800 gap-0.5">
@@ -373,12 +425,12 @@ export default function InvoiceSection({
                 </div>
 
                 <div className="rounded-lg bg-white/75 border border-gray-100 px-3 py-2">
-                  <div className="flex items-end justify-between gap-3">
+                  <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
                     <div>
                       <p className="text-xs text-gray-400">{t('amount')}</p>
-                      <p className="text-lg font-bold text-gray-900 leading-tight">{formatCurrency(inv.amount)}</p>
+                      <p className="text-lg font-bold text-gray-900 leading-tight tabular-nums">{formatCurrency(inv.amount)}</p>
                     </div>
-                    <p className="text-xs text-gray-500 text-right">{t('via', { method: METHOD_LABELS[inv.payment_method] })}</p>
+                    <p className="text-xs text-gray-500 text-right">{t('via', { method: methodLabel(inv.payment_method) })}</p>
                   </div>
                 </div>
 
@@ -386,14 +438,17 @@ export default function InvoiceSection({
                     receipt -> invoice link explicit. */}
                 {(inv.receipts && inv.receipts.length > 0) || inv.receipt_url ? (
                   <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2 space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <ReceiptText className="h-3.5 w-3.5 text-emerald-700" />
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-800">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <ReceiptText className="h-3.5 w-3.5 shrink-0 text-emerald-700" />
+                      <p
+                        className="truncate text-[11px] font-semibold uppercase tracking-wide text-emerald-800"
+                        title={t('receiptForInvoice', { number: inv.invoice_number })}
+                      >
                         {t('receiptForInvoice', { number: shortInvoiceNumber(inv.invoice_number) })}
                       </p>
                     </div>
                     {inv.receipts && inv.receipts.length > 0 ? (
-                      inv.receipts.map((rcpt) => (
+                      inv.receipts.map((rcpt, i) => (
                         <div key={rcpt.id} className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-xs font-mono font-semibold text-emerald-900 truncate" title={rcpt.receipt_number}>
@@ -405,15 +460,15 @@ export default function InvoiceSection({
                           </div>
                           {(rcpt.file_url || inv.receipt_url) && (
                             <Button
+                              type="button"
                               variant="outline"
                               size="sm"
-                              className="shrink-0 h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                              asChild
+                              className="shrink-0 px-2.5 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                              aria-label={t('viewReceiptAria', { number: rcpt.receipt_number })}
+                              onClick={() => previewReceipts(inv, i)}
                             >
-                              <a href={(rcpt.file_url || inv.receipt_url)!} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-3 w-3 mr-1" />
-                                {t('view')}
-                              </a>
+                              <Eye className="h-3.5 w-3.5" />
+                              {t('view')}
                             </Button>
                           )}
                         </div>
@@ -421,30 +476,33 @@ export default function InvoiceSection({
                     ) : (
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[11px] text-emerald-700/80">{t('receiptAvailable')}</p>
-                        {inv.receipt_url && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="shrink-0 h-7 px-2 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
-                            asChild
-                          >
-                            <a href={inv.receipt_url} target="_blank" rel="noopener noreferrer">
-                              <Eye className="h-3 w-3 mr-1" />
-                              {t('view')}
-                            </a>
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 px-2.5 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                          aria-label={t('viewReceiptAria', { number: inv.invoice_number })}
+                          onClick={() => previewReceipts(inv)}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          {t('view')}
+                        </Button>
                       </div>
                     )}
-                    {onSendReceipt && inv.status === 'PAID' && (inv.receipts?.[0]?.file_url || inv.receipt_url) && (
+                    {onSendReceipt && inv.status === 'PAID' && receiptUrl && (
                       <Button
+                        type="button"
                         variant="outline"
                         size="sm"
-                        className="w-full h-7 text-emerald-700 border-emerald-300 hover:bg-emerald-100"
+                        className={cn('w-full text-emerald-700 border-emerald-300 hover:bg-emerald-100', WRAP_BTN)}
                         disabled={sendingReceiptId === inv.id}
                         onClick={() => onSendReceipt(inv)}
                       >
-                        <Send className="h-3 w-3 mr-1" />
+                        {sendingReceiptId === inv.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
                         {sendingReceiptId === inv.id ? t('sendingReceipt') : t('sendReceipt')}
                       </Button>
                     )}
@@ -457,70 +515,75 @@ export default function InvoiceSection({
                   </p>
                 )}
 
-                {inv.note && <p className="text-xs text-gray-400 italic">{inv.note}</p>}
+                {inv.note && <p className="text-xs text-gray-400 italic break-words">{inv.note}</p>}
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {/* Two columns in the narrow desktop column and on phones,
+                    four once the section is wide (tablet, single column). */}
+                <div className="grid grid-cols-2 gap-2 @xl:grid-cols-4">
                   {inv.file_url && (
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => setPreviewInvoice(inv)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      {t('preview')}
-                    </Button>
-                  )}
-                  {inv.file_url && (
-                    <Button variant="outline" size="sm" className="w-full" asChild>
-                      <a href={inv.file_url} target="_blank" rel="noopener noreferrer">
-                        <FileText className="h-3.5 w-3.5 mr-1" />
-                        {t('invoice')}
-                      </a>
-                    </Button>
-                  )}
-                  {inv.receipt_url && (
-                    <Button variant="outline" size="sm" className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50" asChild>
-                      <a href={inv.receipt_url} target="_blank" rel="noopener noreferrer">
-                        <ReceiptText className="h-3.5 w-3.5 mr-1" />
-                        {t('receipt')}
-                      </a>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn('w-full', WRAP_BTN)}
+                      onClick={() => previewInvoice(inv)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      {t('viewInvoice')}
                     </Button>
                   )}
                   {inv.status === 'PAID' && (
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
-                      className="w-full"
-                      disabled={proofLoadingId === inv.id}
+                      className={cn('w-full', WRAP_BTN)}
+                      disabled={proofLoading}
                       onClick={() => handleViewProof(inv)}
                     >
-                      <Eye className="h-3.5 w-3.5 mr-1" />
-                      {proofLoadingId === inv.id ? t('opening') : t('paymentProof')}
+                      {proofLoading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="h-3.5 w-3.5" />
+                      )}
+                      {proofLoading ? t('opening') : t('paymentProof')}
                     </Button>
                   )}
                   {active && onSend && (
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
-                      className="w-full text-blue-700 border-blue-200 hover:bg-blue-50"
-                      disabled={sendingInvoiceId === inv.id}
+                      className={cn('w-full text-blue-700 border-blue-200 hover:bg-blue-50', WRAP_BTN)}
+                      disabled={sending}
                       onClick={() => onSend(inv)}
                     >
-                      <Send className="h-3.5 w-3.5 mr-1" />
-                      {sendingInvoiceId === inv.id ? t('sending') : t('send')}
+                      {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                      {sending ? t('sending') : t('send')}
                     </Button>
                   )}
                   {active && inv.status !== 'PAID' && onMarkPaid && (
                     <Button
+                      type="button"
                       variant="outline"
                       size="sm"
-                      className="w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50"
-                      disabled={payingInvoiceId === inv.id}
+                      className={cn('w-full text-emerald-700 border-emerald-200 hover:bg-emerald-50', WRAP_BTN)}
+                      disabled={paying}
                       onClick={() => onMarkPaid(inv)}
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                      {payingInvoiceId === inv.id ? t('saving') : t('markPaid')}
+                      {paying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                      {paying ? t('saving') : t('markPaid')}
                     </Button>
                   )}
                   {active && (
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => onOpenRevise(inv)}>
-                      <PencilLine className="h-3.5 w-3.5 mr-1" />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn('w-full', WRAP_BTN)}
+                      onClick={() => onOpenRevise(inv)}
+                    >
+                      <PencilLine className="h-3.5 w-3.5" />
                       {t('revise')}
                     </Button>
                   )}
@@ -540,40 +603,44 @@ export default function InvoiceSection({
 
       {/* Statement invoice picker */}
       <Dialog open={statementOpen} onOpenChange={(open) => !statementLoading && setStatementOpen(open)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <FileSpreadsheet className="h-4 w-4 text-slate-600" />
               {t('statementCombined')}
             </DialogTitle>
+            <DialogDescription className="text-xs">
+              {t('statementPickHint')}
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-xs text-gray-500">
-            {t('statementPickHint')}
-          </p>
 
-          <div className="flex items-center justify-between border-y border-gray-100 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-y border-gray-100 py-2">
             <span className="text-xs font-medium text-gray-500">
               {t('selectedCount', { selected: selectedIds.length, total: invoices.length })}
             </span>
-            <div className="flex gap-2">
-              <button
+            <div className="flex gap-1">
+              <Button
                 type="button"
-                className="text-xs text-blue-600 hover:underline"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs text-blue-600"
                 onClick={() => setSelectedIds(invoices.map((i) => i.id))}
               >
                 {t('selectAll')}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="text-xs text-gray-500 hover:underline"
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs text-gray-500"
                 onClick={() => setSelectedIds([])}
               >
                 {t('clearAll')}
-              </button>
+              </Button>
             </div>
           </div>
 
-          <div className="max-h-[45vh] space-y-2 overflow-y-auto py-1">
+          <div className="max-h-[45dvh] space-y-2 overflow-y-auto py-1">
             {invoices.map((inv) => {
               const checked = selectedIds.includes(inv.id);
               return (
@@ -590,20 +657,20 @@ export default function InvoiceSection({
                     className="h-4 w-4 shrink-0 accent-slate-700"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="truncate font-mono text-xs font-medium text-gray-900" title={inv.invoice_number}>
-                        {shortInvoiceNumber(inv.invoice_number)}
-                      </span>
+                    <p className="truncate font-mono text-xs font-medium text-gray-900" title={inv.invoice_number}>
+                      {inv.invoice_number}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
                       <Badge variant="outline" className={`text-[10px] ${TYPE_STYLES[inv.invoice_type]}`}>
                         {t(TYPE_KEYS[inv.invoice_type])}
                       </Badge>
                       <Badge variant="outline" className={`text-[10px] ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.ISSUED}`}>
-                        {inv.status}
+                        {statusLabel(inv.status)}
                       </Badge>
+                      <span className="text-[11px] text-gray-400">{formatDate(inv.issue_date)}</span>
                     </div>
-                    <p className="text-[11px] text-gray-400">{formatDate(inv.issue_date)}</p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-gray-900">
+                  <span className="shrink-0 text-sm font-semibold text-gray-900 tabular-nums">
                     {formatCurrency(inv.amount)}
                   </span>
                 </label>
@@ -611,47 +678,25 @@ export default function InvoiceSection({
             })}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
-            <Button variant="outline" size="sm" onClick={() => setStatementOpen(false)} disabled={statementLoading}>
+          <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" size="sm" onClick={() => setStatementOpen(false)} disabled={statementLoading}>
               {tc('cancel')}
             </Button>
             <Button
+              type="button"
               size="sm"
               className="gap-2"
               onClick={handleGenerateStatement}
               disabled={statementLoading || selectedIds.length === 0}
             >
-              <FileSpreadsheet className="h-4 w-4" />
+              {statementLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-4 w-4" />
+              )}
               {statementLoading ? t('creating') : t('createStatement')}
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!previewInvoice} onOpenChange={(open) => !open && setPreviewInvoice(null)}>
-        <DialogContent className="w-[98vw] max-w-[1500px] h-[96vh] p-0 overflow-hidden flex flex-col gap-0">
-          <DialogHeader className="px-5 py-3 border-b border-gray-100 bg-white shrink-0">
-            <DialogTitle className="flex items-center justify-between pr-8 gap-3">
-              <span className="truncate text-sm sm:text-base">{t('invoicePreview')}{previewInvoice ? ` — ${previewInvoice.invoice_number}` : ''}</span>
-              {previewInvoice?.file_url && (
-                <Button variant="outline" size="sm" asChild className="shrink-0">
-                  <a href={previewInvoice.file_url} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-3.5 w-3.5 mr-1" />
-                    {t('openDownload')}
-                  </a>
-                </Button>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          {previewInvoice?.file_url && (
-            <div className="flex-1 min-h-0 bg-gray-100 p-2 sm:p-4">
-              <iframe
-                src={`${previewInvoice.file_url}#toolbar=1&navpanes=0&scrollbar=1&view=FitH&zoom=page-width`}
-                title={`Invoice ${previewInvoice.invoice_number}`}
-                className="w-full h-full rounded-lg border border-gray-200 bg-white shadow-sm"
-              />
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>

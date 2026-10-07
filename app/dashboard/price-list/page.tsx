@@ -56,7 +56,14 @@ export default function PriceListPage() {
             <div className="max-w-full overflow-x-auto">
               <div className="flex w-fit gap-0.5 rounded-lg bg-gray-100 p-0.5">
                 {TABS.map((k) => (
-                  <button key={k} type="button" className={segmentClass(tab === k, 'shrink-0')} onClick={() => setTab(k)}>
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={tab === k}
+                    // Taller on phones: the shared segment pill is ~28px, below a comfortable tap size.
+                    className={segmentClass(tab === k, 'shrink-0 whitespace-nowrap py-2 sm:py-1.5')}
+                    onClick={() => setTab(k)}
+                  >
                     {t(`tab.${k}`)}
                   </button>
                 ))}

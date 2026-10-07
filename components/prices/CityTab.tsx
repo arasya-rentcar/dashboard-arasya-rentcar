@@ -145,8 +145,8 @@ function ZoneCard({ label, zone, city, data }: { label: string; zone: PriceZone;
             <ul className="mt-1 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
               {zone.surcharges.filter((s) => s.amount > 0).map((s) => (
                 <li key={s.id} className="flex justify-between gap-3">
-                  <span>{s.area}</span>
-                  <span className="font-medium tabular-nums">+{formatCurrency(s.amount)}</span>
+                  <span className="min-w-0 break-words">{s.area}</span>
+                  <span className="whitespace-nowrap font-medium tabular-nums">+{formatCurrency(s.amount)}</span>
                 </li>
               ))}
             </ul>
@@ -166,7 +166,7 @@ function ExtrasCard({ extras }: { extras: PriceExtra[] }) {
         <CardTitle className="text-sm">{t('extrasTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="grid gap-3 sm:grid-cols-3">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {extras.map((e) => (
             <li key={e.id} className="rounded-lg border border-gray-100 p-3">
               <p className="text-xs text-gray-500">{e.label}</p>

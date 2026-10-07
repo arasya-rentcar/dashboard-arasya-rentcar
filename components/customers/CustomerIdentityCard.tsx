@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   BadgeCheck,
-  ExternalLink,
+  Eye,
   FileText,
   Loader2,
   ShieldAlert,
@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useFilePreview } from '@/components/preview/FilePreview';
 import { customersApi } from '@/lib/api';
 import {
   useDeleteCustomerDocument,
@@ -60,6 +61,7 @@ export default function CustomerIdentityCard({
   const verifyMutation = useVerifyCustomer();
   const uploadMutation = useUploadCustomerDocument();
   const deleteMutation = useDeleteCustomerDocument();
+  const { openPreview } = useFilePreview();
 
   const [nik, setNik] = useState('');
   const [address, setAddress] = useState('');
@@ -152,20 +154,22 @@ export default function CustomerIdentityCard({
     }
   }
 
-  // The signed URL is short-lived: fetch it on every click and never keep it.
+  // The signed URL is short-lived: fetch a fresh one on every click and never
+  // keep it. It lives only in the in-page viewer, which drops it on close.
   async function view(doc: CustomerDocument) {
+    if (openingId) return;
     setOpeningId(doc.id);
-    // Open the tab synchronously so the popup blocker lets it through.
-    const win = window.open('about:blank', '_blank');
-    if (win) win.opener = null;
     try {
       const res = await customersApi.documentUrl(customer.id, doc.id);
       const url: string | undefined = res.data?.data?.url ?? res.data?.url;
       if (!url) throw new Error(t('errNoUrl'));
-      if (win) win.location.href = url;
-      else window.location.href = url;
+      openPreview({
+        url,
+        title: t(`kind.${doc.kind}`),
+        // The signed URL path may not end in an extension: use the stored type.
+        kind: doc.mime === 'application/pdf' ? 'pdf' : doc.mime?.startsWith('image/') ? 'image' : 'auto',
+      });
     } catch (err) {
-      win?.close();
       toast.error(getErrorMessage(err));
     } finally {
       setOpeningId(null);
@@ -207,6 +211,7 @@ export default function CustomerIdentityCard({
               </Badge>
             )}
             <Button
+              type="button"
               size="sm"
               variant={verified ? 'outline' : 'default'}
               onClick={toggleVerified}
@@ -275,6 +280,7 @@ export default function CustomerIdentityCard({
         </div>
         <div className="flex justify-end">
           <Button
+            type="button"
             size="sm"
             onClick={saveIdentity}
             disabled={!dirty || nikInvalid || updateMutation.isPending}
@@ -297,7 +303,7 @@ export default function CustomerIdentityCard({
                   key={d.id}
                   className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex min-w-0 flex-1 basis-56 items-center gap-2.5">
                     <FileText className="h-4 w-4 text-gray-400 shrink-0" />
                     <div className="min-w-0">
                       <p className="text-sm text-gray-900">
@@ -307,7 +313,13 @@ export default function CustomerIdentityCard({
                           · {formatSize(d.size)}
                         </span>
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p
+                        className="text-xs text-gray-500 truncate"
+                        title={`${t('uploadedAt', {
+                          at: formatDateTime(d.created_at),
+                          by: d.uploaded_by || '-',
+                        })}${d.note ? ` · ${d.note}` : ''}`}
+                      >
                         {t('uploadedAt', {
                           at: formatDateTime(d.created_at),
                           by: d.uploaded_by || '-',
@@ -316,27 +328,29 @@ export default function CustomerIdentityCard({
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     <Button
+                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => view(d)}
-                      disabled={openingId === d.id}
+                      disabled={openingId !== null}
                     >
                       {openingId === d.id ? (
-                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                       ) : (
-                        <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                        <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                       )}
                       {t('view')}
                     </Button>
                     <Button
+                      type="button"
                       size="sm"
                       variant="ghost"
                       className="text-red-500 hover:text-red-600"
                       onClick={() => setToDelete(d)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" /> {t('delete')}
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> {t('delete')}
                     </Button>
                   </div>
                 </li>
@@ -348,12 +362,12 @@ export default function CustomerIdentityCard({
           <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-2.5">
             <div className="grid grid-cols-1 sm:grid-cols-[140px_minmax(0,1fr)] gap-2.5">
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-500">{t('docKind')}</Label>
+                <Label htmlFor="cust-doc-kind" className="text-xs text-gray-500">{t('docKind')}</Label>
                 <Select
                   value={kind}
                   onValueChange={(v) => setKind(v as CustomerDocumentKind)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="cust-doc-kind" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -366,8 +380,9 @@ export default function CustomerIdentityCard({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-500">{t('docNote')}</Label>
+                <Label htmlFor="cust-doc-note" className="text-xs text-gray-500">{t('docNote')}</Label>
                 <Input
+                  id="cust-doc-note"
                   placeholder={t('docNotePlaceholder')}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -379,18 +394,20 @@ export default function CustomerIdentityCard({
                 ref={fileRef}
                 type="file"
                 accept="image/*,application/pdf"
-                className="h-auto max-w-sm text-xs"
+                aria-label={t('docFile')}
+                className="h-auto min-w-0 flex-1 basis-56 sm:max-w-sm text-xs"
                 onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
               />
               <Button
+                type="button"
                 size="sm"
                 onClick={upload}
                 disabled={!file || uploadMutation.isPending}
               >
                 {uploadMutation.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                 ) : (
-                  <Upload className="h-3.5 w-3.5 mr-1.5" />
+                  <Upload className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
                 {t('upload')}
               </Button>
@@ -407,7 +424,7 @@ export default function CustomerIdentityCard({
       </CardContent>
 
       <Dialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('deleteTitle')}</DialogTitle>
           </DialogHeader>
@@ -417,10 +434,16 @@ export default function CustomerIdentityCard({
             })}
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setToDelete(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setToDelete(null)}
+              disabled={deleteMutation.isPending}
+            >
               {t('cancel')}
             </Button>
             <Button
+              type="button"
               variant="destructive"
               onClick={confirmDelete}
               disabled={deleteMutation.isPending}

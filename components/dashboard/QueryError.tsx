@@ -39,9 +39,9 @@ export default function QueryError({
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-300 bg-white px-3 text-xs font-medium text-red-700 hover:bg-red-50 sm:h-8"
         >
-          <RefreshCw className="h-3.5 w-3.5" /> {t('retry')}
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> {t('retry')}
         </button>
       )}
     </div>

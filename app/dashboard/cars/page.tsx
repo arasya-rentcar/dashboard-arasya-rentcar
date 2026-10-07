@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Edit, Plus, Search, LayoutGrid, List } from "lucide-react";
 import { Loader2 } from "lucide-react";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { useCars, useCreateCar, useUpdateCar } from "@/hooks/useCars";
 import TablePagination, { usePagination } from "@/components/dashboard/TablePagination";
+import QueryError from "@/components/dashboard/QueryError";
 import { Car, CarStatus } from "@/types";
 import { getErrorMessage } from "@/lib/utils";
 
@@ -48,24 +49,22 @@ const CAR_STATUS_STYLES: Record<CarStatus, string> = {
   MAINTENANCE: "bg-red-50 text-red-700 border-red-200",
 };
 
-const createCarSchema = z.object({
-  plate_number: z.string().min(1, "Plate number is required"),
-  unit_code: z.string().optional(),
-  model: z.string().min(1, "Model is required"),
-  type: z.enum(["INTERNAL", "EXTERNAL"]),
-  origin_location: z.string().optional(),
-});
-type CreateCarForm = z.infer<typeof createCarSchema>;
-
-const editCarSchema = z.object({
-  plate_number: z.string().min(1, "Plate number is required"),
-  unit_code: z.string().optional(),
-  model: z.string().min(1, "Model is required"),
-  type: z.enum(["INTERNAL", "EXTERNAL"]),
-  origin_location: z.string().optional(),
-  status: z.enum(["AVAILABLE", "IN_USE", "MAINTENANCE"]),
-});
-type EditCarForm = z.infer<typeof editCarSchema>;
+// Validation messages come from next-intl, so the schemas are built per locale.
+function buildSchemas(t: (key: "errPlate" | "errModel") => string) {
+  const create = z.object({
+    plate_number: z.string().min(1, t("errPlate")),
+    unit_code: z.string().optional(),
+    model: z.string().min(1, t("errModel")),
+    type: z.enum(["INTERNAL", "EXTERNAL"]),
+    origin_location: z.string().optional(),
+  });
+  const edit = create.extend({
+    status: z.enum(["AVAILABLE", "IN_USE", "MAINTENANCE"]),
+  });
+  return { create, edit };
+}
+type CreateCarForm = z.infer<ReturnType<typeof buildSchemas>["create"]>;
+type EditCarForm = z.infer<ReturnType<typeof buildSchemas>["edit"]>;
 
 export default function CarsPage() {
   const t = useTranslations("carsPage");
@@ -77,8 +76,9 @@ export default function CarsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [view, setView] = useState<"cards" | "table">("cards");
+  const schemas = useMemo(() => buildSchemas(t), [t]);
 
-  const { data: cars, isLoading } = useCars();
+  const { data: cars, isLoading, isError, refetch } = useCars();
   const createMutation = useCreateCar();
   const updateMutation = useUpdateCar();
 
@@ -107,7 +107,7 @@ export default function CarsPage() {
     reset,
     formState: { errors },
   } = useForm<CreateCarForm>({
-    resolver: zodResolver(createCarSchema),
+    resolver: zodResolver(schemas.create),
     defaultValues: { type: "INTERNAL" },
   });
 
@@ -117,7 +117,7 @@ export default function CarsPage() {
     control: editControl,
     reset: resetEdit,
     formState: { errors: editErrors },
-  } = useForm<EditCarForm>({ resolver: zodResolver(editCarSchema) });
+  } = useForm<EditCarForm>({ resolver: zodResolver(schemas.edit) });
 
   async function onSubmit(data: CreateCarForm) {
     try {
@@ -156,11 +156,13 @@ export default function CarsPage() {
   return (
     <DashboardShell title={t('title')}>
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex flex-wrap gap-3 items-center justify-between">
           <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
               <Input
+                type="search"
+                aria-label={t('searchPlaceholder')}
                 placeholder={t('searchPlaceholder')}
                 className="pl-9"
                 value={search}
@@ -168,7 +170,7 @@ export default function CarsPage() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-36 shrink-0" aria-label={t('colStatus')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -179,16 +181,18 @@ export default function CarsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
             {view === "cards" && (
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <span className="text-xs text-gray-400">{t('revenue')}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="hidden text-xs text-gray-400 sm:inline">{t('revenue')}</span>
                 <PeriodToggle surface="cars" />
               </div>
             )}
-            <div className="flex rounded-lg border border-gray-200 p-0.5">
+            <div className="ml-auto flex rounded-lg border border-gray-200 p-0.5 sm:ml-0" role="group">
               <button
                 type="button"
+                aria-label={t('cardView')}
+                aria-pressed={view === "cards"}
                 onClick={() => setView("cards")}
                 className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                   view === "cards"
@@ -201,6 +205,8 @@ export default function CarsPage() {
               </button>
               <button
                 type="button"
+                aria-label={t('tableView')}
+                aria-pressed={view === "table"}
                 onClick={() => setView("table")}
                 className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                   view === "table"
@@ -213,13 +219,15 @@ export default function CarsPage() {
               </button>
             </div>
             <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               {t('addCar')}
             </Button>
           </div>
         </div>
 
-        {view === "cards" ? (
+        {isError ? (
+          <QueryError onRetry={() => refetch()} />
+        ) : view === "cards" ? (
           isLoading ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {[...Array(8)].map((_, i) => (
@@ -307,7 +315,7 @@ export default function CarsPage() {
                     <TableCell className="font-mono text-sm font-semibold text-gray-900">
                       {car.unit_code || "—"}
                     </TableCell>
-                    <TableCell className="font-medium text-sm text-gray-900">
+                    <TableCell className="max-w-[220px] truncate font-medium text-sm text-gray-900" title={car.model}>
                       {car.model}
                     </TableCell>
                     <TableCell className="font-mono text-sm text-gray-600">
@@ -338,11 +346,12 @@ export default function CarsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => openEdit(car)}
                       >
-                        <Edit className="h-4 w-4 mr-1" />
+                        <Edit className="h-4 w-4" />
                         {t('edit')}
                       </Button>
                     </TableCell>
@@ -367,7 +376,7 @@ export default function CarsPage() {
 
       {/* Add Car Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('addNewCar')}</DialogTitle>
           </DialogHeader>
@@ -409,13 +418,13 @@ export default function CarsPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{t('type')}</Label>
+                <Label htmlFor="car_type">{t('type')}</Label>
                 <Controller
                   control={control}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="car_type" className="w-full">
                         <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -458,7 +467,7 @@ export default function CarsPage() {
         open={!!editingCar}
         onOpenChange={(open) => !open && setEditingCar(null)}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>{t('editCar')}</DialogTitle>
           </DialogHeader>
@@ -502,13 +511,13 @@ export default function CarsPage() {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>{t('type')}</Label>
+                <Label htmlFor="edit_car_type">{t('type')}</Label>
                 <Controller
                   control={editControl}
                   name="type"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="edit_car_type" className="w-full">
                         <SelectValue placeholder={t('typePlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -527,13 +536,13 @@ export default function CarsPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>{t('status')}</Label>
+                <Label htmlFor="edit_car_status">{t('status')}</Label>
                 <Controller
                   control={editControl}
                   name="status"
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
+                      <SelectTrigger id="edit_car_status" className="w-full">
                         <SelectValue placeholder={t('status')} />
                       </SelectTrigger>
                       <SelectContent>
