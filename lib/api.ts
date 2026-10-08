@@ -55,9 +55,22 @@ export const ordersApi = {
   // already-assigned order (e.g. swap driver on a multi-day order).
   reassign: (id: string, data: { driver_id: string; car_id: string }) =>
     api.post(`/orders/${id}/reassign`, data),
-  // Full-order cancellation. Server computes the cancellation-fee tier/penalty.
-  cancel: (id: string, data: { reason: string }) =>
-    api.post(`/orders/${id}/cancel`, data),
+  // "Batalkan Pesanan", per day: what it would charge now (or at the time the
+  // customer asked, at most 3 days back), then the cancellation itself.
+  cancelQuote: (id: string, requestedAt?: string) =>
+    api.get(`/orders/${id}/cancel-quote`, {
+      params: requestedAt ? { requested_at: requestedAt } : undefined,
+    }),
+  cancel: (
+    id: string,
+    data: {
+      reason: string;
+      expected_fee_total?: number;
+      day_fees?: { line_id: string; fee: number }[];
+      requested_at?: string;
+      client_ref?: string;
+    },
+  ) => api.post(`/orders/${id}/cancel`, data),
   // Admin-only order finalization. Valid once every active day-line is DONE
   // (driver finished all service days). Sets order_status = DONE.
   finalize: (id: string) => api.post(`/orders/${id}/finalize`, {}),
@@ -80,6 +93,9 @@ export const ordersApi = {
       payment_method?: string;
       paid_at?: string;
       amount_received?: number;
+      // Required by the API when amount_received differs from the invoice
+      // amount (409 AMOUNT_MISMATCH otherwise).
+      amount_mismatch_ack?: boolean;
     },
   ) => {
     const fd = new FormData();
@@ -88,26 +104,32 @@ export const ordersApi = {
     if (data.paid_at) fd.append("paid_at", data.paid_at);
     if (data.amount_received != null)
       fd.append("amount_received", String(data.amount_received));
+    if (data.amount_mismatch_ack) fd.append("amount_mismatch_ack", "true");
     return api.post(`/orders/${id}/invoice/${invoiceId}/mark-paid`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
   getPaymentProof: (id: string, invoiceId: string) =>
     api.get(`/orders/${id}/invoice/${invoiceId}/payment-proof`),
-  // Sprint 5: mark refund settled — multipart, refund proof REQUIRED.
-  markRefunded: (
+  // A refund of saldo lebih (several per order, each at most the saldo lebih).
+  // Multipart, proof REQUIRED. client_ref: made when the dialog opens and
+  // reused on a retry; a resend answers 200 with the same refund.
+  createRefund: (
     id: string,
-    data: { proof: File; amount?: number; note?: string },
+    data: { proof: File; amount: number; note?: string; client_ref: string },
   ) => {
     const fd = new FormData();
     fd.append("proof", data.proof);
-    if (data.amount != null) fd.append("amount", String(data.amount));
+    fd.append("amount", String(data.amount));
+    fd.append("client_ref", data.client_ref);
     if (data.note) fd.append("note", data.note);
-    return api.post(`/orders/${id}/mark-refunded`, fd, {
+    return api.post(`/orders/${id}/refunds`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
-  getRefundProof: (id: string) => api.get(`/orders/${id}/refund-proof`),
+  // Fresh 5-minute signed URL for one refund's proof; fetch per click.
+  getRefundProof: (id: string, refundId: string) =>
+    api.get(`/orders/${id}/refunds/${refundId}/proof`),
   getInvoices: (id: string) => api.get(`/orders/${id}/invoice`),
   getStatement: (id: string, invoiceIds?: string[]) =>
     invoiceIds && invoiceIds.length > 0
@@ -211,6 +233,11 @@ export const scheduleApi = {
     api.get("/schedule/week", { params }),
   assignLine: (id: string, data: object) =>
     api.put(`/schedule/lines/${id}`, data),
+  // Edit Hari → Dibatalkan: the day's cancellation fee and what it does to the order's money.
+  cancelQuote: (id: string, requestedAt?: string) =>
+    api.get(`/schedule/lines/${id}/cancel-quote`, {
+      params: requestedAt ? { requested_at: requestedAt } : undefined,
+    }),
   // #A1/#A2 trip-team confirmation (customer + driver). force=re-send.
   sendConfirmation: (id: string, data: { include_driver?: boolean; force?: boolean } = {}) =>
     api.post(`/schedule/lines/${id}/send-confirmation`, data),

@@ -17,6 +17,7 @@ const TYPE_STYLES: Record<InvoiceType, string> = {
   ADDITIONAL: 'border-purple-200 text-purple-700 bg-purple-50',
   COMBINED: 'border-indigo-200 text-indigo-700 bg-indigo-50',
   CANCELLATION_FEE: 'border-red-200 text-red-700 bg-red-50',
+  ADJUSTMENT: 'border-teal-200 text-teal-700 bg-teal-50',
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -40,26 +41,26 @@ export default function OrderInvoiceHistory({ order }: { order: OrderListItem })
     return ta - tb;
   });
 
-  const finalPrice = Number(order.final_price);
-  const activeInvoices = invoices.filter((i) => isActive(i.status));
-  const totalInvoiced = activeInvoices.reduce((s, i) => s + Number(i.amount), 0);
-  const totalPaid = invoices
-    .filter((i) => i.status === 'PAID')
-    .reduce((s, i) => s + Number(i.amount), 0);
-  const remaining = finalPrice - totalPaid;
+  // Money figures from the order's own money columns (rule set v3), never
+  // from invoice amounts: an invoice may be short or overpaid, or partly paid
+  // from saldo lebih.
+  const finalPrice = Number(order.final_price ?? 0);
+  const received = Number(order.paid_to_date ?? 0) - Number(order.refunded_total ?? 0);
+  const remaining = Math.max(0, finalPrice - received);
+  const credit = Number(order.credit_balance ?? 0);
 
   return (
     <div className="bg-gray-50/60 px-4 py-4 sm:px-8">
       {/* Payment summary strip */}
-      <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={`mb-3 grid grid-cols-2 gap-3 ${credit > 0 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
         <SummaryCell label={t('orderTotal')} value={formatCurrency(finalPrice)} />
-        <SummaryCell label={t('invoiced')} value={formatCurrency(totalInvoiced)} />
-        <SummaryCell label={t('paid')} value={formatCurrency(totalPaid)} tone="emerald" />
+        <SummaryCell label={t('received')} value={formatCurrency(received)} tone="emerald" />
         <SummaryCell
           label={t('remaining')}
-          value={formatCurrency(Math.max(remaining, 0))}
+          value={formatCurrency(remaining)}
           tone={remaining <= 0 ? 'emerald' : 'amber'}
         />
+        {credit > 0 && <SummaryCell label={t('credit')} value={formatCurrency(credit)} tone="sky" />}
       </div>
 
       {invoices.length === 0 ? (
@@ -180,14 +181,16 @@ function SummaryCell({
 }: {
   label: string;
   value: string;
-  tone?: 'default' | 'emerald' | 'amber';
+  tone?: 'default' | 'emerald' | 'amber' | 'sky';
 }) {
   const toneCls =
     tone === 'emerald'
       ? 'text-emerald-700'
       : tone === 'amber'
         ? 'text-amber-700'
-        : 'text-gray-900';
+        : tone === 'sky'
+          ? 'text-sky-700'
+          : 'text-gray-900';
   return (
     <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
       <p className="text-[11px] text-gray-400">{label}</p>

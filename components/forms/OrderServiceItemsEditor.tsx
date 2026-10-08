@@ -86,6 +86,8 @@ interface Props<T extends { service_items: ServiceItemFormValue[] }> {
   setValue: UseFormSetValue<T>;
   watch: UseFormWatch<T>;
   errors: FieldErrors<T>;
+  /** Why row `index` may not be removed (shown instead of the delete button), or null. */
+  removeLock?: (index: number) => string | null;
 }
 
 // Auto drop-off placeholder from service_kind, mirroring the WA bot rule.
@@ -148,7 +150,7 @@ function newItem(): ServiceItemFormValue {
 
 export default function OrderServiceItemsEditor<
   T extends { service_items: ServiceItemFormValue[] },
->({ control, register, setValue, watch, errors }: Props<T>) {
+>({ control, register, setValue, watch, errors, removeLock }: Props<T>) {
   const t = useTranslations("serviceItems");
   const tm = useTranslations("maps");
   const { fields, append, remove } = useFieldArray({
@@ -220,6 +222,7 @@ export default function OrderServiceItemsEditor<
           const id = (name: string) => `si-${field.id}-${name}`;
           const pickupPoint = itemPickupPoint(items?.[index]);
           const dropoffPoint = itemDropoffPoint(items?.[index]);
+          const lockHint = removeLock?.(index) ?? null;
           return (
             <div key={field.id} className="bg-white p-3 sm:p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -246,15 +249,19 @@ export default function OrderServiceItemsEditor<
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => remove(index)}
+                      disabled={!!lockHint}
                       className="text-red-500 hover:text-red-600"
                       aria-label={t("removeRow", { n: index + 1 })}
-                      title={t("removeRow", { n: index + 1 })}
+                      title={lockHint ?? t("removeRow", { n: index + 1 })}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
               </div>
+              {lockHint && fields.length > 1 && (
+                <p className="-mt-1 mb-3 text-[11px] text-gray-500">{lockHint}</p>
+              )}
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-12">
                 <div className="space-y-1.5 xl:col-span-2">

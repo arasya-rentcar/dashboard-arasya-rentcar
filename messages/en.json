@@ -660,7 +660,7 @@
       },
       {
         "t": "Mark Paid",
-        "d": "Once the money is in, click <b>Mark Paid</b> and upload the <b>Payment Proof</b> (required; for cash, a photo taken when the money is received). Leave <b>Amount Received</b> empty when it equals the invoice amount. A paid invoice becomes a <b>Receipt</b> (kwitansi)."
+        "d": "Once the money is in, click <b>Mark Paid</b> and upload the <b>Payment Proof</b> (required; for cash, a photo taken when the money is received). <b>Amount Received</b> starts at the invoice amount; change it if the money differs and tick the confirmation. Underpaid: the invoice stays paid with a <b>Short</b> badge and the rest is billed with <b>Bill the shortfall</b> (adjustment invoice). Overpaid: the excess becomes <b>customer credit</b>, which reduces the next invoice. A paid invoice becomes a <b>Receipt</b> (kwitansi)."
       },
       {
         "t": "Sending by WhatsApp",
@@ -672,7 +672,7 @@
       },
       {
         "t": "Cancellation and refunds",
-        "d": "<b>Cancel Order</b> calculates the cancellation fee according to the policy and issues a cancellation invoice only for the part not yet paid. If the customer paid more, return the difference and record it with <b>Mark Refund</b> and the transfer proof."
+        "d": "<b>Cancel Order</b> works out the cancellation fee per day and voids only unpaid invoices; a cancellation-fee invoice is issued only for what is still owed. Money above what the order bills becomes <b>customer credit</b>; return it with <b>Refund</b> and the transfer proof. You can refund more than once, each time at most the credit left."
       }
     ],
     "driverAppTitle": "Driver app & notifications",
@@ -769,7 +769,7 @@
       },
       {
         "t": "Cancellation fee",
-        "d": "Before the travel day: 20% of the order total. On the travel day until 10:00 WIB and the trip has not started: 50%. After that: 100%. Cancel an order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
+        "d": "Charged per rental day from that day's price: before its date 20%; on its date before 10:00 WIB with the driver not yet arrived at the pickup address 50%; otherwise 100%. Extra charges stay billed in full. The amount can be changed by hand when something else was agreed with the customer; the change is recorded in the order history. Cancel one day in <b>Edit Day</b> and the whole order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
       },
       {
         "t": "Driver after the DP",
@@ -781,7 +781,7 @@
       },
       {
         "t": "Changing or cancelling a day",
-        "d": "A day that already has a driver cannot be removed in <b>Edit Order</b>; cancel it in <b>Edit Day</b>. The last active day cannot be cancelled in <b>Edit Day</b>; use <b>Cancel Order</b>. <b>Edit Day</b> also refuses a change that would bring the order total below the invoices already issued; revise the invoice first."
+        "d": "Once an order has money in or an invoice, a day cannot be removed in <b>Edit Order</b>; cancel it in <b>Edit Day</b> so its cancellation fee is charged (a reason is required; the time the customer cancelled may be given, at most 3 days back). A finished day cannot be cancelled, and the last open day is cancelled with <b>Cancel Order</b>. If an unpaid invoice asks more than is still owed, revise the invoice first."
       },
       {
         "t": "Done or cancelled orders",
@@ -797,6 +797,32 @@
       "Logging overtime or parking without <b>Add Additional</b>, so the <b>Additional Invoice</b> has nothing left to bill.",
       "Leaving trip costs in <b>Waiting for review</b>, so the order cannot be finalized.",
       "Leaving old trips open. Check the <b>Not closed</b> chip in <b>{menuTrip}</b> regularly."
+    ],
+    "cancelPolicyTitle": "Cancellation policy (same as the website)",
+    "cancelPolicyHeading": "Cancellation fees are charged per rental day, based on that day's price.",
+    "cancelPolicyWhenHeader": "When the customer cancels",
+    "cancelPolicyFeeHeader": "Fee",
+    "cancelPolicyRows": [
+      {
+        "w": "By the day before the rental date (until 23:59 WIB)",
+        "f": "20%"
+      },
+      {
+        "w": "On the rental date, before 10:00 WIB and before the driver has arrived at the pickup address",
+        "f": "50%"
+      },
+      {
+        "w": "On the rental date from 10:00 WIB, or once the driver has arrived at the pickup address",
+        "f": "100% (that day is paid in full)"
+      }
+    ],
+    "cancelPolicyNote": "Extra charges already incurred (such as overtime, parking or tolls) are still paid in full. If you have paid more than what is billed, the excess goes toward your next bill, or we refund it to your account on request.",
+    "cancelPolicyAdminNote": "In Edit Day and Cancel Order, the admin types the cancellation fee, using this table as a guide. A different amount, including 0, is fine when agreed with the customer.",
+    "cancelPolicyExampleTitle": "Example: a 3-day rental, 10–12 Oct, Rp 1,000,000 per day",
+    "cancelPolicyExamples": [
+      "Cancel on 9 Oct = Rp 600,000",
+      "Cancel on 10 Oct at 08:00, driver not yet arrived at the pickup address = Rp 900,000",
+      "Cancel on 10 Oct at 11:00 = Rp 1,400,000"
     ]
   },
   "orderDetail": {
@@ -809,7 +835,7 @@
     "refunded": "Refunded",
     "editOrder": "Edit Order",
     "assignDriver": "Assign Driver",
-    "markRefund": "Mark Refund",
+    "markRefund": "Refund",
     "statusCreated": "Created",
     "statusAssigned": "Assigned",
     "statusInProgress": "In Progress",
@@ -820,9 +846,9 @@
     "payPaid": "Paid",
     "serviceStartedUnpaidTitle": "Service has started but rental is not fully paid",
     "serviceStartedUnpaidBody": "Full rental payment is due on day 1 of service. Current status: {status}. Issue/settle the remaining balance.",
-    "priceHigher": "Order price is higher than active invoice total",
-    "invoiceExceeds": "Active invoice total exceeds order price",
-    "diffLine": "Order total: {orderTotal} | Active invoice total: {invoiceTotal} | Difference: {difference}",
+    "priceHigher": "Part of the order total has no invoice yet",
+    "invoiceExceeds": "Money received plus unpaid invoices exceed the order total",
+    "diffLine": "Order total: {orderTotal} | Paid + invoiced: {invoiceTotal} | Difference: {difference}",
     "priceHigherHint": "Generate another invoice for the remaining amount, or revise the latest invoice if this is a correction.",
     "invoiceExceedsHint": "Edit order price upward or revise/cancel invoices before creating more invoices.",
     "orders": "Orders",
@@ -912,7 +938,7 @@
     "reassignAllHint": "Overwrites the driver & car on every service day that hasn't started yet. Days already in progress, done, or cancelled are left untouched.",
     "okOrderUpdated": "Order updated successfully",
     "okInvoiceGenerated": "Invoice generated successfully",
-    "okRefundMarked": "Refund marked as paid",
+    "okRefundMarked": "Refund recorded",
     "okRevisionCreated": "Invoice revision created successfully",
     "okTripAdvanced": "Trip advanced to: {status}",
     "actualStart": "Started",
@@ -941,7 +967,7 @@
     "finalizeConfirmHint": "All service days are finished. Finalizing closes the order (marks it Done). Make sure ops cost and driver fee are recorded first.",
     "finalizeAdditionalWarning": "This order has additional charges. Before finalizing, double-check the additional items, ops cost, and driver fee are all correct — finalizing closes the order.",
     "okOrderFinalized": "Order finalized",
-    "cancelWarning": "This cancels the whole order: all upcoming days are cancelled, drivers/cars released, active invoices voided, and the cancellation fee is computed per Arasya policy. A cancellation invoice is issued only for what is still unpaid. This cannot be undone.",
+    "cancelWarning": "Every day still open is cancelled and its driver/car released. The cancellation fee is worked out per day from that day's date and price. Only unpaid invoices are voided; paid invoices stay. This cannot be undone.",
     "cancelReasonLabel": "Cancellation reason",
     "cancelReasonPlaceholder": "e.g. Customer cancelled the booking",
     "cancelReasonRequired": "Please enter a cancellation reason",
@@ -952,13 +978,38 @@
     "cancelPaid": "Already paid",
     "cancelRefundDue": "Refund owed to customer",
     "cancelStillOwed": "Customer still owes",
-    "cancelRefundHint": "The customer overpaid versus the cancellation fee. Process the refund via the Mark Refund flow.",
+    "cancelRefundHint": "The customer paid more than the cancellation fee. The excess becomes customer credit; refund it with the Refund button.",
     "cancelSettled": "Money already received covers the cancellation fee, so no cancellation invoice was issued.",
     "cancelInvoiceIssued": "Cancellation invoice {number} issued for the remaining {amount}.",
     "partnerDriver": "Partner driver",
     "awaitingDpAssign": "A driver can be assigned once the customer pays the DP. Create a Down Payment (DP) invoice, then mark it paid with the transfer proof. Days served by a partner can still be set.",
     "actualOnboard": "Customer on board",
-    "notPaidForTrip": "Order not paid in full ({left} of the rental left). The driver can still depart and mark the arrival at pickup, but \"Start trip\" in the app unlocks only once the settlement is recorded (invoice marked paid)."
+    "notPaidForTrip": "Order not paid in full ({left} of the rental left). The driver can still depart and mark the arrival at pickup, but \"Start trip\" in the app unlocks only once the settlement is recorded (invoice marked paid).",
+    "creditBadge": "Credit {amount}",
+    "refundedBadge": "Refunded {amount}",
+    "okRefundOwed": "Refund recorded. The customer now owes {amount}.",
+    "okMarkedPaidShort": "{number} marked paid, short by {amount}. Bill it with an adjustment invoice.",
+    "okMarkedPaidOver": "{number} marked paid. {amount} extra added to customer credit.",
+    "okInvoicePaidByCredit": "Invoice created and paid at once from customer credit.",
+    "invoiceAdjustment": "Adjustment invoice",
+    "cqDate": "Date",
+    "cqPrice": "Rental day price",
+    "cqNoDate": "No date",
+    "cqEarlierFees": "Fees of days cancelled earlier",
+    "cqFeeTotal": "Total cancellation fee",
+    "cqDoneTotal": "Days already done (paid in full)",
+    "cqCharges": "Extra charges (still billed)",
+    "cqTotal": "Order total",
+    "cqNewTotal": "New order total",
+    "cqVoided": "Unpaid invoices voided",
+    "cqVoidedCredit": "{amount} credit returned",
+    "cqFeeInvoice": "A cancellation-fee invoice of {amount} is issued.",
+    "cqFeeInvoiceCredit": "(after {amount} of customer credit)",
+    "cqCreditAfter": "No new invoice. Customer credit afterwards: {amount}, used for the next bill or returned with Refund.",
+    "cqSettled": "No new invoice and no customer credit left.",
+    "cqGuideChanged": "The policy guide changed to {fee}. Check the fee you entered again, then confirm again.",
+    "cqConfirmAgain": "Confirm again",
+    "cqResultVoided": "Voided invoices: {numbers}."
   },
   "invoicesPage": {
     "expandRow": "Show invoice details",
@@ -1023,7 +1074,8 @@
     "viewPdf": "View PDF",
     "customerFallback": "Customer",
     "errPhoneRequired": "Target WhatsApp number is required",
-    "okSent": "Invoice PDF sent to WhatsApp"
+    "okSent": "Invoice PDF sent to WhatsApp",
+    "typeAdjustment": "Adjustment"
   },
   "schedule": {
     "title": "Trip",
@@ -1325,12 +1377,12 @@
     "orderTotal": "Order Total",
     "activeInvoice": "Active Invoice",
     "remaining": "Remaining",
-    "overInvoiced": "Active invoice total exceeds order final price. Revise invoices or edit order price.",
+    "overInvoiced": "Money received plus unpaid invoices exceed the order total. Revise an unpaid invoice or edit the order price.",
     "invoiceRental": "Rental Invoice",
     "invoiceAdditional": "Additional Invoice",
     "invoiceCombined": "Combined Invoice (Rental + Additional)",
     "statementCombinedPick": "Combined Statement (Select Invoices)",
-    "syncHint": "Order total is higher than the invoice total. Bill the rest with a Rental Invoice (Settlement) or an Additional Invoice, or click <b>Revise</b> on the current invoice to adjust its amount.",
+    "syncHint": "Part of the order total has no invoice yet. Bill the rest with a Rental Invoice (Settlement) or an Additional Invoice, or click <b>Revise</b> on an unpaid invoice to adjust its amount.",
     "status": {
       "DRAFT": "Draft",
       "ISSUED": "Issued",
@@ -1382,7 +1434,22 @@
     "creating": "Creating…",
     "createStatement": "Create Statement",
     "invoicePreview": "Invoice Preview",
-    "openDownload": "Open / Download"
+    "openDownload": "Open / Download",
+    "typeAdjustment": "Adjustment",
+    "receivedLabel": "Received",
+    "refundedLabel": "Refunded",
+    "creditLabel": "Customer credit",
+    "outstandingLabel": "Still owed (receivable)",
+    "billableLabel": "Can still be invoiced",
+    "openBilledHint": "{amount} is already on unpaid invoices.",
+    "paidFromCredit": "Paid from customer credit ({amount}), no transfer",
+    "creditDeducted": "Value {gross}, less customer credit {amount}",
+    "received": "Received {amount}",
+    "overpaid": "Overpaid {amount} → added to customer credit",
+    "adjusts": "Adjustment for {number}",
+    "shortBadge": "Short {amount}",
+    "billShortfall": "Bill the shortfall",
+    "shortfallBilled": "The shortfall is already on an adjustment invoice."
   },
   "generateInvoice": {
     "errAmountRequired": "Amount is required",
@@ -1395,14 +1462,14 @@
     "typeSettlement": "Settlement (Remaining Balance)",
     "typeFull": "Full Payment",
     "orderTotal": "Order Total",
-    "alreadyPaid": "Already Paid",
-    "remaining": "Remaining",
+    "alreadyPaid": "Already paid",
+    "remaining": "Can still be invoiced",
     "invoiceType": "Invoice Type",
     "selectType": "Select type",
     "paymentMethod": "Payment Method",
     "selectMethod": "Select method",
-    "amountIDR": "Amount (IDR)",
-    "dpHint": "Minimum {amount} (20% of rental). Customer may pay more.",
+    "amountIDR": "Invoice value (IDR)",
+    "dpHint": "Minimum {amount} (20% of the rental price {base}). The customer may pay more.",
     "settlementHint": "Remaining rental balance, due on day 1 of service.",
     "additionalHint": "Bills the remaining balance from extra charges. Add the charge in Additional Charges first so the order total reflects it.",
     "issueDate": "Invoice Date (optional)",
@@ -1410,7 +1477,16 @@
     "noteLabel": "Note (optional)",
     "notePlaceholder": "e.g. Transfer via BCA",
     "fullyInvoiced": "This order is fully invoiced. Edit the order final price first if you need to bill additional charges.",
-    "generateBtn": "Generate Invoice"
+    "generateBtn": "Generate Invoice",
+    "typeAdjustment": "Adjustment invoice (shortfall)",
+    "openBilled": "Invoiced, not paid yet",
+    "maxHint": "At most {amount}.",
+    "errExceedsBillable": "More than can still be invoiced ({amount}).",
+    "errDpMin": "The DP must be at least {amount} (20% of the rental price).",
+    "adjustsInvoice": "Shortfall of invoice",
+    "shortfallLeft": "Shortfall not invoiced yet",
+    "adjustmentHint": "An adjustment invoice bills what was not paid on this invoice. It may be below the DP minimum but not above the shortfall.",
+    "generateAdjustmentBtn": "Create adjustment invoice"
   },
   "customerPicker": {
     "noPhone": "No phone",
@@ -1430,20 +1506,27 @@
     "freelanceNote": "External order without a vendor (freelance). Car/cost details are recorded via finance/payable later."
   },
   "refund": {
-    "title": "Mark as Refunded",
-    "due": "Refund to be paid",
-    "dueHint": "Customer overpayment above the order total.",
-    "intro": "Refund proof is required (return transfer / receipt). Every cash movement must be recorded.",
-    "proofLabel": "Refund Proof",
-    "amount": "Refund Amount",
-    "amountHint": "Leave empty to use the default value ({amount}).",
+    "title": "Refund",
+    "due": "Customer credit that can be refunded",
+    "dueHint": "The customer's money above what this order bills.",
+    "intro": "Refund proof is required (return transfer or receipt). Every cash movement must be recorded.",
+    "proofLabel": "Refund proof",
+    "amount": "Amount refunded",
+    "amountHint": "At most {amount} (all of the customer credit).",
     "noteLabel": "Note (optional)",
     "notePlaceholder": "e.g. Return transfer via BCA a/n ...",
     "fileTypeError": "File must be JPEG, PNG, WebP, or PDF.",
     "fileSizeError": "File must be at most 10MB.",
     "proofRequired": "Refund proof is required.",
     "processing": "Processing…",
-    "submitBtn": "Mark as Refunded"
+    "submitBtn": "Record refund",
+    "errTooMuch": "More than the customer credit ({amount}).",
+    "createsDebt": "The customer still owes money: after this refund the receivable becomes {amount}.",
+    "earlier": "Earlier refunds",
+    "proof": "Proof",
+    "proofTitle": "Refund proof #{n}",
+    "viewProofAria": "View refund proof #{n}",
+    "proofNotFound": "Refund proof not found."
   },
   "confirmation": {
     "notSent": "Not sent",
@@ -1475,9 +1558,9 @@
     "defaultNote": "Revision of {number}",
     "defaultNoteWith": "Revision of {number}: {note}",
     "currentInvoice": "Current invoice",
-    "currentAmount": "Current amount",
+    "currentAmount": "Current value",
     "reviseHint": "This will mark the current invoice as REVISED and create a new current invoice. Use the full latest order amount when syncing a price change.",
-    "newAmount": "New Amount (IDR)",
+    "newAmount": "New value (IDR)",
     "paymentMethod": "Payment Method",
     "selectMethod": "Select method",
     "revisionNote": "Revision Note",
@@ -1486,7 +1569,12 @@
     "methodCash": "Cash",
     "methodBankTransfer": "Bank Transfer",
     "methodQris": "QRIS",
-    "methodOther": "Other"
+    "methodOther": "Other",
+    "currentCredit": "Less customer credit",
+    "dpHint": "Minimum {amount} (20% of the rental price {base}). The customer may pay more.",
+    "maxHint": "At most {amount}.",
+    "errExceedsBillable": "More than can still be invoiced ({amount}).",
+    "errDpMin": "The DP must be at least {amount} (20% of the rental price)."
   },
   "combinedInvoice": {
     "intro": "A single invoice billing the rental together with every billable additional charge. When paid, its Kwitansi is also combined. Use this instead of issuing separate Rental + Additional invoices.",
@@ -1540,9 +1628,9 @@
     "phone": "Phone",
     "orderDateNote": "Order Date / Booking Time is kept from the original order creation. Day 1 is the first Service Detail row below. For a 1-day rental, update the first row only.",
     "priceChange": "Price change",
-    "activeInvoiceTotal": "Active invoice total",
+    "activeInvoiceTotal": "Paid + invoiced",
     "invoicesWontChange": "Existing invoices will not change automatically. Sync/revise invoice after saving if needed.",
-    "belowInvoiceTotal": "New final price cannot be below active invoice total.",
+    "belowInvoiceTotal": "Unpaid invoices ask {open}, more than is still owed at the new price ({max}). Revise the invoice first, then save.",
     "reasonForChange": "Reason for Price Change",
     "reasonPlaceholder": "customer added route / overtime / discount correction",
     "finalPrice": "Final price",
@@ -1557,7 +1645,8 @@
       "FULL": "Full",
       "ADDITIONAL": "Additional",
       "COMBINED": "Combined",
-      "CANCELLATION_FEE": "Cancellation Fee"
+      "CANCELLATION_FEE": "Cancellation Fee",
+      "ADJUSTMENT": "Adjustment"
     },
     "status": {
       "DRAFT": "Draft",
@@ -1579,7 +1668,9 @@
     "colDocs": "Docs",
     "paidPrefix": "Paid",
     "docInvoice": "Invoice",
-    "openFullOrder": "Open full order"
+    "openFullOrder": "Open full order",
+    "received": "Received",
+    "credit": "Customer credit"
   },
   "scheduleLine": {
     "editDay": "Edit Day",
@@ -1691,14 +1782,23 @@
     "proofLabel": "Payment Proof",
     "method": "Payment Method",
     "amountReceived": "Amount Received",
-    "amountHint": "Leave empty if equal to the invoice amount. Fill in if more (the excess is recorded).",
+    "amountHint": "Invoice amount {amount}. Change it if the money received differs.",
     "paymentDate": "Payment Date",
     "paymentDateHint": "Leave empty for now.",
     "fileTypeError": "File must be JPEG, PNG, WebP, or PDF.",
     "fileSizeError": "File must be at most 10MB.",
     "proofRequired": "Payment proof is required.",
     "processing": "Processing…",
-    "markPaidBtn": "Mark Paid"
+    "markPaidBtn": "Mark Paid",
+    "underpaid": "Short {amount} → order status: {status}",
+    "underpaidHint": "The invoice is still marked paid, with a shortfall badge. The rest can be billed with an adjustment invoice (Bill the shortfall).",
+    "overpaid": "Over by {amount} → added to customer credit",
+    "overpaidHint": "The excess becomes this order's customer credit: it reduces the next invoice, or it can be refunded. Order status: {status}.",
+    "ackLabel": "I have checked: the money received is {received}, not the invoice amount {invoice}.",
+    "dpMinHint": "The DP minimum of this order is {amount}. Order status once this payment is recorded: {status}.",
+    "statusUnpaid": "Unpaid",
+    "statusDpPaid": "DP paid",
+    "statusPaid": "Paid"
   },
   "cars": {
     "viewPhoto": "View photo",
@@ -1765,8 +1865,8 @@
     "revenueCharges": "incl. extra charges {amount}",
     "revenueCancellation": "cancellation fees {amount}",
     "netCash": "Net Cash Flow",
-    "basisNetCash": "Cash · money in − money out",
-    "cashInOut": "In {in} · Out {out}",
+    "basisNetCash": "Cash · in − refunded − out",
+    "cashInOut": "In {in} · Refunded {refunded} · Out {out}",
     "moneyFlowTitle": "Where the money goes",
     "moneyFlowSub": "Revenue split into costs and margin for the period.",
     "channelTitle": "By channel",
@@ -1800,7 +1900,9 @@
     "arLabel": "AR (receivables)",
     "apLabel": "AP (payables)",
     "overdueCount": "{count} overdue",
-    "deltaVsPrev": "vs prev"
+    "deltaVsPrev": "vs prev",
+    "customerCredit": "Customer credit held",
+    "customerCreditHint": "Customers' money we hold; not a receivable, not revenue."
   },
   "revenue": {
     "title": "Revenue",
@@ -2386,5 +2488,70 @@
     "pointHint": "Map point the customer picked on the website. Editing the address removes the point so the address and the point never disagree.",
     "removePickupPoint": "Remove pickup point",
     "removeDropoffPoint": "Remove destination point"
+  },
+  "invoiceCredit": {
+    "useCredit": "Use customer credit ({amount})",
+    "useCreditHint": "The order's credit reduces this invoice.",
+    "keepCreditHint": "The credit is kept, for example to refund it to the customer.",
+    "invoiceValue": "Invoice value",
+    "creditUsed": "Less customer credit",
+    "toTransfer": "To be transferred",
+    "paidByCredit": "Fully covered by customer credit: the invoice is paid at once, no transfer needed."
+  },
+  "orderCredit": {
+    "title": "Customer credit & refunds",
+    "balance": "Customer credit",
+    "balanceHint": "It reduces the next invoice, or refund it to the customer.",
+    "refundBtn": "Refund",
+    "refunds": "Refunds",
+    "refundedTotal": "Total {amount}",
+    "noRefunds": "No refunds yet.",
+    "history": "Credit history ({count})",
+    "kind": {
+      "OPENING": "Opening balance",
+      "OVERPAYMENT": "Overpayment",
+      "RELEASE": "Order total lowered",
+      "APPLIED": "Used on an invoice",
+      "UNAPPLIED": "Returned from an invoice",
+      "REFUND": "Refunded to the customer"
+    }
+  },
+  "dayCancel": {
+    "badge": "Cancelled · fee {fee} ({pct}%)",
+    "badgeNoTier": "Cancelled · fee {fee}",
+    "reason1": "before the rental day",
+    "reason2": "on the day before 10:00, driver not yet arrived at the pickup address",
+    "reason3Started": "driver has arrived at the pickup address",
+    "reason3": "on the day from 10:00, or once the driver has arrived at the pickup address",
+    "feeLine": "Cancellation fee: {pct}% × {price} = {fee} ({reason})",
+    "newTotal": "New order total",
+    "creditRelease": "Customer credit released",
+    "owedAfter": "Still to be paid",
+    "extraChargesNote": "Extra charges (overtime, parking, tolls, etc.) stay billed in full.",
+    "reasonLabel": "Cancellation reason",
+    "reasonPlaceholder": "e.g. Customer cancelled today's trip",
+    "reasonRequired": "Please enter a cancellation reason",
+    "requestedAtLabel": "When the customer cancelled (WIB)",
+    "requestedAtHint": "Optional. Fill in if the customer cancelled earlier, at most 3 days back. The fee is worked out from this time; empty = the time you save.",
+    "requestedAtClear": "Clear",
+    "quoteLoading": "Working out the cancellation fee…",
+    "feeChangedToast": "The policy guide changed. Check the fee you entered again, then confirm again.",
+    "blockedLastOpenDay": "This is the last open day of the order, so it cannot be cancelled in Edit Day. Use Cancel Order.",
+    "openCancelOrder": "Open Cancel Order",
+    "blockedDoneDay": "A finished day cannot be cancelled.",
+    "openInvoiceExceeds": "Unpaid invoices still ask {open}, but with the new total ({total}) only {max} is still owed. Revise the invoice to at most {max} first (or void it), then save again.",
+    "reopenHint": "Reopening this day removes its cancellation fee, so the order total goes up again. Existing customer credit stays.",
+    "dayDeleteNeedsCancel": "Cancel the day in Edit Day so its cancellation fee is charged.",
+    "feeLabel": "Cancellation fee",
+    "feePctLabel": "Percentage of the rental day price",
+    "feeAbovePrice": "The fee cannot be more than the rental day price ({price}).",
+    "feeAgreed": "Enter what you agreed with the customer; 0 is allowed. Recorded in the order history.",
+    "feeGuide": "Policy guide: {pct}% of the rental day price {price} = {fee} ({reason}).",
+    "feeUseGuide": "Use this amount",
+    "guideChanged": "The policy guide changed to {fee} ({pct}%), for example because it is now past 10:00. Check the fee you entered again, then save again to confirm.",
+    "differsNote": "Different from the policy guide ({auto})",
+    "previewNote": "The order total, invoice and balance breakdown here still use the policy guide; the exact figures are recalculated when you save.",
+    "feeFinal": "Cancellation fee",
+    "policyShort": "Cancellation is charged per rental day from that day's price: cancelling by the day before 20%; cancelling on the rental day before 10:00 WIB while the driver has not yet arrived at the pickup address 50%; cancelling on the rental day from 10:00 WIB or after the driver has arrived at the pickup address 100%. Extra charges already incurred are paid in full. An overpayment is applied to the next bill or refunded on request."
   }
 }

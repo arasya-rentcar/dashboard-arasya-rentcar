@@ -39,6 +39,65 @@ export const orderListItemSchema = z
 
 export const orderListSchema = z.array(orderListItemSchema);
 
+const decimal = z.union([z.string(), z.number()]);
+
+export const invoiceSchema = z
+  .object({
+    id: z.string(),
+    invoice_number: nullableStr,
+    amount: decimal.nullable().optional(),
+    status: z.string().nullable().optional(),
+    // Finance A1/A2: saldo lebih used, money actually received, the derived
+    // gross / shortfall, and the invoice an ADJUSTMENT bills.
+    credit_applied: decimal.nullable().optional(),
+    amount_received: decimal.nullable().optional(),
+    gross: z.number().optional(),
+    shortfall: z.number().optional(),
+    adjusts_invoice_id: nullableStr,
+  })
+  .passthrough();
+
+/** `money` on GET /orders/:id and `order_money` on the money endpoints (rule set v3). */
+export const orderMoneySchema = z
+  .object({
+    total: z.number(),
+    base: z.number(),
+    min_dp: z.number(),
+    charges: z.number(),
+    received: z.number(),
+    refunded: z.number(),
+    net_paid: z.number(),
+    credit_balance: z.number(),
+    covered: z.number(),
+    open_billed: z.number(),
+    billable_remaining: z.number(),
+    outstanding: z.number(),
+    payment_status: z.string(),
+    start_ready: z.boolean(),
+    rule: z.string(),
+  })
+  .passthrough();
+
+export const orderRefundSchema = z
+  .object({
+    id: z.string(),
+    amount: decimal,
+    refunded_at: z.string(),
+    note: nullableStr,
+    has_proof: z.boolean(),
+  })
+  .passthrough();
+
+export const orderCreditEntrySchema = z
+  .object({
+    kind: z.string(),
+    amount: decimal,
+    created_at: z.string(),
+    note: nullableStr,
+    invoice_number: nullableStr,
+  })
+  .passthrough();
+
 export const orderDetailSchema = z
   .object({
     id: z.string(),
@@ -47,6 +106,11 @@ export const orderDetailSchema = z
     order_status: z.string().nullable().optional(),
     payment_status: z.string().nullable().optional(),
     service_items: z.array(serviceItemSchema).nullable().optional(),
+    // Every money figure on the order page comes from here.
+    money: orderMoneySchema,
+    invoices: z.array(invoiceSchema).optional(),
+    refunds: z.array(orderRefundSchema).optional(),
+    credit_entries: z.array(orderCreditEntrySchema).optional(),
   })
   .passthrough();
 
@@ -74,20 +138,32 @@ export const webLeadsResultSchema = z
   })
   .passthrough();
 
+export const createRefundResultSchema = z
+  .object({
+    refund: orderRefundSchema,
+    order_money: orderMoneySchema.nullable(),
+    outstanding_after: z.number(),
+  })
+  .passthrough();
+
+export const markPaidResultSchema = invoiceSchema.extend({
+  payment: z
+    .object({
+      received: z.number(),
+      shortfall: z.number(),
+      overpayment: z.number(),
+      credit_added: z.number(),
+    })
+    .passthrough()
+    .optional(),
+  order_money: orderMoneySchema.nullable().optional(),
+});
+
 export const ordersSearchResultSchema = z
   .object({
     data: z.array(orderListItemSchema),
     pagination: z.object({}).passthrough().nullable().optional(),
     summary: z.object({}).passthrough().nullable().optional(),
-  })
-  .passthrough();
-
-export const invoiceSchema = z
-  .object({
-    id: z.string(),
-    invoice_number: nullableStr,
-    amount: z.union([z.string(), z.number()]).nullable().optional(),
-    status: z.string().nullable().optional(),
   })
   .passthrough();
 
@@ -98,7 +174,26 @@ export const invoicesSearchResultSchema = z
   })
   .passthrough();
 
-export const dashboardV2Schema = z.object({}).passthrough();
+export const dashboardV2Schema = z
+  .object({
+    // Rule set v3: refunds leave the cash, saldo lebih is shown on its own.
+    cash: z
+      .object({
+        collected: z.number(),
+        refunded: z.number(),
+        paid_out: z.number(),
+        net_cash: z.number(),
+      })
+      .passthrough(),
+    outstanding: z
+      .object({
+        ar_outstanding: z.number(),
+        customer_credit: z.number(),
+        ap_outstanding: z.number(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
 
 export const revenueReportSchema = z
   .object({

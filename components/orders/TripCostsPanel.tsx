@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCreateTripCost, useDeleteTripCost, useUpdateTripCost } from '@/hooks/useTripCosts';
-import { formatCurrency, getErrorMessage } from '@/lib/utils';
+import { formatCurrency, getErrorMessage, openInvoiceExceeds } from '@/lib/utils';
 import type { LinePayable, TripCost } from '@/types';
 
 const STATUS_STYLE: Record<TripCost['status'], string> = {
@@ -46,6 +46,23 @@ export default function TripCostsPanel({
   readOnly?: boolean;
 }) {
   const t = useTranslations('tripCosts');
+  const td = useTranslations('dayCancel');
+  // A billed cost rejected, lowered or deleted lowers the order total; the API
+  // refuses it (409 OPEN_INVOICE_EXCEEDS) while an unpaid invoice asks more
+  // than what would still be owed. Show its numbers, not a generic error.
+  const costError = (err: unknown) => {
+    const exceeds = openInvoiceExceeds(err);
+    toast.error(
+      exceeds
+        ? td('openInvoiceExceeds', {
+            open: formatCurrency(exceeds.open_billed),
+            max: formatCurrency(exceeds.max_open_billed),
+            total: formatCurrency(exceeds.new_total),
+          })
+        : getErrorMessage(err),
+      exceeds ? { duration: 10_000 } : undefined,
+    );
+  };
   const { openPreview } = useFilePreview();
   const update = useUpdateTripCost();
   const create = useCreateTripCost();
@@ -86,7 +103,7 @@ export default function TripCostsPanel({
       if (okMsg) toast.success(okMsg);
       return true;
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      costError(err);
       return false;
     }
   }
@@ -252,7 +269,7 @@ export default function TripCostsPanel({
                   {c.created_by && (
                     <Button type="button" size="sm" variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 sm:h-6 sm:w-6" title={t('delete')} aria-label={t('delete')}
                       disabled={remove.isPending && remove.variables === c.id}
-                      onClick={async () => { try { await remove.mutateAsync(c.id); } catch (err) { toast.error(getErrorMessage(err)); } }}>
+                      onClick={async () => { try { await remove.mutateAsync(c.id); } catch (err) { costError(err); } }}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   )}

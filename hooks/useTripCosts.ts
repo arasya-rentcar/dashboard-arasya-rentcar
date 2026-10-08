@@ -31,6 +31,15 @@ export function invalidateLineMoneyViews(qc: ReturnType<typeof useQueryClient>) 
     'revenue-report',
     'dashboard-analytics',
     'dashboard-v2',
+    // Cancellation quotes read the order's money (A3).
+    'line-cancel-quote',
+    'order-cancel-quote',
+    // Cancelling or reopening a day moves payment status / saldo lebih and
+    // frees or books the driver and car.
+    'invoices-search',
+    'customers',
+    'schedule-stock',
+    'driver-availability',
   ]) {
     qc.invalidateQueries({ queryKey: [key] });
   }
