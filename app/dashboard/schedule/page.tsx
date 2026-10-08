@@ -30,6 +30,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { dayLockReason, formatCurrency, formatDate } from '@/lib/utils';
 import { ScheduleLine, ScheduleStatus } from '@/types';
 import ScheduleLineDialog from '@/components/schedule/ScheduleLineDialog';
+import { CancelFeeBadge } from '@/components/orders/DayCancellation';
 import WeekTimeline from '@/components/schedule/WeekTimeline';
 import DayDrawer from '@/components/schedule/DayDrawer';
 import HistoryTab from '@/components/schedule/HistoryTab';
@@ -451,12 +452,16 @@ function AgendaTab() {
                       : formatCurrency(line.margin_amount)}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ${STATUS_STYLES[line.line_status]}`}
-                    >
-                      {STATUS_KEYS[line.line_status] ? tx(STATUS_KEYS[line.line_status]) : line.line_status}
-                    </Badge>
+                    {line.line_status === 'CANCELLED' && line.cancel_fee != null ? (
+                      <CancelFeeBadge line={line} className="max-w-40" />
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ${STATUS_STYLES[line.line_status]}`}
+                      >
+                        {STATUS_KEYS[line.line_status] ? tx(STATUS_KEYS[line.line_status]) : line.line_status}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     <EditLineButton line={line} onEdit={() => setEditing(line)} />

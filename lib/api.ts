@@ -55,9 +55,22 @@ export const ordersApi = {
   // already-assigned order (e.g. swap driver on a multi-day order).
   reassign: (id: string, data: { driver_id: string; car_id: string }) =>
     api.post(`/orders/${id}/reassign`, data),
-  // Full-order cancellation. Server computes the cancellation-fee tier/penalty.
-  cancel: (id: string, data: { reason: string }) =>
-    api.post(`/orders/${id}/cancel`, data),
+  // "Batalkan Pesanan", per day: what it would charge now (or at the time the
+  // customer asked, at most 3 days back), then the cancellation itself.
+  cancelQuote: (id: string, requestedAt?: string) =>
+    api.get(`/orders/${id}/cancel-quote`, {
+      params: requestedAt ? { requested_at: requestedAt } : undefined,
+    }),
+  cancel: (
+    id: string,
+    data: {
+      reason: string;
+      expected_fee_total?: number;
+      day_fees?: { line_id: string; fee: number }[];
+      requested_at?: string;
+      client_ref?: string;
+    },
+  ) => api.post(`/orders/${id}/cancel`, data),
   // Admin-only order finalization. Valid once every active day-line is DONE
   // (driver finished all service days). Sets order_status = DONE.
   finalize: (id: string) => api.post(`/orders/${id}/finalize`, {}),
@@ -220,6 +233,11 @@ export const scheduleApi = {
     api.get("/schedule/week", { params }),
   assignLine: (id: string, data: object) =>
     api.put(`/schedule/lines/${id}`, data),
+  // Edit Hari → Dibatalkan: the day's cancellation fee and what it does to the order's money.
+  cancelQuote: (id: string, requestedAt?: string) =>
+    api.get(`/schedule/lines/${id}/cancel-quote`, {
+      params: requestedAt ? { requested_at: requestedAt } : undefined,
+    }),
   // #A1/#A2 trip-team confirmation (customer + driver). force=re-send.
   sendConfirmation: (id: string, data: { include_driver?: boolean; force?: boolean } = {}) =>
     api.post(`/schedule/lines/${id}/send-confirmation`, data),

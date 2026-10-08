@@ -9,6 +9,7 @@ import {
   TripHistoryRow,
   ScheduleWeekResult,
   SendConfirmationResult,
+  LineCancelQuote,
 } from '@/types';
 
 export interface ScheduleListParams {
@@ -237,6 +238,21 @@ export function useAssignScheduleLine() {
       // The day's fee / uang jalan drive its payable, margins and reports.
       invalidateLineMoneyViews(queryClient);
     },
+  });
+}
+
+/**
+ * Edit Hari → Dibatalkan: the day's cancellation fee now, or at the time the
+ * customer asked (`requestedAt`, ISO). Always fresh: the tier moves with the clock.
+ */
+export function useLineCancelQuote(id: string | undefined, requestedAt: string | undefined, enabled: boolean) {
+  return useQuery<LineCancelQuote>({
+    queryKey: ['line-cancel-quote', id, requestedAt ?? null],
+    queryFn: async () => (await scheduleApi.cancelQuote(id!, requestedAt)).data.data,
+    enabled: enabled && !!id,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
   });
 }
 

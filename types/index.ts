@@ -265,6 +265,15 @@ export interface OrderServiceItem {
   driver_name_raw?: string | null;
   driver_phone_raw?: string | null;
   plate_raw?: string | null;
+  // Per-day cancellation (A3): fee and tier (1 = 20%, 2 = 50%, 3 = 100%)
+  // stored when the day is cancelled; null on days cancelled before A3.
+  cancel_fee?: string | number | null;
+  // The automatic fee of the policy; cancel_fee differing from it = set by hand.
+  cancel_fee_auto?: string | number | null;
+  cancel_tier?: number | null;
+  cancelled_at?: string | null;
+  cancel_reason?: string | null;
+  cancel_requested_at?: string | null;
   driver?: { id: string; name: string } | null;
   car?: {
     id: string;
@@ -468,6 +477,15 @@ export interface ScheduleLine {
   driver_phone_raw?: string | null;
   plate_raw?: string | null;
   notes?: string | null;
+  // Per-day cancellation (A3): fee and tier (1 = 20%, 2 = 50%, 3 = 100%)
+  // stored when the day is cancelled; null on days cancelled before A3.
+  cancel_fee?: string | number | null;
+  // The automatic fee of the policy; cancel_fee differing from it = set by hand.
+  cancel_fee_auto?: string | number | null;
+  cancel_tier?: number | null;
+  cancelled_at?: string | null;
+  cancel_reason?: string | null;
+  cancel_requested_at?: string | null;
   // Driver pay (per day) and the day's payable (extras come off the margin).
   driver_fee?: string | number | null;
   driver_fee_note?: string | null;
@@ -495,6 +513,75 @@ export interface ScheduleLine {
     model: string;
     plate_number?: string | null;
   } | null;
+}
+
+// ---- Per-day cancellation quotes (API A3) ----
+export type LineCancelBlock =
+  | 'LAST_OPEN_DAY'
+  | 'OPEN_INVOICE_EXCEEDS'
+  | 'DONE_DAY'
+  | 'ALREADY_CANCELLED'
+  | null;
+
+/** GET /schedule/lines/:id/cancel-quote: cancelling one day in Edit Hari. Rupiah. */
+export interface LineCancelQuote {
+  decided_at: string;
+  requested_at: string | null;
+  tier: number;
+  pct: number;
+  price: number;
+  fee: number;
+  label: string;
+  // The driver was at the pickup by the decision time (tier 3 before 10.00).
+  arrived: boolean;
+  blocked: LineCancelBlock;
+  new_total: number;
+  net_paid: number;
+  covered: number;
+  credit_release: number;
+  open_billed: number;
+  max_open_billed: number;
+  owed_after: number;
+}
+
+export interface OrderCancelQuoteDay {
+  id: string;
+  date: string | null;
+  price: number;
+  arrived: boolean;
+  tier: 1 | 2 | 3;
+  pct: 20 | 50 | 100;
+  /** Charged; equals fee_auto in a quote. */
+  fee: number;
+  fee_auto: number;
+  manual: boolean;
+  label: string;
+}
+
+/** GET /orders/:id/cancel-quote: "Batalkan Pesanan", per day. Rupiah. */
+export interface OrderCancelQuote {
+  decided_at: string;
+  requested_at: string | null;
+  tier: number;
+  /** The days cancelled now. */
+  days: OrderCancelQuoteDay[];
+  /** Fees of days cancelled earlier (Edit Hari), kept as they are. */
+  earlier_fee_total: number;
+  /** Σ fees of every cancelled day afterwards (= cancellation_fee). */
+  fee_total: number;
+  done_total: number;
+  charges: number;
+  original_total: number;
+  new_total: number;
+  net_paid: number;
+  credit_balance: number;
+  covered: number;
+  voided_invoices: { id: string; number: string; amount: number; credit_applied: number }[];
+  fee_invoice: { gross: number; credit_applied: number; amount: number } | null;
+  credit_applied: number;
+  credit_release: number;
+  credit_after: number;
+  still_owed: number;
 }
 
 // ---- Week Timeline (Schedule > Timeline view) ----

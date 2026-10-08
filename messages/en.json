@@ -672,7 +672,7 @@
       },
       {
         "t": "Cancellation and refunds",
-        "d": "<b>Cancel Order</b> calculates the cancellation fee according to the policy and issues a cancellation invoice only for the part not yet paid. Money above what the order bills becomes <b>customer credit</b>; return it with <b>Refund</b> and the transfer proof. You can refund more than once, each time at most the credit left."
+        "d": "<b>Cancel Order</b> works out the cancellation fee per day and voids only unpaid invoices; a cancellation-fee invoice is issued only for what is still owed. Money above what the order bills becomes <b>customer credit</b>; return it with <b>Refund</b> and the transfer proof. You can refund more than once, each time at most the credit left."
       }
     ],
     "driverAppTitle": "Driver app & notifications",
@@ -769,7 +769,7 @@
       },
       {
         "t": "Cancellation fee",
-        "d": "Before the travel day: 20% of the order total. On the travel day before 10:00 WIB and the trip has not started: 50%. After that: 100%. Cancel an order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
+        "d": "Charged per rental day from that day's price: before its date 20%; on its date before 10:00 WIB with the driver not yet arrived at the pickup address 50%; otherwise 100%. Extra charges stay billed in full. The amount can be changed by hand when something else was agreed with the customer; the change is recorded in the order history. Cancel one day in <b>Edit Day</b> and the whole order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
       },
       {
         "t": "Driver after the DP",
@@ -781,7 +781,7 @@
       },
       {
         "t": "Changing or cancelling a day",
-        "d": "A day that already has a driver cannot be removed in <b>Edit Order</b>; cancel it in <b>Edit Day</b>. The last active day cannot be cancelled in <b>Edit Day</b>; use <b>Cancel Order</b>. <b>Edit Day</b> also refuses a change that would bring the order total below the invoices already issued; revise the invoice first."
+        "d": "Once an order has money in or an invoice, a day cannot be removed in <b>Edit Order</b>; cancel it in <b>Edit Day</b> so its cancellation fee is charged (a reason is required; the time the customer cancelled may be given, at most 3 days back). A finished day cannot be cancelled, and the last open day is cancelled with <b>Cancel Order</b>. If an unpaid invoice asks more than is still owed, revise the invoice first."
       },
       {
         "t": "Done or cancelled orders",
@@ -797,6 +797,32 @@
       "Logging overtime or parking without <b>Add Additional</b>, so the <b>Additional Invoice</b> has nothing left to bill.",
       "Leaving trip costs in <b>Waiting for review</b>, so the order cannot be finalized.",
       "Leaving old trips open. Check the <b>Not closed</b> chip in <b>{menuTrip}</b> regularly."
+    ],
+    "cancelPolicyTitle": "Cancellation policy (same as the website)",
+    "cancelPolicyHeading": "Cancellation fees are charged per rental day, based on that day's price.",
+    "cancelPolicyWhenHeader": "When the customer cancels",
+    "cancelPolicyFeeHeader": "Fee",
+    "cancelPolicyRows": [
+      {
+        "w": "By the day before the rental date (until 23:59 WIB)",
+        "f": "20%"
+      },
+      {
+        "w": "On the rental date, before 10:00 WIB and before the driver has arrived at the pickup address",
+        "f": "50%"
+      },
+      {
+        "w": "On the rental date from 10:00 WIB, or once the driver has arrived at the pickup address",
+        "f": "100% (that day is paid in full)"
+      }
+    ],
+    "cancelPolicyNote": "Extra charges already incurred (such as overtime, parking or tolls) are still paid in full. If you have paid more than what is billed, the excess goes toward your next bill, or we refund it to your account on request.",
+    "cancelPolicyAdminNote": "In Edit Day and Cancel Order, the admin types the cancellation fee, using this table as a guide. A different amount, including 0, is fine when agreed with the customer.",
+    "cancelPolicyExampleTitle": "Example: a 3-day rental, 10–12 Oct, Rp 1,000,000 per day",
+    "cancelPolicyExamples": [
+      "Cancel on 9 Oct = Rp 600,000",
+      "Cancel on 10 Oct at 08:00, driver not yet arrived at the pickup address = Rp 900,000",
+      "Cancel on 10 Oct at 11:00 = Rp 1,400,000"
     ]
   },
   "orderDetail": {
@@ -941,7 +967,7 @@
     "finalizeConfirmHint": "All service days are finished. Finalizing closes the order (marks it Done). Make sure ops cost and driver fee are recorded first.",
     "finalizeAdditionalWarning": "This order has additional charges. Before finalizing, double-check the additional items, ops cost, and driver fee are all correct — finalizing closes the order.",
     "okOrderFinalized": "Order finalized",
-    "cancelWarning": "This cancels the whole order: all upcoming days are cancelled, drivers/cars released, active invoices voided, and the cancellation fee is computed per Arasya policy. A cancellation invoice is issued only for what is still unpaid. This cannot be undone.",
+    "cancelWarning": "Every day still open is cancelled and its driver/car released. The cancellation fee is worked out per day from that day's date and price. Only unpaid invoices are voided; paid invoices stay. This cannot be undone.",
     "cancelReasonLabel": "Cancellation reason",
     "cancelReasonPlaceholder": "e.g. Customer cancelled the booking",
     "cancelReasonRequired": "Please enter a cancellation reason",
@@ -965,7 +991,25 @@
     "okMarkedPaidShort": "{number} marked paid, short by {amount}. Bill it with an adjustment invoice.",
     "okMarkedPaidOver": "{number} marked paid. {amount} extra added to customer credit.",
     "okInvoicePaidByCredit": "Invoice created and paid at once from customer credit.",
-    "invoiceAdjustment": "Adjustment invoice"
+    "invoiceAdjustment": "Adjustment invoice",
+    "cqDate": "Date",
+    "cqPrice": "Rental day price",
+    "cqNoDate": "No date",
+    "cqEarlierFees": "Fees of days cancelled earlier",
+    "cqFeeTotal": "Total cancellation fee",
+    "cqDoneTotal": "Days already done (paid in full)",
+    "cqCharges": "Extra charges (still billed)",
+    "cqTotal": "Order total",
+    "cqNewTotal": "New order total",
+    "cqVoided": "Unpaid invoices voided",
+    "cqVoidedCredit": "{amount} credit returned",
+    "cqFeeInvoice": "A cancellation-fee invoice of {amount} is issued.",
+    "cqFeeInvoiceCredit": "(after {amount} of customer credit)",
+    "cqCreditAfter": "No new invoice. Customer credit afterwards: {amount}, used for the next bill or returned with Refund.",
+    "cqSettled": "No new invoice and no customer credit left.",
+    "cqGuideChanged": "The policy guide changed to {fee}. Check the fee you entered again, then confirm again.",
+    "cqConfirmAgain": "Confirm again",
+    "cqResultVoided": "Voided invoices: {numbers}."
   },
   "invoicesPage": {
     "expandRow": "Show invoice details",
@@ -1586,7 +1630,7 @@
     "priceChange": "Price change",
     "activeInvoiceTotal": "Paid + invoiced",
     "invoicesWontChange": "Existing invoices will not change automatically. Sync/revise invoice after saving if needed.",
-    "belowInvoiceTotal": "The new final price cannot be below the money paid plus unpaid invoices.",
+    "belowInvoiceTotal": "Unpaid invoices ask {open}, more than is still owed at the new price ({max}). Revise the invoice first, then save.",
     "reasonForChange": "Reason for Price Change",
     "reasonPlaceholder": "customer added route / overtime / discount correction",
     "finalPrice": "Final price",
@@ -2453,5 +2497,43 @@
       "UNAPPLIED": "Returned from an invoice",
       "REFUND": "Refunded to the customer"
     }
+  },
+  "dayCancel": {
+    "badge": "Cancelled · fee {fee} ({pct}%)",
+    "badgeNoTier": "Cancelled · fee {fee}",
+    "reason1": "before the rental day",
+    "reason2": "on the day before 10:00, driver not yet arrived at the pickup address",
+    "reason3Started": "driver has arrived at the pickup address",
+    "reason3": "on the day from 10:00, or once the driver has arrived at the pickup address",
+    "feeLine": "Cancellation fee: {pct}% × {price} = {fee} ({reason})",
+    "newTotal": "New order total",
+    "creditRelease": "Customer credit released",
+    "owedAfter": "Still to be paid",
+    "extraChargesNote": "Extra charges (overtime, parking, tolls, etc.) stay billed in full.",
+    "reasonLabel": "Cancellation reason",
+    "reasonPlaceholder": "e.g. Customer cancelled today's trip",
+    "reasonRequired": "Please enter a cancellation reason",
+    "requestedAtLabel": "When the customer cancelled (WIB)",
+    "requestedAtHint": "Optional. Fill in if the customer cancelled earlier, at most 3 days back. The fee is worked out from this time; empty = the time you save.",
+    "requestedAtClear": "Clear",
+    "quoteLoading": "Working out the cancellation fee…",
+    "feeChangedToast": "The policy guide changed. Check the fee you entered again, then confirm again.",
+    "blockedLastOpenDay": "This is the last open day of the order, so it cannot be cancelled in Edit Day. Use Cancel Order.",
+    "openCancelOrder": "Open Cancel Order",
+    "blockedDoneDay": "A finished day cannot be cancelled.",
+    "openInvoiceExceeds": "Unpaid invoices still ask {open}, but with the new total ({total}) only {max} is still owed. Revise the invoice to at most {max} first (or void it), then save again.",
+    "reopenHint": "Reopening this day removes its cancellation fee, so the order total goes up again. Existing customer credit stays.",
+    "dayDeleteNeedsCancel": "Cancel the day in Edit Day so its cancellation fee is charged.",
+    "feeLabel": "Cancellation fee",
+    "feePctLabel": "Percentage of the rental day price",
+    "feeAbovePrice": "The fee cannot be more than the rental day price ({price}).",
+    "feeAgreed": "Enter what you agreed with the customer; 0 is allowed. Recorded in the order history.",
+    "feeGuide": "Policy guide: {pct}% of the rental day price {price} = {fee} ({reason}).",
+    "feeUseGuide": "Use this amount",
+    "guideChanged": "The policy guide changed to {fee} ({pct}%), for example because it is now past 10:00. Check the fee you entered again, then save again to confirm.",
+    "differsNote": "Different from the policy guide ({auto})",
+    "previewNote": "The order total, invoice and balance breakdown here still use the policy guide; the exact figures are recalculated when you save.",
+    "feeFinal": "Cancellation fee",
+    "policyShort": "Cancellation is charged per rental day from that day's price: cancelling by the day before 20%; cancelling on the rental day before 10:00 WIB while the driver has not yet arrived at the pickup address 50%; cancelling on the rental day from 10:00 WIB or after the driver has arrived at the pickup address 100%. Extra charges already incurred are paid in full. An overpayment is applied to the next bill or refunded on request."
   }
 }

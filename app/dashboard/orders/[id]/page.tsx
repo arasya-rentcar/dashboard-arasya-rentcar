@@ -2,6 +2,7 @@
 
 import { use, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowLeft,
@@ -41,7 +42,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import OrderFinanceCard from "@/components/orders/OrderFinanceCard";
 import ArrivalEvidence from "@/components/orders/ArrivalEvidence";
 import TripCostsPanel from "@/components/orders/TripCostsPanel";
@@ -54,6 +54,8 @@ import GenerateInvoiceForm, {
 import AdditionalInvoiceForm from "@/components/forms/AdditionalInvoiceForm";
 import CombinedInvoiceForm from "@/components/forms/CombinedInvoiceForm";
 import ScheduleLineDialog from "@/components/schedule/ScheduleLineDialog";
+import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
+import { CancelFeeBadge } from "@/components/orders/DayCancellation";
 import type { ScheduleLine, ScheduleStatus, OrderServiceItem } from "@/types";
 import ReviseInvoiceForm from "@/components/forms/ReviseInvoiceForm";
 import EditOrderForm from "@/components/forms/EditOrderForm";
@@ -72,11 +74,10 @@ import {
   useSendReceiptWhatsapp,
   useMarkInvoicePaid,
   useCreateRefund,
-  useCancelOrder,
   useFinalizeOrder,
-  type CancelOrderResult,
 } from "@/hooks/useOrders";
 import {
+  apiErrorBody,
   dayLockReason,
   formatCurrency,
   formatDate,
@@ -84,6 +85,7 @@ import {
   getErrorMessage,
   isMoneyConflict,
   isoToWibDate,
+  openInvoiceExceeds,
 } from "@/lib/utils";
 import {
   GenerateInvoiceInput,
@@ -118,6 +120,7 @@ export default function OrderDetailPage({
   const t = useTranslations("orderDetail");
   const tt = useTranslations("terms");
   const tc = useTranslations("common");
+  const td = useTranslations("dayCancel");
   const [reassignOpen, setReassignOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -130,12 +133,14 @@ export default function OrderDetailPage({
   const [refundOpen, setRefundOpen] = useState(false);
   // "Tagih kekurangan": the invoice form opened as an Invoice Penyesuaian.
   const [adjustTarget, setAdjustTarget] = useState<AdjustmentTarget | null>(null);
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [finalizeOpen, setFinalizeOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
-  const [cancelResult, setCancelResult] = useState<CancelOrderResult | null>(
-    null,
+  // Edit Hari on the last open day links here with ?cancel=1 (read once).
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [cancelOpen, setCancelOpen] = useState(
+    () => searchParams.get("cancel") === "1",
   );
+  const [finalizeOpen, setFinalizeOpen] = useState(false);
   const [adjType, setAdjType] = useState("OVERTIME");
   const [adjDesc, setAdjDesc] = useState("");
   const [adjAmount, setAdjAmount] = useState("");
@@ -144,7 +149,6 @@ export default function OrderDetailPage({
 
   const { data: order, isLoading, isError, refetch } = useOrder(id);
   const reassignMutation = useReassignOrder();
-  const cancelMutation = useCancelOrder();
   const finalizeMutation = useFinalizeOrder();
   const updateOrderMutation = useUpdateOrder();
   const generateInvoiceMutation = useGenerateInvoice();
@@ -440,8 +444,13 @@ export default function OrderDetailPage({
       .filter((d): d is string => !!d)
       .map((d) => isoToWibDate(d))
       .sort();
+    // Same as the API's dayBillable: a cancelled day counts at its fee.
     const total = items.reduce(
-      (sum, it) => sum + Number(it.total_price || 0),
+      (sum, it) =>
+        sum +
+        Number(
+          it.line_status === "CANCELLED" ? it.cancel_fee ?? 0 : it.total_price || 0,
+        ),
       0,
     );
     const first = dates[0];
@@ -534,24 +543,6 @@ export default function OrderDetailPage({
     }
   }
 
-  async function handleCancelOrder() {
-    if (!cancelReason.trim()) {
-      toast.error(t("cancelReasonRequired"));
-      return;
-    }
-    try {
-      const result = await cancelMutation.mutateAsync({
-        id,
-        reason: cancelReason.trim(),
-      });
-      setCancelResult(result);
-      setCancelReason("");
-      toast.success(t("okOrderCancelled"));
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  }
-
   async function handleFinalizeOrder() {
     try {
       await finalizeMutation.mutateAsync({ id });
@@ -591,6 +582,9 @@ export default function OrderDetailPage({
       driver_phone_raw: item.driver_phone_raw ?? null,
       plate_raw: item.plate_raw ?? null,
       notes: item.notes ?? null,
+      cancel_fee: item.cancel_fee ?? null,
+      cancel_fee_auto: item.cancel_fee_auto ?? null,
+      cancel_tier: item.cancel_tier ?? null,
       order: {
         id: order.id,
         order_code:
@@ -627,7 +621,20 @@ export default function OrderDetailPage({
       toast.success(t("okOrderUpdated"));
       setEditOpen(false);
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const exceeds = openInvoiceExceeds(err);
+      if (apiErrorBody(err)?.code === "DAY_DELETE_NEEDS_CANCEL") {
+        toast.error(td("dayDeleteNeedsCancel"));
+      } else if (exceeds) {
+        toast.error(
+          td("openInvoiceExceeds", {
+            open: formatCurrency(exceeds.open_billed),
+            max: formatCurrency(exceeds.max_open_billed),
+            total: formatCurrency(exceeds.new_total),
+          }),
+        );
+      } else {
+        toast.error(getErrorMessage(err));
+      }
     }
   }
 
@@ -812,11 +819,7 @@ export default function OrderDetailPage({
               !isPartlyCancelled &&
               !order.awaiting_finalization && (
                 <Button
-                  onClick={() => {
-                    setCancelResult(null);
-                    setCancelReason("");
-                    setCancelOpen(true);
-                  }}
+                  onClick={() => setCancelOpen(true)}
                   size="sm"
                   variant="outline"
                   className="border-red-200 text-red-700 hover:bg-red-50"
@@ -1184,11 +1187,14 @@ export default function OrderDetailPage({
                                             {t('liveTag')}
                                           </span>
                                         )}
-                                        {item.line_status === "CANCELLED" && (
-                                          <span className="ml-2 text-[11px] text-red-600">
-                                            {t('cancelledTag')}
-                                          </span>
-                                        )}
+                                        {item.line_status === "CANCELLED" &&
+                                          (item.cancel_fee != null ? (
+                                            <CancelFeeBadge line={item} className="ml-2 align-middle" />
+                                          ) : (
+                                            <span className="ml-2 text-[11px] text-red-600">
+                                              {t('cancelledTag')}
+                                            </span>
+                                          ))}
                                       </p>
                                       {(item.service_kind ||
                                         item.service_package) && (
@@ -1680,6 +1686,10 @@ export default function OrderDetailPage({
         line={assignLine}
         open={!!assignLine}
         onClose={() => setAssignLine(null)}
+        onCancelOrder={() => {
+          setAssignLine(null);
+          setCancelOpen(true);
+        }}
       />
 
       {/* Generate Additional Invoice Dialog */}
@@ -1765,129 +1775,16 @@ export default function OrderDetailPage({
         isSubmitting={createRefundMutation.isPending}
       />
 
-      {/* Cancel Order Dialog (applies the Arasya cancellation-fee policy) */}
-      <Dialog
+      {/* Batalkan Pesanan: per-day cancellation fees from the API quote. */}
+      <CancelOrderDialog
+        orderId={id}
         open={cancelOpen}
         onOpenChange={(open) => {
           setCancelOpen(open);
-          if (!open) {
-            setCancelReason("");
-            setCancelResult(null);
-          }
+          // Drop ?cancel=1 so a reload does not open it again.
+          if (!open && searchParams.has("cancel")) router.replace(pathname);
         }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('cancelOrder')}</DialogTitle>
-          </DialogHeader>
-
-          {cancelResult ? (
-            // ── Result summary after a successful cancellation ──────────────
-            <div className="space-y-3 text-sm">
-              <div className="rounded-lg border border-gray-200 p-3 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t('cancelTier')}</span>
-                  <span className="font-medium">
-                    {t('cancelTierValue', { tier: cancelResult.tier })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t('cancelPenalty')}</span>
-                  <span className="font-semibold text-red-700">
-                    {formatCurrency(cancelResult.penalty)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">{t('cancelPaid')}</span>
-                  <span className="font-medium">
-                    {formatCurrency(cancelResult.paidToDate)}
-                  </span>
-                </div>
-                {cancelResult.refundDue > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('cancelRefundDue')}</span>
-                    <span className="font-semibold text-amber-700">
-                      {formatCurrency(cancelResult.refundDue)}
-                    </span>
-                  </div>
-                )}
-                {cancelResult.stillOwed > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">{t('cancelStillOwed')}</span>
-                    <span className="font-semibold text-emerald-700">
-                      {formatCurrency(cancelResult.stillOwed)}
-                    </span>
-                  </div>
-                )}
-              </div>
-              {cancelResult.refundDue > 0 && (
-                <p className="text-xs text-amber-700">
-                  {t('cancelRefundHint')}
-                </p>
-              )}
-              {cancelResult.stillOwed > 0 && cancelResult.cancellationInvoiceNumber && (
-                <p className="text-xs text-gray-600">
-                  {t('cancelInvoiceIssued', {
-                    number: cancelResult.cancellationInvoiceNumber,
-                    amount: formatCurrency(cancelResult.stillOwed),
-                  })}
-                </p>
-              )}
-              {cancelResult.stillOwed === 0 && cancelResult.refundDue === 0 && (
-                <p className="text-xs text-gray-600">{t('cancelSettled')}</p>
-              )}
-              <div className="flex justify-end">
-                <Button onClick={() => setCancelOpen(false)} size="sm">
-                  {tc('close')}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            // ── Confirmation form ───────────────────────────────────────────
-            <div className="space-y-3">
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-2 text-sm text-red-700">
-                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                <p>{t('cancelWarning')}</p>
-              </div>
-              <div>
-                <label htmlFor="cancel-reason" className="text-xs text-gray-500 mb-1 block">
-                  {t('cancelReasonLabel')}
-                </label>
-                <Textarea
-                  id="cancel-reason"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder={t('cancelReasonPlaceholder')}
-                  rows={3}
-                />
-              </div>
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={cancelMutation.isPending}
-                  onClick={() => setCancelOpen(false)}
-                >
-                  {tc('cancel')}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="bg-red-600 hover:bg-red-700"
-                  onClick={handleCancelOrder}
-                  disabled={cancelMutation.isPending || !cancelReason.trim()}
-                >
-                  {cancelMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {t('cancelConfirm')}
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* Finalize Order Dialog (admin-authoritative DONE). Ops cost / additional
           / driver fee are SOFT; if additionals exist we remind the admin to
