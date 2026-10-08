@@ -268,6 +268,8 @@ export interface OrderServiceItem {
   // Per-day cancellation (A3): fee and tier (1 = 20%, 2 = 50%, 3 = 100%)
   // stored when the day is cancelled; null on days cancelled before A3.
   cancel_fee?: string | number | null;
+  // The automatic fee of the policy; cancel_fee differing from it = set by hand.
+  cancel_fee_auto?: string | number | null;
   cancel_tier?: number | null;
   cancelled_at?: string | null;
   cancel_reason?: string | null;
@@ -478,6 +480,8 @@ export interface ScheduleLine {
   // Per-day cancellation (A3): fee and tier (1 = 20%, 2 = 50%, 3 = 100%)
   // stored when the day is cancelled; null on days cancelled before A3.
   cancel_fee?: string | number | null;
+  // The automatic fee of the policy; cancel_fee differing from it = set by hand.
+  cancel_fee_auto?: string | number | null;
   cancel_tier?: number | null;
   cancelled_at?: string | null;
   cancel_reason?: string | null;

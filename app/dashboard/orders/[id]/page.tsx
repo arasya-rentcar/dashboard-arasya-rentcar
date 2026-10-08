@@ -583,6 +583,7 @@ export default function OrderDetailPage({
       plate_raw: item.plate_raw ?? null,
       notes: item.notes ?? null,
       cancel_fee: item.cancel_fee ?? null,
+      cancel_fee_auto: item.cancel_fee_auto ?? null,
       cancel_tier: item.cancel_tier ?? null,
       order: {
         id: order.id,

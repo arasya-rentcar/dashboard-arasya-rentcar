@@ -66,6 +66,7 @@ export const ordersApi = {
     data: {
       reason: string;
       expected_fee_total?: number;
+      day_fees?: { line_id: string; fee: number }[];
       requested_at?: string;
       client_ref?: string;
     },

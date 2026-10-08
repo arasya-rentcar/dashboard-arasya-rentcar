@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  CancelFeeField,
+  cancelFeeState,
   CustomerCancelTimeInput,
   useTierReason,
 } from '@/components/orders/DayCancellation';
@@ -53,12 +55,25 @@ export default function CancelOrderDialog({
   const [reason, setReason] = useState('');
   const [requestedLocal, setRequestedLocal] = useState('');
   const [changedQuote, setChangedQuote] = useState<OrderCancelQuote | null>(null);
+  // Fees typed by hand, by day (plain digits); a day without an entry keeps its automatic fee.
+  const [feeManual, setFeeManual] = useState<Record<string, string>>({});
   const [result, setResult] = useState<CancelOrderResult | null>(null);
   const [clientRef, renewClientRef] = useClientRef(open);
   const requestedIso = wibDateTimeToIso(requestedLocal);
   const quoteQuery = useOrderCancelQuote(orderId, requestedIso, open && !result);
   const quote = changedQuote ?? quoteQuery.data;
   const mutation = useCancelOrder();
+
+  const dayStates = (quote?.days ?? []).map((d) => ({
+    day: d,
+    state: cancelFeeState(feeManual[d.id] ?? null, d.fee, d.price),
+  }));
+  const feesInvalid = dayStates.some((x) => x.state.invalid);
+  const manualDays = dayStates.filter((x) => x.state.isManual);
+  // The penalty the admin is confirming: the automatic total moved by the days changed by hand.
+  const finalFeeTotal = quote
+    ? quote.fee_total + dayStates.reduce((sum, x) => sum + (x.state.fee - x.day.fee), 0)
+    : 0;
 
   function setOpen(o: boolean) {
     // Closing mid-request would reopen with a new client_ref while the first
@@ -69,6 +84,7 @@ export default function CancelOrderDialog({
       setReason('');
       setRequestedLocal('');
       setChangedQuote(null);
+      setFeeManual({});
       setResult(null);
     }
   }
@@ -83,11 +99,16 @@ export default function CancelOrderDialog({
       const res = await mutation.mutateAsync({
         id: orderId,
         reason: reason.trim(),
+        // The automatic total the admin was shown; the manual days go in day_fees.
         expected_fee_total: quote.fee_total,
+        ...(manualDays.length
+          ? { day_fees: manualDays.map((x) => ({ line_id: x.day.id, fee: x.state.fee })) }
+          : {}),
         ...(requestedIso ? { requested_at: requestedIso } : {}),
         client_ref: clientRef,
       });
       renewClientRef();
+      setFeeManual({});
       setResult(res);
       setReason('');
       toast.success(t('okOrderCancelled'));
@@ -182,46 +203,48 @@ export default function CancelOrderDialog({
                   </p>
                 )}
                 {quote.days.length > 0 && (
-                  <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="w-full text-[11px] sm:text-xs">
-                      <thead className="bg-gray-50 text-[10px] text-gray-500 sm:text-[11px]">
-                        <tr>
-                          <th className="px-1 py-1.5 sm:px-2 text-left font-medium">{t('cqDate')}</th>
-                          <th className="px-1 py-1.5 sm:px-2 text-right font-medium">{t('cqPrice')}</th>
-                          <th className="px-1 py-1.5 sm:px-2 text-left font-medium">{t('cqStarted')}</th>
-                          <th className="px-1 py-1.5 sm:px-2 text-right font-medium">{t('cqTier')}</th>
-                          <th className="px-1 py-1.5 sm:px-2 text-right font-medium">{t('cqFee')}</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {quote.days.map((d) => (
-                          <tr key={d.id}>
-                            <td className="px-1 py-1.5 sm:px-2">
-                              {d.date ? formatDate(d.date) : t('cqNoDate')}
-                            </td>
-                            <td className="whitespace-nowrap px-1 py-1.5 sm:px-2 text-right tabular-nums">
-                              {formatCurrency(d.price)}
-                            </td>
-                            <td className="px-1 py-1.5 sm:px-2">{d.started ? tc('yes') : td('notStarted')}</td>
-                            <td
-                              className="px-1 py-1.5 sm:px-2 text-right tabular-nums"
-                              title={tierReason(d.tier, d.started)}
-                            >
-                              {d.pct}%
-                            </td>
-                            <td className="whitespace-nowrap px-1 py-1.5 sm:px-2 text-right font-medium tabular-nums">
-                              {formatCurrency(d.fee)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <ul className="space-y-2">
+                    {dayStates.map(({ day: d, state }) => (
+                      <li key={d.id} className="space-y-2 rounded-lg border border-gray-200 p-3">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
+                          <span className="font-medium text-gray-900">
+                            {d.date ? formatDate(d.date) : t('cqNoDate')}
+                          </span>
+                          <span className="tabular-nums text-gray-500">
+                            {t('cqPrice')} {formatCurrency(d.price)}
+                          </span>
+                        </div>
+                        <CancelFeeField
+                          id={`cancel-fee-${d.id}`}
+                          price={d.price}
+                          auto={d.fee}
+                          autoPct={d.pct}
+                          reason={tierReason(d.tier, d.started)}
+                          manual={feeManual[d.id] ?? null}
+                          onChange={(v) =>
+                            setFeeManual((m) => {
+                              const next = { ...m };
+                              if (v === null) delete next[d.id];
+                              else next[d.id] = v;
+                              return next;
+                            })
+                          }
+                        />
+                      </li>
+                    ))}
+                  </ul>
                 )}
 
                 <div className="space-y-1 rounded-lg border border-gray-200 p-3 text-xs">
                   {quote.earlier_fee_total > 0 && row(t('cqEarlierFees'), quote.earlier_fee_total)}
-                  {row(t('cqFeeTotal'), quote.fee_total, 'text-red-700')}
+                  {row(t('cqFeeTotal'), finalFeeTotal, 'text-red-700')}
+                  {manualDays.map(({ day: d, state }) => (
+                    <p key={d.id} className="text-[11px] text-amber-700">
+                      {d.date ? formatDate(d.date) : t('cqNoDate')}
+                      {': '}
+                      {formatCurrency(state.fee)} · {td('manualNote', { auto: formatCurrency(d.fee) })}
+                    </p>
+                  ))}
                   {quote.done_total > 0 && row(t('cqDoneTotal'), quote.done_total)}
                   {quote.charges > 0 && row(t('cqCharges'), quote.charges)}
                   <div className="flex justify-between gap-3 border-t border-gray-100 pt-1">
@@ -264,7 +287,11 @@ export default function CancelOrderDialog({
                   ) : (
                     <p className="rounded-md bg-gray-50 px-2 py-1.5">{t('cqSettled')}</p>
                   )}
+                  {manualDays.length > 0 && (
+                    <p className="text-[11px] text-amber-700">{td('manualPreviewNote')}</p>
+                  )}
                   <p className="text-[11px] text-gray-500">{td('extraChargesNote')}</p>
+                  <p className="text-[11px] text-gray-500">{td('policyShort')}</p>
                 </div>
               </div>
             )}
@@ -307,7 +334,11 @@ export default function CancelOrderDialog({
                 className="bg-red-600 hover:bg-red-700"
                 onClick={confirm}
                 disabled={
-                  mutation.isPending || !reason.trim() || !quote || quoteQuery.isFetching
+                  mutation.isPending ||
+                  !reason.trim() ||
+                  !quote ||
+                  quoteQuery.isFetching ||
+                  feesInvalid
                 }
               >
                 {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -769,7 +769,7 @@
       },
       {
         "t": "Cancellation fee",
-        "d": "Charged per rental day from that day's price: before its date 20%; on its date before 10:00 WIB with the driver not yet left 50%; otherwise 100%. Extra charges stay billed in full. Cancel one day in <b>Edit Day</b> and the whole order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
+        "d": "Charged per rental day from that day's price: before its date 20%; on its date before 10:00 WIB with the driver not yet arrived at the pickup address 50%; otherwise 100%. Extra charges stay billed in full. The amount can be changed by hand when something else was agreed with the customer; the change is recorded in the order history. Cancel one day in <b>Edit Day</b> and the whole order with <b>Cancel Order</b>; an order whose days are all done is closed with <b>Finalize Order</b>, not cancelled."
       },
       {
         "t": "Driver after the DP",
@@ -808,11 +808,11 @@
         "f": "20%"
       },
       {
-        "w": "On the rental date, before 10:00 WIB and before the driver has left to pick you up",
+        "w": "On the rental date, before 10:00 WIB and before the driver has arrived at the pickup address",
         "f": "50%"
       },
       {
-        "w": "On the rental date from 10:00 WIB, or once the driver has left to pick you up",
+        "w": "On the rental date from 10:00 WIB, or once the driver has arrived at the pickup address",
         "f": "100% (that day is paid in full)"
       }
     ],
@@ -820,7 +820,7 @@
     "cancelPolicyExampleTitle": "Example: a 3-day rental, 10–12 Oct, Rp 1,000,000 per day",
     "cancelPolicyExamples": [
       "Cancel on 9 Oct = Rp 600,000",
-      "Cancel on 10 Oct at 08:00, driver not yet left = Rp 900,000",
+      "Cancel on 10 Oct at 08:00, driver not yet arrived at the pickup address = Rp 900,000",
       "Cancel on 10 Oct at 11:00 = Rp 1,400,000"
     ]
   },
@@ -992,10 +992,7 @@
     "okInvoicePaidByCredit": "Invoice created and paid at once from customer credit.",
     "invoiceAdjustment": "Adjustment invoice",
     "cqDate": "Date",
-    "cqPrice": "Price",
-    "cqStarted": "Left?",
-    "cqTier": "Rate",
-    "cqFee": "Fee",
+    "cqPrice": "Rental day price",
     "cqNoDate": "No date",
     "cqEarlierFees": "Fees of days cancelled earlier",
     "cqFeeTotal": "Total cancellation fee",
@@ -1009,7 +1006,7 @@
     "cqFeeInvoiceCredit": "(after {amount} of customer credit)",
     "cqCreditAfter": "No new invoice. Customer credit afterwards: {amount}, used for the next bill or returned with Refund.",
     "cqSettled": "No new invoice and no customer credit left.",
-    "cqFeeChanged": "The cancellation fee changed to {fee}. Check the breakdown, then confirm again.",
+    "cqFeeChanged": "The automatic cancellation fee changed to {fee}. Check the breakdown, then confirm again.",
     "cqConfirmAgain": "Confirm again",
     "cqResultVoided": "Voided invoices: {numbers}."
   },
@@ -2504,9 +2501,9 @@
     "badge": "Cancelled · fee {fee} ({pct}%)",
     "badgeNoTier": "Cancelled · fee {fee}",
     "reason1": "before the rental day",
-    "reason2": "on the day before 10:00, driver not yet left",
-    "reason3Started": "driver already left",
-    "reason3": "on the day from 10:00, or later",
+    "reason2": "on the day before 10:00, driver not yet arrived at the pickup address",
+    "reason3Started": "driver has arrived at the pickup address",
+    "reason3": "on the day from 10:00, or once the driver has arrived at the pickup address",
     "feeLine": "Cancellation fee: {pct}% × {price} = {fee} ({reason})",
     "newTotal": "New order total",
     "creditRelease": "Customer credit released",
@@ -2519,7 +2516,7 @@
     "requestedAtHint": "Optional. Fill in if the customer cancelled earlier, at most 3 days back. The fee is worked out from this time; empty = the time you save.",
     "requestedAtClear": "Clear",
     "quoteLoading": "Working out the cancellation fee…",
-    "feeChanged": "The cancellation fee changed to {fee} ({pct}%), for example because it is now past 10:00. Check the numbers, then save again to confirm.",
+    "feeChanged": "The automatic fee changed to {fee} ({pct}%), for example because it is now past 10:00. Check the numbers, then save again to confirm.",
     "feeChangedToast": "The cancellation fee changed. Check the new numbers, then confirm again.",
     "blockedLastOpenDay": "This is the last open day of the order, so it cannot be cancelled in Edit Day. Use Cancel Order.",
     "openCancelOrder": "Open Cancel Order",
@@ -2527,6 +2524,15 @@
     "openInvoiceExceeds": "Unpaid invoices still ask {open}, but with the new total ({total}) only {max} is still owed. Revise the invoice to at most {max} first (or void it), then save again.",
     "reopenHint": "Reopening this day removes its cancellation fee, so the order total goes up again. Existing customer credit stays.",
     "dayDeleteNeedsCancel": "Cancel the day in Edit Day so its cancellation fee is charged.",
-    "notStarted": "Not yet"
+    "feeLabel": "Cancellation fee",
+    "feePctLabel": "Percentage of the rental day price",
+    "feeRequired": "Enter the cancellation fee (0 is allowed).",
+    "feeAbovePrice": "The fee cannot be more than the rental day price ({price}).",
+    "feeExplain": "Filled in automatically per policy: {pct}% of this rental day's price {price} ({reason}). Change it if you agreed something else with the customer; the change is recorded in the order history.",
+    "feeUseAuto": "Use the automatic amount",
+    "feeFinal": "Cancellation fee",
+    "manualNote": "Entered manually (automatic {auto})",
+    "manualPreviewNote": "The order total, invoice and balance breakdown still use the automatic amount; the exact figures are recalculated when you save.",
+    "policyShort": "Cancellation is charged per rental day from that day's price: cancelling by the day before 20%; cancelling on the rental day before 10:00 WIB while the driver has not yet arrived at the pickup address 50%; cancelling on the rental day from 10:00 WIB or after the driver has arrived at the pickup address 100%. Extra charges already incurred are paid in full. An overpayment is applied to the next bill or refunded on request."
   }
 }

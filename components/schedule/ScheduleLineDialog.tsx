@@ -44,6 +44,8 @@ import { LineCancelQuote, ScheduleLine } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import {
   CancelFeeBadge,
+  CancelFeeField,
+  cancelFeeState,
   CustomerCancelTimeInput,
   useTierReason,
 } from '@/components/orders/DayCancellation';
@@ -103,6 +105,8 @@ export default function ScheduleLineDialog({
   // customer asked (WIB, at most 3 days back) and the fee quote it gives.
   const [cancelReason, setCancelReason] = useState('');
   const [requestedLocal, setRequestedLocal] = useState('');
+  // The fee typed by hand (plain digits); null = the automatic fee of the quote.
+  const [cancelFeeManual, setCancelFeeManual] = useState<string | null>(null);
   // The quote a 409 CANCEL_FEE_CHANGED returned: shown until the admin saves again.
   const [changedQuote, setChangedQuote] = useState<LineCancelQuote | null>(null);
   const [invoiceConflict, setInvoiceConflict] = useState<ReturnType<typeof openInvoiceExceeds>>(null);
@@ -144,6 +148,7 @@ export default function ScheduleLineDialog({
     setPartnerPlate(line.plate_raw || line.external_car?.plate_number || '');
     setCancelReason('');
     setRequestedLocal('');
+    setCancelFeeManual(null);
     setChangedQuote(null);
     setInvoiceConflict(null);
   }, [line]);
@@ -210,8 +215,14 @@ export default function ScheduleLineDialog({
   };
 
   // A cancel waits for its quote, a reason, and no blocking rule.
+  const feeState = quote ? cancelFeeState(cancelFeeManual, quote.fee, quote.price) : null;
   const cancelBlocked =
-    cancelling && (!quote || !!quote.blocked || !cancelReason.trim() || quoteQuery.isFetching);
+    cancelling &&
+    (!quote ||
+      !!quote.blocked ||
+      !cancelReason.trim() ||
+      quoteQuery.isFetching ||
+      !!feeState?.invalid);
 
   async function save() {
     if (cancelling && !cancelReason.trim()) {
@@ -241,6 +252,8 @@ export default function ScheduleLineDialog({
             ? {
                 cancel_reason: cancelReason.trim(),
                 expected_cancel_fee: quote.fee,
+                // Absent = the automatic fee.
+                ...(feeState?.isManual ? { cancel_fee: feeState.fee } : {}),
                 ...(requestedIso ? { cancel_requested_at: requestedIso } : {}),
               }
             : {}),
@@ -690,6 +703,7 @@ export default function ScheduleLineDialog({
               value={status}
               onValueChange={(v) => {
                 setStatus(v);
+                setCancelFeeManual(null);
                 setChangedQuote(null);
                 setInvoiceConflict(null);
               }}
@@ -734,7 +748,18 @@ export default function ScheduleLineDialog({
                       {td('feeChanged', { fee: formatCurrency(changedQuote.fee), pct: changedQuote.pct })}
                     </p>
                   )}
-                  {quote.blocked !== 'DONE_DAY' && (
+                  {!quote.blocked && feeState && (
+                    <CancelFeeField
+                      id="line-cancel-fee"
+                      price={quote.price}
+                      auto={quote.fee}
+                      autoPct={quote.pct}
+                      reason={tierReason(quote.tier, quote.started)}
+                      manual={cancelFeeManual}
+                      onChange={setCancelFeeManual}
+                    />
+                  )}
+                  {quote.blocked && quote.blocked !== 'DONE_DAY' && (
                     <p className="font-semibold text-red-800">
                       {td('feeLine', {
                         pct: quote.pct,
@@ -746,6 +771,19 @@ export default function ScheduleLineDialog({
                   )}
                   {!quote.blocked && (
                     <dl className="space-y-1 text-gray-700">
+                      <div className="flex justify-between gap-3">
+                        <dt className="font-semibold text-red-800">{td('feeFinal')}</dt>
+                        <dd className="font-semibold tabular-nums text-red-800">
+                          {formatCurrency(feeState?.fee ?? quote.fee)}
+                        </dd>
+                      </div>
+                      {feeState?.isManual && (
+                        <p className="text-[11px] text-amber-700">
+                          {td('manualNote', { auto: formatCurrency(quote.fee) })}
+                          {' · '}
+                          {td('manualPreviewNote')}
+                        </p>
+                      )}
                       <div className="flex justify-between gap-3">
                         <dt>{td('newTotal')}</dt>
                         <dd className="font-medium tabular-nums">{formatCurrency(quote.new_total)}</dd>
