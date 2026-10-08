@@ -333,8 +333,6 @@ export const pricesApi = {
 // ─── Payables (Tagihan Driver / Vendor) ──────────────────────────────────────
 
 export const analyticsApi = {
-  dashboard: (params: Record<string, string | undefined> = {}) =>
-    api.get("/analytics/dashboard", { params }),
   dashboardV2: (params: Record<string, string | undefined> = {}) =>
     api.get("/analytics/dashboard-v2", { params }),
   revenue: (params: Record<string, string | undefined> = {}) =>
