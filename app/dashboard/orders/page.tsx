@@ -695,7 +695,7 @@ function OrdersPageInner() {
                           </span>
                         )}
                         {order.is_refunded && (
-                          <span className="inline-flex rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">
+                          <span className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
                             {t('tagRefund')}
                           </span>
                         )}

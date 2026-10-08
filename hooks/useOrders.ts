@@ -33,7 +33,6 @@ function invalidateMoneyViews(queryClient: QueryClient, id?: string) {
   for (const key of [
     "invoices-search",
     "dashboard-v2",
-    "dashboard-analytics",
     "revenue-report",
   ]) {
     queryClient.invalidateQueries({ queryKey: [key] });

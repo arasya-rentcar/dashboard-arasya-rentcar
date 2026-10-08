@@ -1371,26 +1371,6 @@ export interface FrequencyBreakdown {
   external: { cars: FreqRow[]; vendors: FreqRow[] };
 }
 
-export interface DashboardAnalytics {
-  receivables: {
-    dp_pending: number;
-    settlement_due: number;
-    unbilled: number;
-    total: number;
-  };
-  aging: { receivables: AgingBuckets; payables: AgingBuckets };
-  margin: { top: MarginRow[]; bottom: MarginRow[] };
-  cashflow: { inflow_7d: number; outflow_7d: number; net_7d: number };
-  leaderboard: { drivers: DriverLeader[]; vendors: VendorLeader[] };
-  mix: {
-    internal: { trips: number; revenue: number };
-    external: { trips: number; revenue: number };
-  };
-  car_utilization: CarUtil[];
-  monthly_trend: MonthlyTrendRow[];
-  frequency?: FrequencyBreakdown;
-}
-
 export interface PayablesSummary {
   driver: PayableKindSummary;
   vendor: PayableKindSummary;
