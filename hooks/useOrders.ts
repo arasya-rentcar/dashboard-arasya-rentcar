@@ -6,6 +6,7 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { ordersApi } from "@/lib/api";
+import { invalidateLineMoneyViews } from "@/hooks/useTripCosts";
 import { parseResponse } from "@/lib/safeParse";
 import {
   orderListSchema,
@@ -259,10 +260,9 @@ export function useCancelOrder() {
     },
     onSuccess: (_data, variables) => {
       invalidateMoneyViews(queryClient, variables.id);
-      // Its days are cancelled too: schedule, payables and the day margins move.
-      for (const key of ["schedule", "schedule-week", "payables", "payables-summary"]) {
-        queryClient.invalidateQueries({ queryKey: [key] });
-      }
+      // Its days are cancelled too: schedule, payables, day margins and the
+      // released drivers and cars move.
+      invalidateLineMoneyViews(queryClient);
     },
   });
 }

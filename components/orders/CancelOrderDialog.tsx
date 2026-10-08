@@ -61,6 +61,9 @@ export default function CancelOrderDialog({
   const mutation = useCancelOrder();
 
   function setOpen(o: boolean) {
+    // Closing mid-request would reopen with a new client_ref while the first
+    // cancel still commits.
+    if (!o && mutation.isPending) return;
     onOpenChange(o);
     if (!o) {
       setReason('');
