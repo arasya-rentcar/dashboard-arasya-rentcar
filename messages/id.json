@@ -817,6 +817,7 @@
       }
     ],
     "cancelPolicyNote": "Biaya tambahan yang sudah terpakai (misalnya overtime, parkir, tol) tetap dibayar penuh. Jika pembayaran Anda melebihi tagihan, kelebihannya dipakai untuk tagihan berikutnya atau kami kembalikan ke rekening Anda bila diminta.",
+    "cancelPolicyAdminNote": "Di Edit Hari dan Batalkan Pesanan, admin mengisi sendiri biaya pembatalan dengan tabel ini sebagai panduan. Boleh diisi angka lain, termasuk 0, bila sudah disepakati dengan pelanggan.",
     "cancelPolicyExampleTitle": "Contoh: sewa 3 hari, 10–12 Okt, Rp 1.000.000/hari",
     "cancelPolicyExamples": [
       "Batal 9 Okt = Rp 600.000",
@@ -1006,7 +1007,7 @@
     "cqFeeInvoiceCredit": "(sudah dipotong saldo lebih {amount})",
     "cqCreditAfter": "Tidak ada invoice baru. Saldo lebih sesudahnya {amount}: dipakai untuk tagihan berikutnya atau dikembalikan lewat Kembalikan Dana.",
     "cqSettled": "Tidak ada invoice baru dan tidak ada saldo lebih.",
-    "cqFeeChanged": "Biaya pembatalan otomatis berubah menjadi {fee}. Periksa rinciannya, lalu konfirmasi lagi.",
+    "cqGuideChanged": "Panduan kebijakan berubah menjadi {fee}. Periksa lagi biaya yang Anda isi, lalu konfirmasi lagi.",
     "cqConfirmAgain": "Konfirmasi lagi",
     "cqResultVoided": "Invoice yang dibatalkan: {numbers}."
   },
@@ -2516,8 +2517,7 @@
     "requestedAtHint": "Opsional. Isi bila pelanggan sudah membatalkan lebih awal, paling lama 3 hari ke belakang. Biaya dihitung dari jam ini; kosong = jam simpan.",
     "requestedAtClear": "Hapus",
     "quoteLoading": "Menghitung biaya pembatalan…",
-    "feeChanged": "Biaya otomatis berubah menjadi {fee} ({pct}%), misalnya karena sudah lewat pukul 10.00. Periksa angkanya, lalu simpan lagi untuk konfirmasi.",
-    "feeChangedToast": "Biaya pembatalan berubah. Periksa angka barunya, lalu konfirmasi lagi.",
+    "feeChangedToast": "Panduan kebijakan berubah. Periksa lagi biaya yang Anda isi, lalu konfirmasi lagi.",
     "blockedLastOpenDay": "Ini hari aktif terakhir di order ini, jadi tidak bisa dibatalkan lewat Edit Hari. Pakai Batalkan Pesanan.",
     "openCancelOrder": "Buka Batalkan Pesanan",
     "blockedDoneDay": "Hari yang sudah selesai tidak bisa dibatalkan.",
@@ -2526,13 +2526,14 @@
     "dayDeleteNeedsCancel": "Batalkan hari lewat Edit Hari supaya biaya pembatalan dihitung.",
     "feeLabel": "Biaya pembatalan",
     "feePctLabel": "Persentase dari harga hari sewa",
-    "feeRequired": "Isi biaya pembatalan (boleh 0).",
     "feeAbovePrice": "Biaya tidak boleh lebih dari harga hari sewa ({price}).",
-    "feeExplain": "Terisi otomatis sesuai kebijakan: {pct}% dari harga hari sewa ini {price} ({reason}). Ubah bila ada kesepakatan lain dengan pelanggan; perubahan tercatat di riwayat order.",
-    "feeUseAuto": "Pakai hitungan otomatis",
+    "feeAgreed": "Isi sesuai kesepakatan dengan pelanggan; boleh 0. Tercatat di riwayat order.",
+    "feeGuide": "Panduan kebijakan: {pct}% dari harga hari sewa {price} = {fee} ({reason}).",
+    "feeUseGuide": "Pakai angka ini",
+    "guideChanged": "Panduan kebijakan berubah menjadi {fee} ({pct}%), misalnya karena sudah lewat pukul 10.00. Periksa lagi biaya yang Anda isi, lalu simpan lagi untuk konfirmasi.",
+    "differsNote": "Berbeda dari panduan kebijakan ({auto})",
+    "previewNote": "Rincian total order, invoice, dan sisa tagihan di sini masih memakai panduan kebijakan; angka pastinya dihitung ulang saat disimpan.",
     "feeFinal": "Biaya pembatalan",
-    "manualNote": "Diisi manual (otomatis {auto})",
-    "manualPreviewNote": "Rincian total order, invoice, dan sisa tagihan masih memakai hitungan otomatis; angka pastinya dihitung ulang saat disimpan.",
     "policyShort": "Pembatalan dihitung per hari sewa dari harga hari tersebut: batal paling lambat sehari sebelumnya 20%; batal pada hari sewa sebelum pukul 10.00 WIB dan driver belum tiba di alamat jemput 50%; batal pada hari sewa mulai pukul 10.00 WIB atau setelah driver tiba di alamat jemput 100%. Biaya tambahan yang sudah terpakai dibayar penuh. Kelebihan bayar dipotongkan ke tagihan berikutnya atau dikembalikan bila diminta."
   }
 }

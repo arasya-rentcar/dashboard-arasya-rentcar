@@ -55,8 +55,8 @@ export default function CancelOrderDialog({
   const [reason, setReason] = useState('');
   const [requestedLocal, setRequestedLocal] = useState('');
   const [changedQuote, setChangedQuote] = useState<OrderCancelQuote | null>(null);
-  // Fees typed by hand, by day (plain digits); a day without an entry keeps its automatic fee.
-  const [feeManual, setFeeManual] = useState<Record<string, string>>({});
+  // Fees typed by the admin, by day (plain digits); a day without an entry is still empty.
+  const [feeTyped, setFeeTyped] = useState<Record<string, string>>({});
   const [result, setResult] = useState<CancelOrderResult | null>(null);
   const [clientRef, renewClientRef] = useClientRef(open);
   const requestedIso = wibDateTimeToIso(requestedLocal);
@@ -66,14 +66,12 @@ export default function CancelOrderDialog({
 
   const dayStates = (quote?.days ?? []).map((d) => ({
     day: d,
-    state: cancelFeeState(feeManual[d.id] ?? null, d.fee, d.price),
+    state: cancelFeeState(feeTyped[d.id] ?? '', d.fee, d.price),
   }));
   const feesInvalid = dayStates.some((x) => x.state.invalid);
-  const manualDays = dayStates.filter((x) => x.state.isManual);
-  // The penalty the admin is confirming: the automatic total moved by the days changed by hand.
-  const finalFeeTotal = quote
-    ? quote.fee_total + dayStates.reduce((sum, x) => sum + (x.state.fee - x.day.fee), 0)
-    : 0;
+  const differingDays = dayStates.filter((x) => x.state.differs);
+  // The penalty the admin is confirming: the sum of the typed fees (the policy total is only a guide).
+  const finalFeeTotal = dayStates.reduce((sum, x) => sum + (x.state.fee ?? 0), 0);
 
   function setOpen(o: boolean) {
     // Closing mid-request would reopen with a new client_ref while the first
@@ -84,7 +82,7 @@ export default function CancelOrderDialog({
       setReason('');
       setRequestedLocal('');
       setChangedQuote(null);
-      setFeeManual({});
+      setFeeTyped({});
       setResult(null);
     }
   }
@@ -94,21 +92,19 @@ export default function CancelOrderDialog({
       toast.error(t('cancelReasonRequired'));
       return;
     }
-    if (!quote) return;
+    if (!quote || feesInvalid) return;
     try {
       const res = await mutation.mutateAsync({
         id: orderId,
         reason: reason.trim(),
-        // The automatic total the admin was shown; the manual days go in day_fees.
+        // The policy total the admin was shown; every day goes in day_fees with the typed fee.
         expected_fee_total: quote.fee_total,
-        ...(manualDays.length
-          ? { day_fees: manualDays.map((x) => ({ line_id: x.day.id, fee: x.state.fee })) }
-          : {}),
+        day_fees: dayStates.map((x) => ({ line_id: x.day.id, fee: x.state.fee ?? 0 })),
         ...(requestedIso ? { requested_at: requestedIso } : {}),
         client_ref: clientRef,
       });
       renewClientRef();
-      setFeeManual({});
+      setFeeTyped({});
       setResult(res);
       setReason('');
       toast.success(t('okOrderCancelled'));
@@ -199,7 +195,7 @@ export default function CancelOrderDialog({
               <div className="space-y-3">
                 {changedQuote && (
                   <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-                    {t('cqFeeChanged', { fee: formatCurrency(changedQuote.fee_total) })}
+                    {t('cqGuideChanged', { fee: formatCurrency(changedQuote.fee_total) })}
                   </p>
                 )}
                 {quote.days.length > 0 && (
@@ -217,18 +213,11 @@ export default function CancelOrderDialog({
                         <CancelFeeField
                           id={`cancel-fee-${d.id}`}
                           price={d.price}
-                          auto={d.fee}
-                          autoPct={d.pct}
+                          guide={d.fee}
+                          guidePct={d.pct}
                           reason={tierReason(d.tier, d.arrived)}
-                          manual={feeManual[d.id] ?? null}
-                          onChange={(v) =>
-                            setFeeManual((m) => {
-                              const next = { ...m };
-                              if (v === null) delete next[d.id];
-                              else next[d.id] = v;
-                              return next;
-                            })
-                          }
+                          value={feeTyped[d.id] ?? ''}
+                          onChange={(v) => setFeeTyped((m) => ({ ...m, [d.id]: v }))}
                         />
                       </li>
                     ))}
@@ -238,11 +227,11 @@ export default function CancelOrderDialog({
                 <div className="space-y-1 rounded-lg border border-gray-200 p-3 text-xs">
                   {quote.earlier_fee_total > 0 && row(t('cqEarlierFees'), quote.earlier_fee_total)}
                   {row(t('cqFeeTotal'), finalFeeTotal, 'text-red-700')}
-                  {manualDays.map(({ day: d, state }) => (
+                  {differingDays.map(({ day: d, state }) => (
                     <p key={d.id} className="text-[11px] text-amber-700">
                       {d.date ? formatDate(d.date) : t('cqNoDate')}
                       {': '}
-                      {formatCurrency(state.fee)} · {td('manualNote', { auto: formatCurrency(d.fee) })}
+                      {formatCurrency(state.fee ?? 0)} · {td('differsNote', { auto: formatCurrency(d.fee) })}
                     </p>
                   ))}
                   {quote.done_total > 0 && row(t('cqDoneTotal'), quote.done_total)}
@@ -287,8 +276,8 @@ export default function CancelOrderDialog({
                   ) : (
                     <p className="rounded-md bg-gray-50 px-2 py-1.5">{t('cqSettled')}</p>
                   )}
-                  {manualDays.length > 0 && (
-                    <p className="text-[11px] text-amber-700">{td('manualPreviewNote')}</p>
+                  {differingDays.length > 0 && (
+                    <p className="text-[11px] text-amber-700">{td('previewNote')}</p>
                   )}
                   <p className="text-[11px] text-gray-500">{td('extraChargesNote')}</p>
                   <p className="text-[11px] text-gray-500">{td('policyShort')}</p>

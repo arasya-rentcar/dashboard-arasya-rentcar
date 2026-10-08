@@ -13,8 +13,8 @@ import { formatCurrency, isoToWibDateTimeLocal } from '@/lib/utils';
 
 const TIER_PCT: Record<number, number> = { 1: 20, 2: 50, 3: 100 };
 
-/** The charged fee differs from the automatic one (set by hand in Edit Hari / Batalkan Pesanan). */
-export function isManualCancelFee(line: {
+/** The charged fee differs from the policy guide (every fee is typed by hand now). */
+export function differsFromPolicy(line: {
   cancel_fee?: string | number | null;
   cancel_fee_auto?: string | number | null;
 }) {
@@ -49,9 +49,9 @@ export function CancelFeeBadge({
     >
       <span>
         {pct ? t('badge', { fee, pct }) : t('badgeNoTier', { fee })}
-        {isManualCancelFee(line) && (
+        {differsFromPolicy(line) && (
           <span className="block font-normal text-amber-700">
-            {t('manualNote', { auto: formatCurrency(line.cancel_fee_auto ?? 0) })}
+            {t('differsNote', { auto: formatCurrency(line.cancel_fee_auto ?? 0) })}
           </span>
         )}
       </span>
@@ -73,65 +73,65 @@ export function useTierReason() {
 }
 
 /**
- * The fee of a cancelled day as the admin sees it. `manual` is the text the
- * admin typed (plain digits) or null while the automatic fee stands; a value
- * equal to the automatic fee counts as automatic (nothing is sent).
+ * The fee the admin typed for a cancelled day (plain digits, '' = not filled
+ * yet). Valid = a whole rupiah from 0 up to the day price; `fee` is null until
+ * then. `differs` = valid and not the policy guide amount.
  */
-export function cancelFeeState(manual: string | null, auto: number, price: number) {
-  const value = manual ?? String(auto);
-  const invalid = value === '' || Number(value) > price;
-  const fee = invalid ? auto : Number(value);
-  return { value, invalid, fee, isManual: !invalid && fee !== auto };
+export function cancelFeeState(typed: string, guide: number, price: number) {
+  const invalid = typed === '' || Number(typed) > price;
+  const fee = invalid ? null : Number(typed);
+  return { value: typed, invalid, fee, differs: fee !== null && fee !== guide };
 }
 
 const percentOf = (fee: number, price: number) =>
   price > 0 ? Math.round((fee / price) * 1000) / 10 : 0;
 
 /**
- * "Biaya pembatalan" for one day: the nominal prefilled with the automatic fee
- * plus a % box that moves with it, bounded 0..price, whole rupiah.
+ * "Biaya pembatalan" for one day: starts empty and is required (0 is allowed),
+ * bounded 0..price, whole rupiah, with a % box as a convenience. The policy
+ * amount is only shown as a guide under the field; "Pakai angka ini" copies it.
  */
 export function CancelFeeField({
   id,
   price,
-  auto,
-  autoPct,
+  guide,
+  guidePct,
   reason,
-  manual,
+  value,
   onChange,
 }: {
   id: string;
   price: number;
-  auto: number;
-  autoPct: number;
+  guide: number;
+  guidePct: number;
   reason: string;
-  manual: string | null;
-  onChange: (manual: string | null) => void;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   const t = useTranslations('dayCancel');
   const locale = useLocale();
   // What the admin typed in the % box; null = derive it from the nominal.
   const [pctText, setPctText] = useState<string | null>(null);
-  const state = cancelFeeState(manual, auto, price);
+  const state = cancelFeeState(value, guide, price);
   const pctShown =
-    manual !== null && pctText !== null
+    pctText !== null
       ? pctText
-      : state.value === ''
+      : value === ''
         ? ''
         : new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
-            percentOf(Number(state.value), price),
+            percentOf(Number(value), price),
           );
 
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-xs font-medium text-gray-700">
-        {t('feeLabel')}
+        {t('feeLabel')} <span className="text-red-600">*</span>
       </label>
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <RupiahInput
             id={id}
-            value={state.value}
+            value={value}
             onChange={(v) => {
               setPctText(null);
               onChange(v);
@@ -143,6 +143,7 @@ export function CancelFeeField({
             inputMode="decimal"
             aria-label={t('feePctLabel')}
             className="pr-7 text-right tabular-nums"
+            placeholder="0"
             value={pctShown}
             onChange={(e) => {
               const text = e.target.value;
@@ -157,28 +158,32 @@ export function CancelFeeField({
           </span>
         </div>
       </div>
-      {state.invalid && (
+      {value !== '' && state.invalid && (
         <p className="text-[11px] leading-snug text-red-600">
-          {state.value === ''
-            ? t('feeRequired')
-            : t('feeAbovePrice', { price: formatCurrency(price) })}
+          {t('feeAbovePrice', { price: formatCurrency(price) })}
         </p>
       )}
+      <p className="text-[11px] leading-snug text-gray-500">{t('feeAgreed')}</p>
       <p className="text-[11px] leading-snug text-gray-500">
-        {t('feeExplain', { pct: autoPct, price: formatCurrency(price), reason })}
+        {t('feeGuide', {
+          pct: guidePct,
+          price: formatCurrency(price),
+          fee: formatCurrency(guide),
+          reason,
+        })}{' '}
+        {value !== String(guide) && (
+          <button
+            type="button"
+            onClick={() => {
+              setPctText(null);
+              onChange(String(guide));
+            }}
+            className="font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
+          >
+            {t('feeUseGuide')}
+          </button>
+        )}
       </p>
-      {manual !== null && (
-        <button
-          type="button"
-          onClick={() => {
-            setPctText(null);
-            onChange(null);
-          }}
-          className="text-[11px] font-medium text-blue-700 underline underline-offset-2 hover:text-blue-900"
-        >
-          {t('feeUseAuto')}
-        </button>
-      )}
     </div>
   );
 }

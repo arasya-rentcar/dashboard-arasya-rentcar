@@ -817,6 +817,7 @@
       }
     ],
     "cancelPolicyNote": "Extra charges already incurred (such as overtime, parking or tolls) are still paid in full. If you have paid more than what is billed, the excess goes toward your next bill, or we refund it to your account on request.",
+    "cancelPolicyAdminNote": "In Edit Day and Cancel Order, the admin types the cancellation fee, using this table as a guide. A different amount, including 0, is fine when agreed with the customer.",
     "cancelPolicyExampleTitle": "Example: a 3-day rental, 10–12 Oct, Rp 1,000,000 per day",
     "cancelPolicyExamples": [
       "Cancel on 9 Oct = Rp 600,000",
@@ -1006,7 +1007,7 @@
     "cqFeeInvoiceCredit": "(after {amount} of customer credit)",
     "cqCreditAfter": "No new invoice. Customer credit afterwards: {amount}, used for the next bill or returned with Refund.",
     "cqSettled": "No new invoice and no customer credit left.",
-    "cqFeeChanged": "The automatic cancellation fee changed to {fee}. Check the breakdown, then confirm again.",
+    "cqGuideChanged": "The policy guide changed to {fee}. Check the fee you entered again, then confirm again.",
     "cqConfirmAgain": "Confirm again",
     "cqResultVoided": "Voided invoices: {numbers}."
   },
@@ -2516,8 +2517,7 @@
     "requestedAtHint": "Optional. Fill in if the customer cancelled earlier, at most 3 days back. The fee is worked out from this time; empty = the time you save.",
     "requestedAtClear": "Clear",
     "quoteLoading": "Working out the cancellation fee…",
-    "feeChanged": "The automatic fee changed to {fee} ({pct}%), for example because it is now past 10:00. Check the numbers, then save again to confirm.",
-    "feeChangedToast": "The cancellation fee changed. Check the new numbers, then confirm again.",
+    "feeChangedToast": "The policy guide changed. Check the fee you entered again, then confirm again.",
     "blockedLastOpenDay": "This is the last open day of the order, so it cannot be cancelled in Edit Day. Use Cancel Order.",
     "openCancelOrder": "Open Cancel Order",
     "blockedDoneDay": "A finished day cannot be cancelled.",
@@ -2526,13 +2526,14 @@
     "dayDeleteNeedsCancel": "Cancel the day in Edit Day so its cancellation fee is charged.",
     "feeLabel": "Cancellation fee",
     "feePctLabel": "Percentage of the rental day price",
-    "feeRequired": "Enter the cancellation fee (0 is allowed).",
     "feeAbovePrice": "The fee cannot be more than the rental day price ({price}).",
-    "feeExplain": "Filled in automatically per policy: {pct}% of this rental day's price {price} ({reason}). Change it if you agreed something else with the customer; the change is recorded in the order history.",
-    "feeUseAuto": "Use the automatic amount",
+    "feeAgreed": "Enter what you agreed with the customer; 0 is allowed. Recorded in the order history.",
+    "feeGuide": "Policy guide: {pct}% of the rental day price {price} = {fee} ({reason}).",
+    "feeUseGuide": "Use this amount",
+    "guideChanged": "The policy guide changed to {fee} ({pct}%), for example because it is now past 10:00. Check the fee you entered again, then save again to confirm.",
+    "differsNote": "Different from the policy guide ({auto})",
+    "previewNote": "The order total, invoice and balance breakdown here still use the policy guide; the exact figures are recalculated when you save.",
     "feeFinal": "Cancellation fee",
-    "manualNote": "Entered manually (automatic {auto})",
-    "manualPreviewNote": "The order total, invoice and balance breakdown still use the automatic amount; the exact figures are recalculated when you save.",
     "policyShort": "Cancellation is charged per rental day from that day's price: cancelling by the day before 20%; cancelling on the rental day before 10:00 WIB while the driver has not yet arrived at the pickup address 50%; cancelling on the rental day from 10:00 WIB or after the driver has arrived at the pickup address 100%. Extra charges already incurred are paid in full. An overpayment is applied to the next bill or refunded on request."
   }
 }

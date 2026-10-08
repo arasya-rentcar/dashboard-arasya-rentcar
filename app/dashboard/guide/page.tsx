@@ -198,6 +198,7 @@ export default function GuidePage() {
               </table>
             </div>
             <p>{t("cancelPolicyNote")}</p>
+            <p>{t("cancelPolicyAdminNote")}</p>
             <div className="rounded-lg border p-3">
               <b className="text-gray-900">{t("cancelPolicyExampleTitle")}</b>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
