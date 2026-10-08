@@ -532,7 +532,8 @@ export interface LineCancelQuote {
   price: number;
   fee: number;
   label: string;
-  started: boolean;
+  // The driver was at the pickup by the decision time (tier 3 before 10.00).
+  arrived: boolean;
   blocked: LineCancelBlock;
   new_total: number;
   net_paid: number;
@@ -547,10 +548,13 @@ export interface OrderCancelQuoteDay {
   id: string;
   date: string | null;
   price: number;
-  started: boolean;
+  arrived: boolean;
   tier: 1 | 2 | 3;
   pct: 20 | 50 | 100;
+  /** Charged; equals fee_auto in a quote. */
   fee: number;
+  fee_auto: number;
+  manual: boolean;
   label: string;
 }
 

@@ -219,7 +219,7 @@ export default function CancelOrderDialog({
                           price={d.price}
                           auto={d.fee}
                           autoPct={d.pct}
-                          reason={tierReason(d.tier, d.started)}
+                          reason={tierReason(d.tier, d.arrived)}
                           manual={feeManual[d.id] ?? null}
                           onChange={(v) =>
                             setFeeManual((m) => {

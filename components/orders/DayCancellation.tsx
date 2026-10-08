@@ -62,12 +62,12 @@ export function CancelFeeBadge({
 /** Why a day falls in its tier (the API's dayCancellation rule). */
 export function useTierReason() {
   const t = useTranslations('dayCancel');
-  return (tier: number, started: boolean) =>
+  return (tier: number, arrived: boolean) =>
     tier === 1
       ? t('reason1')
       : tier === 2
         ? t('reason2')
-        : started
+        : arrived
           ? t('reason3Started')
           : t('reason3');
 }

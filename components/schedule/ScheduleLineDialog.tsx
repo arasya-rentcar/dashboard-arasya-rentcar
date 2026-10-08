@@ -754,7 +754,7 @@ export default function ScheduleLineDialog({
                       price={quote.price}
                       auto={quote.fee}
                       autoPct={quote.pct}
-                      reason={tierReason(quote.tier, quote.started)}
+                      reason={tierReason(quote.tier, quote.arrived)}
                       manual={cancelFeeManual}
                       onChange={setCancelFeeManual}
                     />
@@ -765,7 +765,7 @@ export default function ScheduleLineDialog({
                         pct: quote.pct,
                         price: formatCurrency(quote.price),
                         fee: formatCurrency(quote.fee),
-                        reason: tierReason(quote.tier, quote.started),
+                        reason: tierReason(quote.tier, quote.arrived),
                       })}
                     </p>
                   )}
