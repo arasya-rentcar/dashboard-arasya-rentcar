@@ -1,28 +1,41 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { AlertTriangle, ExternalLink, Eye, MapPin, Navigation } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useFilePreview } from '@/components/preview/FilePreview';
 import { formatDateTime } from '@/lib/utils';
+import {
+  ARRIVAL_TOLERANCE_M,
+  distanceMeters,
+  mapsDirectionsUrl,
+  mapsSearchUrl,
+  type GeoPoint,
+} from '@/lib/maps';
 import type { TripReportEntry } from '@/types';
 
 /**
  * Proof the driver was at the pickup point: the arrival photo from the app's
  * GPS camera (time, driver, GPS stamped on it) and the phone's GPS fix, with
  * map links so the office can compare the point with the pickup address.
+ * When the customer picked a pickup point on the website, also shows the
+ * straight-line distance to it and flags one beyond ARRIVAL_TOLERANCE_M.
  * Flags a mock (fake) location and an arrival recorded without GPS.
  */
 export default function ArrivalEvidence({
   reports,
   pickupLocation,
+  pickupPoint,
   arrivedAt,
 }: {
   reports?: TripReportEntry[] | null;
   pickupLocation: string;
+  /** Pickup point from the website map; null/absent = address text only. */
+  pickupPoint?: GeoPoint | null;
   arrivedAt?: string | null;
 }) {
   const t = useTranslations('arrival');
+  const format = useFormatter();
   const { openPreview } = useFilePreview();
   const list = reports ?? [];
   const latest = (type: string) =>
@@ -46,7 +59,23 @@ export default function ArrivalEvidence({
     null;
   const lat = withFix?.latitude ?? null;
   const lng = withFix?.longitude ?? null;
-  const point = lat != null && lng != null ? `${lat.toFixed(6)},${lng.toFixed(6)}` : null;
+  const fix: GeoPoint | null = lat != null && lng != null ? { lat, lng } : null;
+  const point = fix ? `${fix.lat.toFixed(6)},${fix.lng.toFixed(6)}` : null;
+  // Straight-line distance from the driver's fix to the customer's point.
+  // Whole metres, so the text, the km switch and the warning agree (999.6 m
+  // reads "1,0 km", and 300.4 m reads "300 m" without "more than 300 m").
+  const distance = fix && pickupPoint ? Math.round(distanceMeters(fix, pickupPoint)) : null;
+  const far = distance != null && distance > ARRIVAL_TOLERANCE_M;
+  const accuracy = withFix?.location_accuracy_m ?? null;
+  const distanceText =
+    distance == null
+      ? null
+      : distance >= 1000
+        ? t('distanceKm', {
+            km: format.number(distance / 1000, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+          })
+        : t('distanceM', { m: format.number(distance) });
+  const tolerance = format.number(ARRIVAL_TOLERANCE_M);
 
   function showPhoto() {
     if (!photo?.file_url) return;
@@ -75,6 +104,15 @@ export default function ArrivalEvidence({
             {t('noGps')}
           </Badge>
         )}
+        {far && (
+          <Badge
+            variant="outline"
+            className="bg-amber-50 text-amber-800 border-amber-200 text-[10px] gap-1"
+            title={t('farHint', { m: tolerance })}
+          >
+            <AlertTriangle className="h-3 w-3" /> {t('farFromPickup', { m: tolerance })}
+          </Badge>
+        )}
       </div>
       <div className="mt-1.5 flex gap-2">
         {photo?.file_url && (
@@ -98,7 +136,7 @@ export default function ArrivalEvidence({
           {locationName && (
             <p className="font-medium text-gray-800 break-words">{locationName}</p>
           )}
-          {point ? (
+          {fix ? (
             <>
               <p className="tabular-nums break-all">
                 {point}
@@ -106,9 +144,16 @@ export default function ArrivalEvidence({
                   ` · ${t('accuracy', { m: withFix.location_accuracy_m })}`}
               </p>
               {withFix?.location_at && <p>{t('fixAt', { at: formatDateTime(withFix.location_at) })}</p>}
+              {distanceText && (
+                <p className={far ? 'font-medium text-amber-800' : 'text-gray-700'}>
+                  {t('distance', { d: distanceText })}
+                  {/* A fix as loose as the tolerance itself can't settle it. */}
+                  {accuracy != null && accuracy >= ARRIVAL_TOLERANCE_M && ` · ${t('lowAccuracy')}`}
+                </p>
+              )}
               <div className="flex flex-wrap gap-x-3 gap-y-0.5 pt-0.5">
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${point}`}
+                  href={mapsSearchUrl(fix)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-blue-600 hover:underline"
@@ -116,13 +161,13 @@ export default function ArrivalEvidence({
                   {t('openMap')} <ExternalLink className="h-3 w-3" />
                 </a>
                 <a
-                  href={`https://www.google.com/maps/dir/?api=1&origin=${point}&destination=${encodeURIComponent(pickupLocation)}`}
+                  href={mapsDirectionsUrl(fix, pickupPoint ?? pickupLocation)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                  title={t('routeHint')}
+                  title={pickupPoint ? t('routeToPointHint') : t('routeHint')}
                 >
-                  <Navigation className="h-3 w-3" /> {t('route')}
+                  <Navigation className="h-3 w-3" /> {pickupPoint ? t('routeToPoint') : t('route')}
                 </a>
               </div>
             </>

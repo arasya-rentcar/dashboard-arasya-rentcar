@@ -11,6 +11,21 @@ import { z } from 'zod';
  */
 
 const nullableStr = z.string().nullable().optional();
+const nullableNum = z.number().nullable().optional();
+
+// Map points (website map picker). Absent on older API responses = no point.
+const serviceItemSchema = z
+  .object({
+    pickup_location: nullableStr,
+    dropoff_location: nullableStr,
+    pickup_lat: nullableNum,
+    pickup_lng: nullableNum,
+    pickup_place_id: nullableStr,
+    dropoff_lat: nullableNum,
+    dropoff_lng: nullableNum,
+    dropoff_place_id: nullableStr,
+  })
+  .passthrough();
 
 export const orderListItemSchema = z
   .object({
@@ -90,11 +105,36 @@ export const orderDetailSchema = z
     final_price: z.union([z.string(), z.number()]).nullable().optional(),
     order_status: z.string().nullable().optional(),
     payment_status: z.string().nullable().optional(),
+    service_items: z.array(serviceItemSchema).nullable().optional(),
     // Every money figure on the order page comes from here.
     money: orderMoneySchema,
     invoices: z.array(invoiceSchema).optional(),
     refunds: z.array(orderRefundSchema).optional(),
     credit_entries: z.array(orderCreditEntrySchema).optional(),
+  })
+  .passthrough();
+
+export const webLeadSchema = z
+  .object({
+    id: z.string(),
+    lead_code: z.string(),
+    pickup_location: nullableStr,
+    destination: nullableStr,
+    pickup_lat: nullableNum,
+    pickup_lng: nullableNum,
+    pickup_place_id: nullableStr,
+    pickup_place_name: nullableStr,
+    destination_lat: nullableNum,
+    destination_lng: nullableNum,
+    destination_place_id: nullableStr,
+    destination_place_name: nullableStr,
+  })
+  .passthrough();
+
+export const webLeadsResultSchema = z
+  .object({
+    data: z.array(webLeadSchema),
+    meta: z.object({}).passthrough(),
   })
   .passthrough();
 

@@ -13,8 +13,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency, wibDateToIso, wibDateTimeToIso } from "@/lib/utils";
 import { expandServiceItemsByDays } from "@/lib/expandServiceItems";
+import { itemPointPayload, type GeoPoint } from "@/lib/maps";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
+  pointFormValues,
+  servicePointFieldsSchema,
 } from "./OrderServiceItemsEditor";
 import CustomerPicker from "./CustomerPicker";
 import CustomerLookupHint from "./CustomerLookupHint";
@@ -45,6 +48,7 @@ function buildSchema(msg: {
     quantity: z.string().min(1, msg.price),
     unit_price: z.string().min(1, msg.price),
     notes: z.string().optional(),
+    ...servicePointFieldsSchema,
   });
   const additionalSchema = z.object({
     type: z.string().min(1),
@@ -81,6 +85,9 @@ export interface CreateOrderPrefill {
   startAt?: string; // YYYY-MM-DDTHH:mm (datetime-local)
   pickup: string;
   dropoff?: string;
+  /** Map points picked on the website (pickup / destination). */
+  pickupPoint?: GeoPoint | null;
+  dropoffPoint?: GeoPoint | null;
   notes?: string;
   passengerCount?: number | null;
   /** Requested unit / duration as the customer typed them on the website. */
@@ -125,6 +132,7 @@ const defaultItem: ServiceItemFormValue = {
   quantity: "1",
   unit_price: "",
   notes: "",
+  ...pointFormValues(null, null),
 };
 
 const ADDITIONAL_TYPE_KEYS: { key: string; value: string }[] = [
@@ -183,6 +191,8 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
               pickup_location: prefill.pickup,
               dropoff_location: prefill.dropoff ?? "",
               notes: leadLineNotes(prefill),
+              // Every day expanded from this row keeps the lead's points.
+              ...pointFormValues(prefill.pickupPoint, prefill.dropoffPoint),
             }
           : defaultItem,
       ],
@@ -296,6 +306,8 @@ export default function CreateOrderForm({ onSubmit, isLoading, prefill }: Props)
           total_price: Number(item.unit_price || 0),
           notes: item.notes || undefined,
           sort_order: index,
+          // Always all six (value or null): lat/lng travel as a pair.
+          ...itemPointPayload(item),
         }),
       ),
       additionals: cleanAdditionals,

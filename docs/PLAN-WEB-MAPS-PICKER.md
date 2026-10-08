@@ -1,6 +1,6 @@
 # Rencana: pilih alamat jemput & tujuan lewat peta (arasya-web)
 
-Status: rencana, belum dikerjakan (7 Okt 2026). Pengerjaan di sesi lain.
+Status (7 Okt 2026): F1–F4 dikerjakan, PR terbuka: API arasya-rentcar/api-arasya-rentcar#6, dashboard arasya-rentcar/dashboard-arasya-rentcar#14, website arasya-rentcar/arasya-web#2. F0 (akun + kunci Google) dan F5 belum. Detail dan langkah pemilik: `docs/HANDOFF.md` "Status 7 Okt malam".
 
 ## 1. Tujuan
 

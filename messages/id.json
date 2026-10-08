@@ -2082,7 +2082,15 @@
     "route": "Rute ke alamat jemput",
     "routeHint": "Peta menunjukkan jarak dari titik driver ke alamat jemput",
     "openPhoto": "Buka foto",
-    "photoAlt": "Foto sampai lokasi jemput dengan cap waktu dan GPS"
+    "photoAlt": "Foto sampai lokasi jemput dengan cap waktu dan GPS",
+    "distance": "Jarak lurus ke titik jemput: {d}",
+    "distanceM": "{m} m",
+    "distanceKm": "{km} km",
+    "farFromPickup": "Lebih dari {m} m dari titik jemput",
+    "farHint": "Titik GPS driver berada lebih dari {m} m dari titik jemput yang dipilih pelanggan. Cek dengan driver.",
+    "lowAccuracy": "GPS kurang akurat, jarak bisa meleset",
+    "routeToPoint": "Rute ke titik jemput",
+    "routeToPointHint": "Peta menunjukkan rute dari titik driver ke titik jemput yang dipilih pelanggan"
   },
   "tripCosts": {
     "typeLabel": "Jenis biaya",
@@ -2470,6 +2478,16 @@
     "next": "Berikutnya",
     "loadFailed": "File tidak bisa ditampilkan di sini.",
     "pdfNotSupported": "Browser ini tidak bisa menampilkan PDF di dalam halaman. Buka di tab baru untuk melihatnya."
+  },
+  "maps": {
+    "openMap": "Lihat di peta",
+    "pickupPoint": "Titik jemput",
+    "destinationPoint": "Titik tujuan",
+    "openInMaps": "{label}: buka di Google Maps (tab baru)",
+    "pointFromWebsite": "Titik dari website",
+    "pointHint": "Titik peta yang dipilih pelanggan di website. Bila alamat diubah, titik ikut terhapus supaya alamat dan titik tidak berbeda.",
+    "removePickupPoint": "Hapus titik jemput",
+    "removeDropoffPoint": "Hapus titik tujuan"
   },
   "invoiceCredit": {
     "useCredit": "Pakai saldo lebih ({amount})",

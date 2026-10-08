@@ -33,6 +33,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { TripHistoryRow } from '@/types';
 import ArrivalEvidence from '@/components/orders/ArrivalEvidence';
+import { itemPickupPoint } from '@/lib/maps';
 import ReportLocation from '@/components/orders/ReportLocation';
 
 const PAGE_SIZE = 20;
@@ -451,6 +452,7 @@ function HistoryRow({
                 <ArrivalEvidence
                   reports={row.reports}
                   pickupLocation={row.pickup_location}
+                  pickupPoint={itemPickupPoint(row)}
                   arrivedAt={row.actual_pickup_at}
                 />
               )}

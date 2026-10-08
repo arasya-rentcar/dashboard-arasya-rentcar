@@ -9,11 +9,14 @@ import {
   UseFormWatch,
   useFieldArray,
 } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { z } from "zod";
+import { MapPin, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import MapPointLink from "@/components/dashboard/MapPointLink";
 import { formatCurrency } from "@/lib/utils";
+import { itemDropoffPoint, itemPickupPoint, type GeoPoint } from "@/lib/maps";
 
 // DURASI (sheet column) -> stored value
 export const DURASI_OPTIONS: { label: string; value: string }[] = [
@@ -41,6 +44,40 @@ export interface ServiceItemFormValue {
   quantity: string;
   unit_price: string;
   notes?: string;
+  // Map points (from the website lead). Not editable here yet; cleared when
+  // the matching address text is edited so text and point never disagree.
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
+  pickup_place_id?: string | null;
+  dropoff_lat?: number | null;
+  dropoff_lng?: number | null;
+  dropoff_place_id?: string | null;
+}
+
+// Zod shape for the point fields: the form schemas must list them, or the
+// resolver strips them before submit.
+export const servicePointFieldsSchema = {
+  pickup_lat: z.number().nullable().optional(),
+  pickup_lng: z.number().nullable().optional(),
+  pickup_place_id: z.string().nullable().optional(),
+  dropoff_lat: z.number().nullable().optional(),
+  dropoff_lng: z.number().nullable().optional(),
+  dropoff_place_id: z.string().nullable().optional(),
+};
+
+/** Form values for a row's points (null when there is none). */
+export function pointFormValues(
+  pickup?: GeoPoint | null,
+  dropoff?: GeoPoint | null,
+) {
+  return {
+    pickup_lat: pickup?.lat ?? null,
+    pickup_lng: pickup?.lng ?? null,
+    pickup_place_id: pickup?.placeId ?? null,
+    dropoff_lat: dropoff?.lat ?? null,
+    dropoff_lng: dropoff?.lng ?? null,
+    dropoff_place_id: dropoff?.placeId ?? null,
+  };
 }
 
 interface Props<T extends { service_items: ServiceItemFormValue[] }> {
@@ -107,6 +144,7 @@ function newItem(): ServiceItemFormValue {
     quantity: "1",
     unit_price: "",
     notes: "",
+    ...pointFormValues(null, null),
   };
 }
 
@@ -114,6 +152,7 @@ export default function OrderServiceItemsEditor<
   T extends { service_items: ServiceItemFormValue[] },
 >({ control, register, setValue, watch, errors, removeLock }: Props<T>) {
   const t = useTranslations("serviceItems");
+  const tm = useTranslations("maps");
   const { fields, append, remove } = useFieldArray({
     control,
     name: "service_items" as never,
@@ -134,6 +173,14 @@ export default function OrderServiceItemsEditor<
   // iOS zoom on focus), like Input does.
   const selectClass =
     "h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs md:text-sm";
+
+  function clearPoint(index: number, side: "pickup" | "dropoff") {
+    for (const f of ["lat", "lng", "place_id"]) {
+      setValue(`service_items.${index}.${side}_${f}` as never, null as never, {
+        shouldDirty: true,
+      });
+    }
+  }
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -173,6 +220,8 @@ export default function OrderServiceItemsEditor<
             Number(items?.[index]?.unit_price || 0);
           const err = rowErrors(index);
           const id = (name: string) => `si-${field.id}-${name}`;
+          const pickupPoint = itemPickupPoint(items?.[index]);
+          const dropoffPoint = itemDropoffPoint(items?.[index]);
           const lockHint = removeLock?.(index) ?? null;
           return (
             <div key={field.id} className="bg-white p-3 sm:p-4">
@@ -291,10 +340,24 @@ export default function OrderServiceItemsEditor<
                     aria-invalid={!!err?.pickup_location}
                     {...register(
                       `service_items.${index}.pickup_location` as never,
+                      {
+                        // Typing a different address drops the website point.
+                        onChange: () => {
+                          if (pickupPoint) clearPoint(index, "pickup");
+                        },
+                      },
                     )}
                   />
                   {err?.pickup_location && (
                     <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
+                  {pickupPoint && (
+                    <PointChip
+                      point={pickupPoint}
+                      label={tm("pickupPoint")}
+                      removeLabel={tm("removePickupPoint")}
+                      onRemove={() => clearPoint(index, "pickup")}
+                    />
                   )}
                 </div>
                 <div className="space-y-1.5 xl:col-span-3">
@@ -305,10 +368,23 @@ export default function OrderServiceItemsEditor<
                     aria-invalid={!!err?.dropoff_location}
                     {...register(
                       `service_items.${index}.dropoff_location` as never,
+                      {
+                        onChange: () => {
+                          if (dropoffPoint) clearPoint(index, "dropoff");
+                        },
+                      },
                     )}
                   />
                   {err?.dropoff_location && (
                     <p className="text-xs text-red-500">{t("fieldRequired")}</p>
+                  )}
+                  {dropoffPoint && (
+                    <PointChip
+                      point={dropoffPoint}
+                      label={tm("destinationPoint")}
+                      removeLabel={tm("removeDropoffPoint")}
+                      onRemove={() => clearPoint(index, "dropoff")}
+                    />
                   )}
                 </div>
 
@@ -388,5 +464,43 @@ export default function OrderServiceItemsEditor<
         })}
       </div>
     </section>
+  );
+}
+
+// Shows that a map point is attached to the address above it: the text links
+// to the map, "x" removes the point (picking a new point comes later).
+function PointChip({
+  point,
+  label,
+  removeLabel,
+  onRemove,
+}: {
+  point: GeoPoint;
+  label: string;
+  removeLabel: string;
+  onRemove: () => void;
+}) {
+  const t = useTranslations("maps");
+  return (
+    <div
+      className="inline-flex max-w-full items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 py-0.5 pl-2 pr-0.5 text-[11px] text-emerald-800"
+      title={t("pointHint")}
+    >
+      <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />
+      {/* The chip text itself opens the point on the map. */}
+      <MapPointLink point={point} label={label} className="min-w-0 font-medium">
+        <span className="sr-only">{label}: </span>
+        <span className="truncate">{t("pointFromWebsite")}</span>
+      </MapPointLink>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeLabel}
+        title={removeLabel}
+        className="flex h-6 w-6 items-center justify-center rounded text-emerald-700 hover:bg-emerald-100 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
   );
 }

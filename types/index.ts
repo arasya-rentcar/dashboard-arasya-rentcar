@@ -218,7 +218,19 @@ export type MarkPaidResult = Invoice & {
   order_money?: OrderMoney | null;
 };
 
-export interface OrderServiceItem {
+// Map points on an order service item (picked on the website map and carried
+// over from the lead). Null or absent (older API) = no point. lat/lng always
+// come as a pair; the place id is optional.
+export interface ServiceItemPointFields {
+  pickup_lat: number | null;
+  pickup_lng: number | null;
+  pickup_place_id: string | null;
+  dropoff_lat: number | null;
+  dropoff_lng: number | null;
+  dropoff_place_id: string | null;
+}
+
+export interface OrderServiceItem extends Partial<ServiceItemPointFields> {
   id?: string;
   order_id?: string;
   service_date?: string | null;
@@ -659,7 +671,7 @@ export interface TripReportEntry {
 // One finished (DONE) service line for the Trip History tab. finance_status:
 // FINALIZED = parent order is DONE (money fields trustworthy); AWAITING = line
 // done but order not finalized yet (render money as "Pending").
-export interface TripHistoryRow {
+export interface TripHistoryRow extends Partial<ServiceItemPointFields> {
   id: string;
   service_date?: string | null;
   description?: string | null;
@@ -917,7 +929,7 @@ export interface CreateOrderInput {
   customer_name: string;
   customer_phone: string;
   customers?: { name: string; phone?: string; is_primary?: boolean }[];
-  service_items?: {
+  service_items?: ({
     service_date?: string;
     start_at?: string;
     end_at?: string;
@@ -930,7 +942,7 @@ export interface CreateOrderInput {
     total_price?: number;
     notes?: string;
     sort_order?: number;
-  }[];
+  } & Partial<ServiceItemPointFields>)[];
   pickup_location: string;
   dropoff_location: string;
   order_date: string;
@@ -960,6 +972,16 @@ export interface WebLead {
   pickup_time: string | null;
   pickup_location: string;
   destination: string | null;
+  // Points picked on the website map (absent on leads sent before that / by
+  // an older API). lat/lng come as a pair.
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
+  pickup_place_id?: string | null;
+  pickup_place_name?: string | null;
+  destination_lat?: number | null;
+  destination_lng?: number | null;
+  destination_place_id?: string | null;
+  destination_place_name?: string | null;
   unit: string | null;
   passenger_count: number | null;
   duration: string | null;
@@ -1000,7 +1022,7 @@ export interface UpdateOrderInput {
   customer_name?: string;
   customer_phone?: string;
   customers?: { name: string; phone?: string; is_primary?: boolean }[];
-  service_items?: {
+  service_items?: ({
     service_date?: string;
     start_at?: string;
     end_at?: string;
@@ -1013,7 +1035,7 @@ export interface UpdateOrderInput {
     total_price?: number;
     notes?: string;
     sort_order?: number;
-  }[];
+  } & Partial<ServiceItemPointFields>)[];
   pickup_location?: string;
   dropoff_location?: string;
   order_date?: string;

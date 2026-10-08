@@ -71,6 +71,7 @@ import {
   exportToCsv,
   isoToWibDate,
 } from '@/lib/utils';
+import { toGeoPoint } from '@/lib/maps';
 import { OrderStatus } from '@/types';
 import { ORDER_STATUS_STYLES, PAYMENT_STATUS_STYLES } from '@/lib/statusStyles';
 
@@ -143,6 +144,12 @@ function OrdersPageInner() {
       startAt: lead.trip_date && lead.pickup_time ? `${lead.trip_date}T${lead.pickup_time}` : undefined,
       pickup: lead.pickup_location,
       dropoff: lead.destination ?? undefined,
+      // Website map points go to the service row's pickup / dropoff point.
+      pickupPoint: toGeoPoint(lead.pickup_lat, lead.pickup_lng, lead.pickup_place_id),
+      // A point without destination text would disagree with the (empty) field.
+      dropoffPoint: lead.destination
+        ? toGeoPoint(lead.destination_lat, lead.destination_lng, lead.destination_place_id)
+        : null,
       notes: extras.join('\n'),
       passengerCount: lead.passenger_count,
       unit: lead.unit,

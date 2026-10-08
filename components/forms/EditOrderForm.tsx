@@ -17,8 +17,11 @@ import {
   wibDateTimeToIso,
 } from "@/lib/utils";
 import { expandServiceItemsByDays } from "@/lib/expandServiceItems";
+import { itemDropoffPoint, itemPickupPoint, itemPointPayload } from "@/lib/maps";
 import OrderServiceItemsEditor, {
   ServiceItemFormValue,
+  pointFormValues,
+  servicePointFieldsSchema,
 } from "./OrderServiceItemsEditor";
 
 const customerSchema = z.object({
@@ -42,6 +45,7 @@ const serviceItemSchema = z.object({
   quantity: z.string().min(1),
   unit_price: z.string().min(1),
   notes: z.string().optional(),
+  ...servicePointFieldsSchema,
 });
 // The price-change reason is checked on submit (only when a price actually
 // changed): checking it in the schema also blocked saving after the price was
@@ -101,6 +105,8 @@ export default function EditOrderForm({
         quantity: String(item.quantity || 1),
         unit_price: String(Number(item.unit_price || 0)),
         notes: item.notes || "",
+        // Sent back unchanged unless the address is edited or the point removed.
+        ...pointFormValues(itemPickupPoint(item), itemDropoffPoint(item)),
       }))
     : [
         {
@@ -115,6 +121,7 @@ export default function EditOrderForm({
           quantity: "1",
           unit_price: String(originalPrice),
           notes: "",
+          ...pointFormValues(null, null),
         },
       ];
   const {
@@ -255,6 +262,8 @@ export default function EditOrderForm({
           total_price: Number(item.unit_price || 0),
           notes: item.notes || undefined,
           sort_order: index,
+          // Always all six (value or null): lat/lng travel as a pair.
+          ...itemPointPayload(item),
         }),
       ),
     });
