@@ -21,7 +21,7 @@ Playwright is a devDependency; launch Chromium with `executablePath: '/opt/pw-br
 
 ## Deploy
 - Push to `main` → `vercel.yml` deploys the Vercel copy and `deploy.yml` deploys the VPS copy over SSH (secrets `SSH_HOST`, `SSH_USER`, `SSH_PORT`, `SSH_DEPLOY_KEY`; only when dashboard code paths change, or run it manually).
-- dashboard.haikuy.com (what admins use) is the VPS copy; `deploy.yml` runs `cd /root/.openclaw/workspace/arasya-projects && GIT_SYNC=1 ./deploy-local.sh dashboard`.
+- dashboard.haikuy.com (what admins use) is the VPS copy; `deploy.yml` syncs `/opt/arasya/src/api-arasya-rentcar` and runs its `GIT_SYNC=1 ops/deploy.sh dashboard`. Server setup: API repo `ops/README.md`.
 - Release the dashboard only after the API it depends on is deployed.
 - Work happens on `claude/trusting-dijkstra-hocd9x`; fast-forward `main` to release.
 
